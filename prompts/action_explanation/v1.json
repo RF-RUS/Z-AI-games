@@ -1,0 +1,17 @@
+{
+  "prompt_id": "action_explanation",
+  "version": "1.0.0",
+  "use_case": "explanation",
+  "template": "Explain this UNO legal action concisely for the operator.\nAction: {action_type}\nCard: {card}\nRespond JSON: {\"summary\": str, \"confidence\": float}",
+  "expected_output_schema": {
+    "type": "object",
+    "properties": {
+      "summary": {"type": "string"},
+      "confidence": {"type": "number"}
+    },
+    "required": ["summary", "confidence"]
+  },
+  "safety_notes": "Must not reveal hidden opponent cards",
+  "compatible_model_families": ["mock", "llama_cpp_openai", "vllm_openai"],
+  "active": true
+}

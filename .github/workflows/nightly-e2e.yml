@@ -1,0 +1,57 @@
+name: Nightly E2E
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  pizzuno-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Install Playwright
+        run: |
+          python -m playwright install chromium
+          python -m playwright install-deps
+      - name: Run Pizzuno E2E smoke
+        run: python -m pytest tests/smoke/test_pizzuno_e2e.py -v --tb=long -m smoke
+        env:
+          UNO_PLAYWRIGHT headless: "true"
+      - name: Collect artifacts
+        if: always()
+        run: |
+          mkdir -p artifacts/ci-run
+          cp -r services/artifacts/* artifacts/ci-run/ 2>/dev/null || true
+          cp -r artifacts/profile-health/* artifacts/ci-run/ 2>/dev/null || true
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pizzuno-e2e-artifacts
+          path: |
+            artifacts/ci-run/
+            .pytest_cache/
+          retention-days: 30
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: pizzuno-e2e
+    if: always()
+    steps:
+      - name: Report status
+        run: |
+          if [ "${{ needs.pizzuno-e2e.result }}" = "success" ]; then
+            echo "✅ Pizzuno E2E: PASSED"
+          else
+            echo "❌ Pizzuno E2E: FAILED"
+            exit 1
+          fi

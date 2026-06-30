@@ -1,0 +1,17 @@
+{
+  "prompt_id": "perception_dispute",
+  "version": "1.0.0",
+  "use_case": "perception_dispute",
+  "template": "Two perception snippets conflict. Resolve advisory only.\nA: {evidence_a}\nB: {evidence_b}\nRespond JSON: resolution_class one of agree|prefer_a|prefer_b|insufficient_confidence, confidence float",
+  "expected_output_schema": {
+    "type": "object",
+    "properties": {
+      "resolution_class": {"type": "string"},
+      "confidence": {"type": "number"}
+    },
+    "required": ["resolution_class", "confidence"]
+  },
+  "safety_notes": "Advisory — perception-service decides",
+  "compatible_model_families": ["mock", "llama_cpp_openai", "vllm_openai"],
+  "active": true
+}

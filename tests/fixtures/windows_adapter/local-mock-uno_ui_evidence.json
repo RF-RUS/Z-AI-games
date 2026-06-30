@@ -1,0 +1,25 @@
+{
+  "source": "ui_automation",
+  "element_tree": {
+    "extracted": {
+      "top_card": {
+        "color": "red",
+        "value": "5"
+      },
+      "draw_pile_count": 80,
+      "current_player_id": "bot",
+      "chat_messages": [
+        "Player2: hey bot, what are the rules?"
+      ],
+      "discard_pile_count": 1,
+      "direction": 1,
+      "pending_draw": 0
+    },
+    "window_title": "UNO Mock Test Target",
+    "backend": "mock",
+    "nodes_count": 6,
+    "truncated": false,
+    "sparse_tree": false
+  },
+  "confidence": 0.85
+}

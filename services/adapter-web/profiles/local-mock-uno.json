@@ -1,0 +1,54 @@
+{
+  "profile_id": "local-mock-uno",
+  "display_name": "Local Mock UNO Test Page",
+  "game_type": "uno",
+  "launch_url": "http://127.0.0.1:8765/",
+  "allowed_domains": ["127.0.0.1", "localhost"],
+  "readiness_selector": "[data-testid='game-ready']",
+  "readiness_timeout_ms": 10000,
+  "health": {
+    "required": ["hand_area", "discard_top_card", "draw_button"],
+    "optional": ["chat_messages", "play_button"]
+  },
+  "selectors": {
+    "discard_top_card": {
+      "primary": "[data-testid='discard-top-card']",
+      "attribute": "data-color"
+    },
+    "hand_area": {
+      "primary": "[data-testid='player-hand']",
+      "fallbacks": ["#player-hand"]
+    },
+    "hand_cards": {
+      "primary": "[data-testid='hand-card']"
+    },
+    "draw_pile_count": {
+      "primary": "[data-testid='draw-pile-count']"
+    },
+    "current_player": {
+      "primary": "[data-testid='current-player-id']",
+      "fallbacks": ["#current-player-id"]
+    },
+    "chat_messages": {
+      "primary": "[data-testid='chat-messages']"
+    },
+    "chat_lines": {
+      "primary": "[data-testid='chat-line']"
+    },
+    "chat_input": {
+      "primary": "[data-testid='chat-input']"
+    },
+    "draw_button": {
+      "primary": "[data-testid='btn-draw']"
+    },
+    "play_button": {
+      "primary": "[data-testid='btn-play-red5']"
+    }
+  },
+  "action_mappings": {
+    "draw": "[data-testid='btn-draw']",
+    "play_red_five": "[data-testid='btn-play-red5']"
+  },
+  "notes": "Deterministic local test page for CI. Not a real UNO site.",
+  "limitations": ["Simplified UNO layout", "No network multiplayer"]
+}

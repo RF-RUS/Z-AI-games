@@ -1,0 +1,248 @@
+[
+  {
+    "observation_id": "77f5ebc5-d787-4bf6-b1c3-353f24e13335",
+    "session_id": "665d69ae-e6fd-42dc-bf97-07756afcaeb5",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "77f5ebc5-d787-4bf6-b1c3-353f24e13335",
+      "session_id": "665d69ae-e6fd-42dc-bf97-07756afcaeb5",
+      "timestamp_ms": 1782163417497,
+      "game_type": "uno",
+      "game_state": {
+        "top_card": {
+          "color": "blue",
+          "value": "0"
+        },
+        "draw_pile_count": 0,
+        "discard_pile_count": 1,
+        "current_player_id": "\u2b07",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.85,
+        "game_state": 0.85,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "#app>>nth=0": "ITSABOT\n1\t\n1\t\n9\t\n9\t\n9\t\n5\t\n5\t\n5\t\n\u2051\t\n\u2051\t\n\u2051\t\n2\t\n2\t\n9\t\n9\t\n9\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2318\t\n\u2318\t\n3\t\n3\t\n3\t\n8\t\n8\t\n8\t\n4\t\n4\t\n4\t\n1\t\n1\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n\u2051\t\n\u2051\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n9\t\n9\t\n9\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n8\t\n8\t\n8\t\n8\t\n8\t\n5\t\n5\t\n5\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n\u2051\t\n\u2051\t\n\u2318\t\n\u2318\t\n\u2318\t\n3\t\n3\t\n3\t\n3\t\n3\t\n\u2756\t\n\u2756\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2051\t\n\u2051\t\n\u2051\t\n\u2051\t\n\u2051\t\n0\t\n0\t\n\u2b07\n NOU\n JARVISVACATIONDAY\n AI3000\n2\t\n3\t\n\u2318\t\n9\t\n8\t\n4\t\n8\t\n\u21a9",
+            "#playedCards .card:last-child>>nth=0": "0",
+            "#player-hand>>nth=0": "",
+            ".bottom-hand .card>>nth=0": "2",
+            ".bottom-hand .card>>nth=1": "3",
+            ".bottom-hand .card>>nth=2": "\u2318",
+            ".bottom-hand .card>>nth=3": "9",
+            ".bottom-hand .card>>nth=4": "8",
+            ".bottom-hand .card>>nth=5": "4",
+            ".bottom-hand .card>>nth=6": "8",
+            "#deck .card>>nth=0": "",
+            "#deck .card>>nth=1": "",
+            "#deck .card>>nth=2": "",
+            "#deck .card>>nth=3": "",
+            "#deck .card>>nth=4": "",
+            "#deck .card>>nth=5": "",
+            "#deck .card>>nth=6": "",
+            "#deck .card>>nth=7": "",
+            "#deck .card>>nth=8": "",
+            "#deck .card>>nth=9": ""
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "blue",
+              "value": "0"
+            },
+            "current_player_id": "\u2b07",
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "d40cae31-59ea-4b4b-bdfd-824b84dea573"
+  },
+  {
+    "observation_id": "740c5688-fbda-4980-89d5-e9856264d3c7",
+    "session_id": "665d69ae-e6fd-42dc-bf97-07756afcaeb5",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "740c5688-fbda-4980-89d5-e9856264d3c7",
+      "session_id": "665d69ae-e6fd-42dc-bf97-07756afcaeb5",
+      "timestamp_ms": 1782163423780,
+      "game_type": "uno",
+      "game_state": {
+        "top_card": {
+          "color": "blue",
+          "value": "0"
+        },
+        "draw_pile_count": 0,
+        "discard_pile_count": 1,
+        "current_player_id": "\u2b07",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.85,
+        "game_state": 0.85,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "#app>>nth=0": "ITSABOT\n1\t\n1\t\n9\t\n9\t\n9\t\n5\t\n5\t\n5\t\n\u2051\t\n\u2051\t\n\u2051\t\n2\t\n2\t\n9\t\n9\t\n9\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2318\t\n\u2318\t\n3\t\n3\t\n3\t\n8\t\n8\t\n8\t\n4\t\n4\t\n4\t\n1\t\n1\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n\u2051\t\n\u2051\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n9\t\n9\t\n9\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n8\t\n8\t\n8\t\n8\t\n8\t\n5\t\n5\t\n5\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n\u2051\t\n\u2051\t\n\u2318\t\n\u2318\t\n\u2318\t\n3\t\n3\t\n3\t\n3\t\n3\t\n\u2756\t\n\u2756\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2051\t\n\u2051\t\n\u2051\t\n\u2051\t\n\u2051\t\n0\t\n0\t\n\u2b07\n NOU\n JARVISVACATIONDAY\n AI3000\n2\t\n3\t\n\u2318\t\n9\t\n8\t\n4\t\n8\t\n\u21a9",
+            "#playedCards .card:last-child>>nth=0": "0",
+            "#player-hand>>nth=0": "",
+            ".bottom-hand .card>>nth=0": "2",
+            ".bottom-hand .card>>nth=1": "3",
+            ".bottom-hand .card>>nth=2": "\u2318",
+            ".bottom-hand .card>>nth=3": "9",
+            ".bottom-hand .card>>nth=4": "8",
+            ".bottom-hand .card>>nth=5": "4",
+            ".bottom-hand .card>>nth=6": "8",
+            "#deck .card>>nth=0": "",
+            "#deck .card>>nth=1": "",
+            "#deck .card>>nth=2": "",
+            "#deck .card>>nth=3": "",
+            "#deck .card>>nth=4": "",
+            "#deck .card>>nth=5": "",
+            "#deck .card>>nth=6": "",
+            "#deck .card>>nth=7": "",
+            "#deck .card>>nth=8": "",
+            "#deck .card>>nth=9": ""
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "blue",
+              "value": "0"
+            },
+            "current_player_id": "\u2b07",
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "8d3afb55-ed91-4958-87f5-6879fa111936"
+  },
+  {
+    "observation_id": "841f050f-cf9c-4f62-8fb9-4ad0c1570f1f",
+    "session_id": "665d69ae-e6fd-42dc-bf97-07756afcaeb5",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "841f050f-cf9c-4f62-8fb9-4ad0c1570f1f",
+      "session_id": "665d69ae-e6fd-42dc-bf97-07756afcaeb5",
+      "timestamp_ms": 1782163429974,
+      "game_type": "uno",
+      "game_state": {
+        "top_card": {
+          "color": "blue",
+          "value": "0"
+        },
+        "draw_pile_count": 0,
+        "discard_pile_count": 1,
+        "current_player_id": "\u2b07",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.85,
+        "game_state": 0.85,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "#app>>nth=0": "ITSABOT\n1\t\n1\t\n9\t\n9\t\n9\t\n5\t\n5\t\n5\t\n\u2051\t\n\u2051\t\n\u2051\t\n2\t\n2\t\n9\t\n9\t\n9\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2318\t\n\u2318\t\n3\t\n3\t\n3\t\n8\t\n8\t\n8\t\n4\t\n4\t\n4\t\n1\t\n1\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n3\t\n\u2051\t\n\u2051\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n9\t\n9\t\n9\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2716\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2318\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n6\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n\u27f2\t\n8\t\n8\t\n8\t\n8\t\n8\t\n5\t\n5\t\n5\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n8\t\n\u2051\t\n\u2051\t\n\u2318\t\n\u2318\t\n\u2318\t\n3\t\n3\t\n3\t\n3\t\n3\t\n\u2756\t\n\u2756\t\n\u2318\t\n\u2318\t\n\u2318\t\n\u2051\t\n\u2051\t\n\u2051\t\n\u2051\t\n\u2051\t\n0\t\n0\t\n\u2b07\n NOU\n JARVISVACATIONDAY\n AI3000\n2\t\n3\t\n\u2318\t\n9\t\n8\t\n4\t\n8\t\n\u21a9",
+            "#playedCards .card:last-child>>nth=0": "0",
+            "#player-hand>>nth=0": "",
+            ".bottom-hand .card>>nth=0": "2",
+            ".bottom-hand .card>>nth=1": "3",
+            ".bottom-hand .card>>nth=2": "\u2318",
+            ".bottom-hand .card>>nth=3": "9",
+            ".bottom-hand .card>>nth=4": "8",
+            ".bottom-hand .card>>nth=5": "4",
+            ".bottom-hand .card>>nth=6": "8",
+            "#deck .card>>nth=0": "",
+            "#deck .card>>nth=1": "",
+            "#deck .card>>nth=2": "",
+            "#deck .card>>nth=3": "",
+            "#deck .card>>nth=4": "",
+            "#deck .card>>nth=5": "",
+            "#deck .card>>nth=6": "",
+            "#deck .card>>nth=7": "",
+            "#deck .card>>nth=8": "",
+            "#deck .card>>nth=9": ""
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "blue",
+              "value": "0"
+            },
+            "current_player_id": "\u2b07",
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "0ca08352-191f-479a-8770-0d84c3365b7b"
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "prompt_id": "policy_advice",
+  "version": "1.0.0",
+  "use_case": "policy_advice",
+  "template": "You are a game strategy advisor. Given the current game state and available legal actions, recommend the best action.\n\nGame state:\n{game_state}\n\nLegal actions:\n{legal_actions}\n\nCurrent strategy context:\n{strategy_context}\n\nRespond with JSON:\n{\"action_index\": <0-based index of recommended action>, \"confidence\": <0.0-1.0>, \"reasoning\": \"<brief explanation>\"}",
+  "expected_output_schema": {
+    "type": "object",
+    "properties": {
+      "action_index": {"type": "integer", "minimum": 0},
+      "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+      "reasoning": {"type": "string"}
+    },
+    "required": ["action_index", "confidence", "reasoning"]
+  },
+  "safety_notes": "Advisory only. Action must still pass rules validation and policy guard.",
+  "compatible_model_families": ["gpt-4", "gpt-3.5-turbo", "llama", "mistral", "gemma"],
+  "active": true
+}

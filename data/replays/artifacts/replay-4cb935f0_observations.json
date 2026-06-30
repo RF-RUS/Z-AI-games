@@ -1,0 +1,131 @@
+[
+  {
+    "observation_id": "6b834a0c-f957-4d8f-a8a5-7f07d7dfcfb9",
+    "session_id": "4cb935f0-5d4d-4beb-99c1-fa5bbc1bb13d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "6b834a0c-f957-4d8f-a8a5-7f07d7dfcfb9",
+      "session_id": "4cb935f0-5d4d-4beb-99c1-fa5bbc1bb13d",
+      "timestamp_ms": 1781550485461,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Operator",
+            "backend": "uia",
+            "nodes_count": 22,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "7733bbf1-cd02-430e-afbc-f6694a674621"
+  },
+  {
+    "observation_id": "7850f359-de99-4101-b492-c329e3759d6c",
+    "session_id": "4cb935f0-5d4d-4beb-99c1-fa5bbc1bb13d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "7850f359-de99-4101-b492-c329e3759d6c",
+      "session_id": "4cb935f0-5d4d-4beb-99c1-fa5bbc1bb13d",
+      "timestamp_ms": 1781550600202,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Operator",
+            "backend": "uia",
+            "nodes_count": 127,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "52d54482-d40c-45fa-b674-b1afc037bf75"
+  },
+  {
+    "observation_id": "2f43d05a-c508-49a1-96af-a49075f201dc",
+    "session_id": "4cb935f0-5d4d-4beb-99c1-fa5bbc1bb13d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "2f43d05a-c508-49a1-96af-a49075f201dc",
+      "session_id": "4cb935f0-5d4d-4beb-99c1-fa5bbc1bb13d",
+      "timestamp_ms": 1781550695045,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Operator",
+            "backend": "uia",
+            "nodes_count": 136,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "f0551ba0-fc20-45f1-b5cd-0d72fbd5a818"
+  }
+]

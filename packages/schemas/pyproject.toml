@@ -1,0 +1,18 @@
+[project]
+name = "uno-schemas"
+version = "0.1.0"
+description = "Shared typed schemas for UNO Operator"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/uno_schemas"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]

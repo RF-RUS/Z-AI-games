@@ -1,0 +1,13 @@
+{
+  "failed_stage": "browser_launch",
+  "error_message": "Playwright startup failed at stage=browser_launch (0ms): No open pages found at http://127.0.0.1:9222",
+  "stage_timings_ms": {
+    "browser_launch": 0
+  },
+  "screenshot_path": null,
+  "trace_path": null,
+  "log_path": null,
+  "url": "http://127.0.0.1:8765/",
+  "profile_id": "local-mock-uno",
+  "page_goto": null
+}

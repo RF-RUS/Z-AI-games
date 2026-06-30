@@ -1,0 +1,248 @@
+[
+  {
+    "observation_id": "ce89758e-86b9-4436-b056-8797f1ff8212",
+    "session_id": "685c3a3e-1c44-4edc-96dd-d29ab2e52961",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "ce89758e-86b9-4436-b056-8797f1ff8212",
+      "session_id": "685c3a3e-1c44-4edc-96dd-d29ab2e52961",
+      "timestamp_ms": 1782206033443,
+      "game_type": "uno",
+      "game_state": {
+        "top_card": {
+          "color": "yellow",
+          "value": "6"
+        },
+        "draw_pile_count": 0,
+        "discard_pile_count": 1,
+        "current_player_id": "\u2b07",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.85,
+        "game_state": 0.85,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "#app>>nth=0": "ARDUINOCLIENTUSER332\n2\t\n2\t\n0\t\n0\t\n0\t\n9\t\n9\t\n9\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2716\t\n\u2716\t\n\u2716\t\n6\t\n6\t\n\u2b07\n XRAYVISIONROBOT\n PROFESSIONALCARDPLAYER\n MACHINELEARNINGMODEL343\n3\t\n0\t\n\u2051\t\n7\t\n\u2051\t\n\u2756\t\n1\t\n\u21a9",
+            "#playedCards .card:last-child>>nth=0": "6",
+            "#player-hand>>nth=0": "",
+            ".bottom-hand .card>>nth=0": "3",
+            ".bottom-hand .card>>nth=1": "0",
+            ".bottom-hand .card>>nth=2": "\u2051",
+            ".bottom-hand .card>>nth=3": "7",
+            ".bottom-hand .card>>nth=4": "\u2051",
+            ".bottom-hand .card>>nth=5": "\u2756",
+            ".bottom-hand .card>>nth=6": "1",
+            "#deck .card>>nth=0": "",
+            "#deck .card>>nth=1": "",
+            "#deck .card>>nth=2": "",
+            "#deck .card>>nth=3": "",
+            "#deck .card>>nth=4": "",
+            "#deck .card>>nth=5": "",
+            "#deck .card>>nth=6": "",
+            "#deck .card>>nth=7": "",
+            "#deck .card>>nth=8": "",
+            "#deck .card>>nth=9": ""
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "yellow",
+              "value": "6"
+            },
+            "current_player_id": "\u2b07",
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "425d72b6-c485-4901-a028-a86f8d926e69"
+  },
+  {
+    "observation_id": "a0991326-f505-40fb-b40a-7c75a2b7cbe4",
+    "session_id": "685c3a3e-1c44-4edc-96dd-d29ab2e52961",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "a0991326-f505-40fb-b40a-7c75a2b7cbe4",
+      "session_id": "685c3a3e-1c44-4edc-96dd-d29ab2e52961",
+      "timestamp_ms": 1782206048439,
+      "game_type": "uno",
+      "game_state": {
+        "top_card": {
+          "color": "yellow",
+          "value": "6"
+        },
+        "draw_pile_count": 0,
+        "discard_pile_count": 1,
+        "current_player_id": "\u2b07",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.85,
+        "game_state": 0.85,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "#app>>nth=0": "ARDUINOCLIENTUSER332\n2\t\n2\t\n0\t\n0\t\n0\t\n9\t\n9\t\n9\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2716\t\n\u2716\t\n\u2716\t\n6\t\n6\t\n\u2b07\n XRAYVISIONROBOT\n PROFESSIONALCARDPLAYER\n MACHINELEARNINGMODEL343\n3\t\n0\t\n\u2051\t\n7\t\n\u2051\t\n\u2756\t\n1\t\n\u21a9",
+            "#playedCards .card:last-child>>nth=0": "6",
+            "#player-hand>>nth=0": "",
+            ".bottom-hand .card>>nth=0": "3",
+            ".bottom-hand .card>>nth=1": "0",
+            ".bottom-hand .card>>nth=2": "\u2051",
+            ".bottom-hand .card>>nth=3": "7",
+            ".bottom-hand .card>>nth=4": "\u2051",
+            ".bottom-hand .card>>nth=5": "\u2756",
+            ".bottom-hand .card>>nth=6": "1",
+            "#deck .card>>nth=0": "",
+            "#deck .card>>nth=1": "",
+            "#deck .card>>nth=2": "",
+            "#deck .card>>nth=3": "",
+            "#deck .card>>nth=4": "",
+            "#deck .card>>nth=5": "",
+            "#deck .card>>nth=6": "",
+            "#deck .card>>nth=7": "",
+            "#deck .card>>nth=8": "",
+            "#deck .card>>nth=9": ""
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "yellow",
+              "value": "6"
+            },
+            "current_player_id": "\u2b07",
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "5cac8086-2af8-499b-8fdb-f5650be43fe1"
+  },
+  {
+    "observation_id": "2313dd46-797c-427f-b912-6a9eccbfa037",
+    "session_id": "685c3a3e-1c44-4edc-96dd-d29ab2e52961",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "2313dd46-797c-427f-b912-6a9eccbfa037",
+      "session_id": "685c3a3e-1c44-4edc-96dd-d29ab2e52961",
+      "timestamp_ms": 1782206061712,
+      "game_type": "uno",
+      "game_state": {
+        "top_card": {
+          "color": "yellow",
+          "value": "6"
+        },
+        "draw_pile_count": 0,
+        "discard_pile_count": 1,
+        "current_player_id": "\u2b07",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.85,
+        "game_state": 0.85,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "#app>>nth=0": "ARDUINOCLIENTUSER332\n2\t\n2\t\n0\t\n0\t\n0\t\n9\t\n9\t\n9\t\n\u2756\t\n\u2756\t\n\u2756\t\n\u2716\t\n\u2716\t\n\u2716\t\n6\t\n6\t\n\u2b07\n XRAYVISIONROBOT\n PROFESSIONALCARDPLAYER\n MACHINELEARNINGMODEL343\n3\t\n0\t\n\u2051\t\n7\t\n\u2051\t\n\u2756\t\n1\t\n\u21a9",
+            "#playedCards .card:last-child>>nth=0": "6",
+            "#player-hand>>nth=0": "",
+            ".bottom-hand .card>>nth=0": "3",
+            ".bottom-hand .card>>nth=1": "0",
+            ".bottom-hand .card>>nth=2": "\u2051",
+            ".bottom-hand .card>>nth=3": "7",
+            ".bottom-hand .card>>nth=4": "\u2051",
+            ".bottom-hand .card>>nth=5": "\u2756",
+            ".bottom-hand .card>>nth=6": "1",
+            "#deck .card>>nth=0": "",
+            "#deck .card>>nth=1": "",
+            "#deck .card>>nth=2": "",
+            "#deck .card>>nth=3": "",
+            "#deck .card>>nth=4": "",
+            "#deck .card>>nth=5": "",
+            "#deck .card>>nth=6": "",
+            "#deck .card>>nth=7": "",
+            "#deck .card>>nth=8": "",
+            "#deck .card>>nth=9": ""
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "yellow",
+              "value": "6"
+            },
+            "current_player_id": "\u2b07",
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "d2e6637a-ad91-4951-a058-9ea6261702b4"
+  }
+]

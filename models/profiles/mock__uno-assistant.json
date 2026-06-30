@@ -1,0 +1,15 @@
+{
+  "profile_id": "mock/uno-assistant",
+  "display_name": "Mock UNO Assistant",
+  "alias": "mock",
+  "provider": "mock",
+  "enabled": true,
+  "capabilities": ["text_generation", "chat_reply"],
+  "use_cases": ["chat_intent", "chat_reply", "explanation", "perception_dispute", "policy_advice", "benchmark_only"],
+  "priority": 10,
+  "max_tokens_default": 256,
+  "temperature_default": 0.2,
+  "timeout_seconds": 5.0,
+  "supports_json_mode": true,
+  "metadata": {"default_for": "all"}
+}

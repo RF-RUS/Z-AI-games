@@ -1,0 +1,55 @@
+{
+  "run_id": "97c764f1-db9c-4f76-9e7d-2ddfd95c9129",
+  "model_id": "mock/uno-assistant",
+  "dataset": "chat_intent",
+  "prompt_id": null,
+  "prompt_version": null,
+  "provider": "mock",
+  "score": 0.0,
+  "latency_p50_ms": 0.0,
+  "latency_p95_ms": 0.0,
+  "samples": 4,
+  "success_rate": 0.0,
+  "parse_success_rate": 0.0,
+  "case_results": [
+    {
+      "case_id": "ci-1",
+      "success": false,
+      "score": 0.0,
+      "latency_ms": 0,
+      "parse_success": false,
+      "exact_match": false,
+      "error": "'\"directed_at_bot\"'"
+    },
+    {
+      "case_id": "ci-2",
+      "success": false,
+      "score": 0.0,
+      "latency_ms": 0,
+      "parse_success": false,
+      "exact_match": false,
+      "error": "'\"directed_at_bot\"'"
+    },
+    {
+      "case_id": "ci-3",
+      "success": false,
+      "score": 0.0,
+      "latency_ms": 0,
+      "parse_success": false,
+      "exact_match": false,
+      "error": "'\"directed_at_bot\"'"
+    },
+    {
+      "case_id": "ci-4",
+      "success": false,
+      "score": 0.0,
+      "latency_ms": 0,
+      "parse_success": false,
+      "exact_match": false,
+      "error": "'\"directed_at_bot\"'"
+    }
+  ],
+  "metadata": {
+    "timestamp": "1781522086"
+  }
+}

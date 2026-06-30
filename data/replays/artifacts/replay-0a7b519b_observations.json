@@ -1,0 +1,140 @@
+[
+  {
+    "observation_id": "239678e8-4ca4-41a1-9cfb-2f7740da2f3c",
+    "session_id": "0a7b519b-1ee6-44e2-a49a-0d4d578d67a2",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "239678e8-4ca4-41a1-9cfb-2f7740da2f3c",
+      "session_id": "0a7b519b-1ee6-44e2-a49a-0d4d578d67a2",
+      "timestamp_ms": 1782155500504,
+      "game_type": null,
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "lobby_html",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 4,
+              "uia_actionable_in_match": false,
+              "message": "Lobby HTML controls are available in the DOM (Quick Play, Create Room). Use bootstrap actions to enter a match before canvas coordinate play.",
+              "recommended_action": "Click Quick Play (bootstrap) to enter a match, then retry canvas coordinate play."
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "8a061601-d78b-4227-8856-141f68f2829a"
+  },
+  {
+    "observation_id": "d446ccf4-03dd-4c98-8526-5b2bcd77be9c",
+    "session_id": "0a7b519b-1ee6-44e2-a49a-0d4d578d67a2",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "d446ccf4-03dd-4c98-8526-5b2bcd77be9c",
+      "session_id": "0a7b519b-1ee6-44e2-a49a-0d4d578d67a2",
+      "timestamp_ms": 1782155511773,
+      "game_type": null,
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "lobby_html",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 4,
+              "uia_actionable_in_match": false,
+              "message": "Lobby HTML controls are available in the DOM (Quick Play, Create Room). Use bootstrap actions to enter a match before canvas coordinate play.",
+              "recommended_action": "Click Quick Play (bootstrap) to enter a match, then retry canvas coordinate play."
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "03408858-55cc-4c9a-8e13-db3e68d90a78"
+  },
+  {
+    "observation_id": "56edbcf2-7c8e-43c6-ad0f-ac7a5f173d24",
+    "session_id": "0a7b519b-1ee6-44e2-a49a-0d4d578d67a2",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "56edbcf2-7c8e-43c6-ad0f-ac7a5f173d24",
+      "session_id": "0a7b519b-1ee6-44e2-a49a-0d4d578d67a2",
+      "timestamp_ms": 1782155522634,
+      "game_type": null,
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "lobby_html",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 4,
+              "uia_actionable_in_match": false,
+              "message": "Lobby HTML controls are available in the DOM (Quick Play, Create Room). Use bootstrap actions to enter a match before canvas coordinate play.",
+              "recommended_action": "Click Quick Play (bootstrap) to enter a match, then retry canvas coordinate play."
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "a03d0153-f9c9-4d4f-a914-261602f89525"
+  }
+]

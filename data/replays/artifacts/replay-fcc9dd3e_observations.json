@@ -1,0 +1,346 @@
+[
+  {
+    "observation_id": "25ce7bcb-79bb-4ae8-b213-d8ef1145bfbc",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "25ce7bcb-79bb-4ae8-b213-d8ef1145bfbc",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469138845,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 56,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "c9828d48-cbbd-47d6-9075-2cd39a67f004"
+  },
+  {
+    "observation_id": "4bdeedc8-7aeb-4bce-8fd9-9a0681a87352",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "4bdeedc8-7aeb-4bce-8fd9-9a0681a87352",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469142695,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 56,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "b7635e4c-469a-4cd3-b6d2-e3f325912d18"
+  },
+  {
+    "observation_id": "3d5cdc28-6713-40fe-b4ae-eacbb11f854e",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "3d5cdc28-6713-40fe-b4ae-eacbb11f854e",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469146662,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 56,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "cd98ebea-de98-4c35-b451-36be1483f5ee"
+  },
+  {
+    "observation_id": "68003d0f-4423-4f06-9bde-45faf4f7204e",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "68003d0f-4423-4f06-9bde-45faf4f7204e",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469150694,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 60,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "0012b072-40be-4272-b729-5cc3a6f4cd93"
+  },
+  {
+    "observation_id": "c20704b1-b21f-4b13-b4c0-95a4cf4108fd",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "c20704b1-b21f-4b13-b4c0-95a4cf4108fd",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469154571,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 60,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "cb6295e6-03ac-4d4c-ad3b-2e7900a2e316"
+  },
+  {
+    "observation_id": "103fe7bb-4775-40e7-8714-d2283f67de0c",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "103fe7bb-4775-40e7-8714-d2283f67de0c",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469158700,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 60,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "336d7e60-7b0c-487d-b43f-8cdd0fb74047"
+  },
+  {
+    "observation_id": "87d1a0ff-04e5-4219-8e8f-27e7550a0df1",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "87d1a0ff-04e5-4219-8e8f-27e7550a0df1",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469162605,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 60,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "90ef2ac3-383f-4b06-be29-344f0a3b5c82"
+  },
+  {
+    "observation_id": "aeefa35c-4029-4652-afac-60d174a54b29",
+    "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "aeefa35c-4029-4652-afac-60d174a54b29",
+      "session_id": "fcc9dd3e-2953-45eb-ad78-e35e32559daa",
+      "timestamp_ms": 1782469166325,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Happ 2.14.0 (542)",
+            "backend": "uia",
+            "nodes_count": 60,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "7dfc3aab-e6f9-4ef2-a372-020278e2f8cb"
+  }
+]

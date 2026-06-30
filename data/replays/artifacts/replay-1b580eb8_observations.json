@@ -1,0 +1,134 @@
+[
+  {
+    "observation_id": "dbffed0c-5626-4ccd-b634-ee0b4c49c760",
+    "session_id": "1b580eb8-839b-41c0-ad8d-ec213961c2b9",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "dbffed0c-5626-4ccd-b634-ee0b4c49c760",
+      "session_id": "1b580eb8-839b-41c0-ad8d-ec213961c2b9",
+      "timestamp_ms": 1781549481967,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "current_player_id": "bot",
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Mock Test Target",
+            "backend": "uia",
+            "nodes_count": 19,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "868e618e-df7d-4daf-9df5-f2248876a664"
+  },
+  {
+    "observation_id": "c5491dbb-d99e-4393-bb32-f619bef051e1",
+    "session_id": "1b580eb8-839b-41c0-ad8d-ec213961c2b9",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "c5491dbb-d99e-4393-bb32-f619bef051e1",
+      "session_id": "1b580eb8-839b-41c0-ad8d-ec213961c2b9",
+      "timestamp_ms": 1781549524044,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "current_player_id": "bot",
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Mock Test Target",
+            "backend": "uia",
+            "nodes_count": 19,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "08a29cd1-2af1-4a3c-a9f7-bccac3673e07"
+  },
+  {
+    "observation_id": "f50f1bfa-8949-49dd-976a-26709d338602",
+    "session_id": "1b580eb8-839b-41c0-ad8d-ec213961c2b9",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "f50f1bfa-8949-49dd-976a-26709d338602",
+      "session_id": "1b580eb8-839b-41c0-ad8d-ec213961c2b9",
+      "timestamp_ms": 1781549555465,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "current_player_id": "bot",
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Mock Test Target",
+            "backend": "uia",
+            "nodes_count": 19,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "8de6307e-dbd1-4133-a993-46270e450e07"
+  }
+]

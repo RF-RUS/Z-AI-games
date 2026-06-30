@@ -1,0 +1,94 @@
+{
+  "snapshot_id": "588ce60d-ed9d-4782-8263-e501095efe57",
+  "window_title": "UNO Mock Test Target",
+  "class_name": null,
+  "process_name": null,
+  "backend": "mock",
+  "captured_at_ms": 1781521581091,
+  "profile_id": "local-mock-uno",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "control_type": "Text",
+      "name": "Discard: Red 5",
+      "auto_id": null,
+      "class_name": null,
+      "bounds": null,
+      "enabled": null,
+      "visible": null,
+      "depth": 0
+    },
+    {
+      "node_id": "n2",
+      "control_type": "Text",
+      "name": "Current: bot",
+      "auto_id": null,
+      "class_name": null,
+      "bounds": null,
+      "enabled": null,
+      "visible": null,
+      "depth": 0
+    },
+    {
+      "node_id": "n3",
+      "control_type": "Text",
+      "name": "Draw pile: 80",
+      "auto_id": null,
+      "class_name": null,
+      "bounds": null,
+      "enabled": null,
+      "visible": null,
+      "depth": 0
+    },
+    {
+      "node_id": "n4",
+      "control_type": "Text",
+      "name": "Player2: hey bot, what are the rules?",
+      "auto_id": null,
+      "class_name": null,
+      "bounds": null,
+      "enabled": null,
+      "visible": null,
+      "depth": 0
+    },
+    {
+      "node_id": "n5",
+      "control_type": "Button",
+      "name": "Draw",
+      "auto_id": null,
+      "class_name": null,
+      "bounds": null,
+      "enabled": null,
+      "visible": null,
+      "depth": 0
+    },
+    {
+      "node_id": "n6",
+      "control_type": "Button",
+      "name": "Play Red 5",
+      "auto_id": null,
+      "class_name": null,
+      "bounds": null,
+      "enabled": null,
+      "visible": null,
+      "depth": 0
+    }
+  ],
+  "extracted": {
+    "top_card": {
+      "color": "red",
+      "value": "5"
+    },
+    "draw_pile_count": 80,
+    "current_player_id": "bot",
+    "chat_messages": [
+      "Player2: hey bot, what are the rules?"
+    ],
+    "discard_pile_count": 1,
+    "direction": 1,
+    "pending_draw": 0
+  },
+  "confidence": 0.85,
+  "truncated": false,
+  "sparse_tree": false
+}

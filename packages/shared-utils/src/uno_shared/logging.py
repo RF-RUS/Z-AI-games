@@ -1,0 +1,49 @@
+"""Structured logging with correlation ID support."""
+
+from __future__ import annotations
+
+import logging
+import sys
+from contextvars import ContextVar
+from typing import Any
+
+import structlog
+
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
+
+
+def bind_correlation_id(correlation_id: str) -> None:
+  correlation_id_var.set(correlation_id)
+
+
+def get_correlation_id() -> str | None:
+  return correlation_id_var.get()
+
+
+def add_correlation_id(
+  _logger: logging.Logger, _method: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
+  cid = correlation_id_var.get()
+  if cid:
+    event_dict["correlation_id"] = cid
+  return event_dict
+
+
+def configure_logging(level: str = "INFO") -> None:
+  structlog.configure(
+    processors=[
+      structlog.contextvars.merge_contextvars,
+      add_correlation_id,
+      structlog.processors.add_log_level,
+      structlog.processors.TimeStamper(fmt="iso"),
+      structlog.dev.ConsoleRenderer(),
+    ],
+    wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, level.upper(), logging.INFO)),
+    context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(file=sys.stdout),
+    cache_logger_on_first_use=True,
+  )
+
+
+def get_logger(name: str) -> structlog.stdlib.BoundLogger:
+  return structlog.get_logger(name)

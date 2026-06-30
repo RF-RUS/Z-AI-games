@@ -1,0 +1,17 @@
+{
+  "model_id": "waltgrace/poker-gemma4-26b-a4b-lora",
+  "display_name": "Poker Gemma 4 26B (experimental)",
+  "source_repo": "waltgrace/poker-gemma4-26b-a4b-lora",
+  "revision": "main",
+  "files": ["*.gguf"],
+  "modality": "multimodal",
+  "runtime": "llama_cpp",
+  "capabilities": ["text_generation", "vision_understanding", "action_ranking", "chat_reply"],
+  "context_length": 8192,
+  "quantization": "Q4_K_M",
+  "enabled": false,
+  "metadata": {
+    "profile": "experimental",
+    "install_hint": "huggingface-cli download waltgrace/poker-gemma4-26b-a4b-lora"
+  }
+}

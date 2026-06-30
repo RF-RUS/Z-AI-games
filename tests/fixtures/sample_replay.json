@@ -1,0 +1,22 @@
+{
+  "replay_id": "sample-replay-001",
+  "game_id": "game-sample",
+  "session_id": "session-sample",
+  "events": [
+    {
+      "event_id": "evt-1",
+      "event_type": "card_played",
+      "game_id": "game-sample",
+      "session_id": "session-sample",
+      "sequence": 1,
+      "timestamp_ms": 1700000000000,
+      "payload": {
+        "player_id": "p1",
+        "card": {"color": "red", "value": "5"}
+      }
+    }
+  ],
+  "metadata": {
+    "player_names": ["Alice", "Bob", "Carol", "Dave"]
+  }
+}

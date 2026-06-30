@@ -1,0 +1,2 @@
+{"scenario_id": "smoke-1", "description": "Single tick smoke", "adapter_type": "mock", "max_ticks": 1, "expected": {"has_action": true}, "tags": ["smoke"]}
+{"scenario_id": "smoke-2", "description": "Two ticks smoke", "adapter_type": "mock", "max_ticks": 2, "expected": {"min_ticks": 2, "no_fatal_error": true}, "tags": ["smoke"]}

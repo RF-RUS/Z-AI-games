@@ -1,0 +1,39 @@
+Новая сессия. Нужно быстро понять проект и восстановить контекст перед любыми изменениями.
+
+Задача:
+Проанализируй репозиторий и собери компактный, но точный working brief, чтобы дальше уверенно работать в проекте без потери контекста.
+
+Что нужно понять:
+1. Общая архитектура проекта.
+2. Основные сервисы, их роли и точки взаимодействия.
+3. Где находится entrypoint / orchestration flow.
+4. Как устроены trace / evidence / diagnostics пути.
+5. Какие runbooks, architecture docs и debug docs уже существуют.
+6. Какие важные env vars, feature flags и runtime assumptions есть.
+7. Где лежат ключевые файлы для adapter-web, session-orchestrator и trace pipeline.
+8. Какие known issues, recent fixes или sensitive areas уже отмечены в документации.
+9. Что сейчас считается canonical source для trace/debug поведения.
+10. Какие команды или маршруты чаще всего нужны для проверки состояния системы.
+
+Что нужно сделать:
+- Просканировать код, docs и runbooks.
+- Не делать предположений без подтверждения файлами.
+- Сначала собрать high-level map, потом детали.
+- Если есть противоречия между файлами, перечислить их отдельно.
+- Если какой-то важный кусок не найден, явно отметить это как gap.
+
+Формат итогового ответа:
+1. Project overview — 5-8 bullet points.
+2. Service map — таблица: service / purpose / main files / key endpoints.
+3. Trace & diagnostics flow — пошагово, от orchestration до disk/UI.
+4. Important files — список с кратким назначением.
+5. Env vars / flags — список с пояснением.
+6. Docs map — какие документы canonical, какие вспомогательные.
+7. Known risks / recent fixes — короткий список.
+8. Gaps / uncertainties — только если реально есть.
+
+Важно:
+- Пиши кратко, но точно.
+- Не повторяй одно и то же в разных разделах.
+- Если есть runbook по screenshot trace, считай его canonical source и используй его как основу для пояснения trace pipeline.
+- В конце дай one-paragraph “mental model” проекта — как он работает в целом.

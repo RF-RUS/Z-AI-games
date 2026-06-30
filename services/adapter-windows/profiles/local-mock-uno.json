@@ -1,0 +1,53 @@
+{
+  "profile_id": "local-mock-uno",
+  "display_name": "Local Mock UNO Windows Test Target",
+  "game_type": "uno",
+  "window": {
+    "title_regex": "UNO Mock Test Target",
+    "process_name": "python.exe"
+  },
+  "test_target_script": "test-target/uno_mock_app.py",
+  "preferred_backend": "uia",
+  "fallback_backend": "win32",
+  "readiness_timeout_ms": 10000,
+  "selectors": {
+    "discard_top_card": {
+      "title": "Discard: Red 5",
+      "control_type": "Text"
+    },
+    "hand_area": {
+      "title_regex": "Hand:",
+      "control_type": "Text"
+    },
+    "draw_button": {
+      "title": "Draw",
+      "control_type": "Button"
+    },
+    "play_button": {
+      "title": "Play Red 5",
+      "control_type": "Button"
+    },
+    "current_player": {
+      "title_regex": "Current: bot"
+    }
+  },
+  "chat_selectors": {
+    "chat_messages": {
+      "title_regex": "Player2: hey bot"
+    },
+    "chat_input": {
+      "title_regex": "chat",
+      "control_type": "Edit"
+    }
+  },
+  "action_mappings": {
+    "draw": "Draw",
+    "play_red_five": "Play Red 5"
+  },
+  "layout_targets": {
+    "draw_button": {"x_ratio": 0.44, "y_ratio": 0.34, "label": "Draw"},
+    "play_button": {"x_ratio": 0.56, "y_ratio": 0.34, "label": "Play Red 5"}
+  },
+  "notes": "Deterministic tkinter test app for CI/dev. Not a commercial UNO client.",
+  "limitations": ["Sparse UIA on some tkinter builds", "Requires Windows for real mode"]
+}

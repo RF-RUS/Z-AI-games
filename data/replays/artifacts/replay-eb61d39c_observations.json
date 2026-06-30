@@ -1,0 +1,191 @@
+[
+  {
+    "observation_id": "92c30837-7fa4-458b-a20f-d365002cba6d",
+    "session_id": "eb61d39c-2a0f-4f02-8182-0530a35b9b1d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "92c30837-7fa4-458b-a20f-d365002cba6d",
+      "session_id": "eb61d39c-2a0f-4f02-8182-0530a35b9b1d",
+      "timestamp_ms": 1781548383052,
+      "table_state": {
+        "top_card": {
+          "color": "red",
+          "value": "5"
+        },
+        "draw_pile_count": 80,
+        "discard_pile_count": 1,
+        "current_player_id": "bot",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "hand_cards": [],
+      "visible_chat": [
+        "Player2: hey bot, what are the rules?"
+      ],
+      "confidence": {
+        "overall": 0.85,
+        "table_state": 0.85,
+        "hand_state": 0.0,
+        "chat_visible": 0.85
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "top_card": {
+                "color": "red",
+                "value": "5"
+              },
+              "draw_pile_count": 80,
+              "current_player_id": "bot",
+              "chat_messages": [
+                "Player2: hey bot, what are the rules?"
+              ],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Mock Test Target",
+            "backend": "mock",
+            "nodes_count": 6,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "8b3fe33f-b01d-41cc-b286-b0219dbc0f9c"
+  },
+  {
+    "observation_id": "88428099-07ac-4505-af0a-66f614d7b674",
+    "session_id": "eb61d39c-2a0f-4f02-8182-0530a35b9b1d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "88428099-07ac-4505-af0a-66f614d7b674",
+      "session_id": "eb61d39c-2a0f-4f02-8182-0530a35b9b1d",
+      "timestamp_ms": 1781548393122,
+      "table_state": {
+        "top_card": {
+          "color": "red",
+          "value": "5"
+        },
+        "draw_pile_count": 80,
+        "discard_pile_count": 1,
+        "current_player_id": "bot",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "hand_cards": [],
+      "visible_chat": [
+        "Player2: hey bot, what are the rules?"
+      ],
+      "confidence": {
+        "overall": 0.85,
+        "table_state": 0.85,
+        "hand_state": 0.0,
+        "chat_visible": 0.85
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "top_card": {
+                "color": "red",
+                "value": "5"
+              },
+              "draw_pile_count": 80,
+              "current_player_id": "bot",
+              "chat_messages": [
+                "Player2: hey bot, what are the rules?"
+              ],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Mock Test Target",
+            "backend": "mock",
+            "nodes_count": 6,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "5ae389a1-578b-43b1-822c-6dece1c7fd35"
+  },
+  {
+    "observation_id": "aef0b9de-be16-4e39-809e-108697d2a1ea",
+    "session_id": "eb61d39c-2a0f-4f02-8182-0530a35b9b1d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "aef0b9de-be16-4e39-809e-108697d2a1ea",
+      "session_id": "eb61d39c-2a0f-4f02-8182-0530a35b9b1d",
+      "timestamp_ms": 1781548763558,
+      "table_state": {
+        "top_card": {
+          "color": "red",
+          "value": "5"
+        },
+        "draw_pile_count": 80,
+        "discard_pile_count": 1,
+        "current_player_id": "bot",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "hand_cards": [],
+      "visible_chat": [
+        "Player2: hey bot, what are the rules?"
+      ],
+      "confidence": {
+        "overall": 0.85,
+        "table_state": 0.85,
+        "hand_state": 0.0,
+        "chat_visible": 0.85
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "top_card": {
+                "color": "red",
+                "value": "5"
+              },
+              "draw_pile_count": 80,
+              "current_player_id": "bot",
+              "chat_messages": [
+                "Player2: hey bot, what are the rules?"
+              ],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Mock Test Target",
+            "backend": "mock",
+            "nodes_count": 6,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.85
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "bfcc08a0-0805-4f2d-9c9d-65b541a3e23e"
+  }
+]

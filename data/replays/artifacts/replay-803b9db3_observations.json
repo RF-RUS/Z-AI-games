@@ -1,0 +1,45 @@
+[
+  {
+    "observation_id": "65c0a6b4-d367-41d9-b8f1-919631488535",
+    "session_id": "803b9db3-13c7-4114-a96d-f2c81e0ea70c",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "65c0a6b4-d367-41d9-b8f1-919631488535",
+      "session_id": "803b9db3-13c7-4114-a96d-f2c81e0ea70c",
+      "timestamp_ms": 1781550603978,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO Operator",
+            "backend": "uia",
+            "nodes_count": 133,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "07a17574-5ac6-41a5-8be3-28d736bcc846"
+  }
+]

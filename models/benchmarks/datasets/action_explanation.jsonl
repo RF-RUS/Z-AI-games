@@ -1,0 +1,2 @@
+{"case_id": "ae-1", "use_case": "explanation", "input": {"action_type": "play_card", "card": "red 5"}, "expected": {"summary_contains": "red"}, "tags": ["play"]}
+{"case_id": "ae-2", "use_case": "explanation", "input": {"action_type": "draw_card", "card": ""}, "expected": {"summary_contains": "draw"}, "tags": ["draw"]}

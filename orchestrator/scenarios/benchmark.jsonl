@@ -1,0 +1,4 @@
+{"scenario_id": "normal_loop", "description": "Active loop completes without errors", "expected_flow_state": "idle", "adapter_type": "mock"}
+{"scenario_id": "adapter_transient", "description": "Adapter attach retries then succeeds", "inject_failure": "adapter_attach", "expected_recovery": "retry"}
+{"scenario_id": "policy_block", "description": "Policy guard blocks and pauses", "inject_failure": "policy_block", "expected_recovery": "pause"}
+{"scenario_id": "model_fallback", "description": "Model advisory fails, deterministic path continues", "inject_failure": "model_advisory", "expected_recovery": "fallback"}

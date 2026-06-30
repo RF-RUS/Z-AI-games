@@ -1,0 +1,14 @@
+{
+  "step": 1,
+  "phase": "observe",
+  "url": "https://scuffeduno.online/",
+  "viewport": {
+    "w": 1920,
+    "h": 945
+  },
+  "dpr": 1.0,
+  "screen": "in_game",
+  "hand_cards": 1,
+  "draw_pile": true,
+  "confidence": 0.8300000000000001
+}

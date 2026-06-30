@@ -1,0 +1,37 @@
+{
+  "run_id": "3b5a89df-99ed-414c-b3ea-20798ce6027f",
+  "model_id": "mock/uno-assistant",
+  "dataset": "action_explanation",
+  "prompt_id": "action_explanation",
+  "prompt_version": "1.0.0",
+  "provider": "mock",
+  "score": 1.0,
+  "latency_p50_ms": 0.0,
+  "latency_p95_ms": 0.0,
+  "samples": 2,
+  "success_rate": 1.0,
+  "parse_success_rate": 1.0,
+  "case_results": [
+    {
+      "case_id": "ae-1",
+      "success": true,
+      "score": 1.0,
+      "latency_ms": 0,
+      "parse_success": true,
+      "exact_match": true,
+      "error": null
+    },
+    {
+      "case_id": "ae-2",
+      "success": true,
+      "score": 1.0,
+      "latency_ms": 0,
+      "parse_success": true,
+      "exact_match": true,
+      "error": null
+    }
+  ],
+  "metadata": {
+    "timestamp": "1781522260"
+  }
+}

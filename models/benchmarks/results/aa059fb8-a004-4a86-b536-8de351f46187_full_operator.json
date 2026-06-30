@@ -1,0 +1,242 @@
+{
+  "run_id": "aa059fb8-a004-4a86-b536-8de351f46187",
+  "mode": "full_operator",
+  "dataset": "full_operator",
+  "profile_id": null,
+  "scenarios": 15,
+  "success_rate": 0.0,
+  "avg_score": 0.30000000000000004,
+  "avg_ticks": 0.0,
+  "policy_accept_rate": 1.0,
+  "case_results": [
+    {
+      "scenario_id": "normal-play-1",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Single tick completes with legal action"
+      }
+    },
+    {
+      "scenario_id": "normal-play-3",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Three ticks without fatal error"
+      }
+    },
+    {
+      "scenario_id": "heuristic-strategy",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Heuristic decision path"
+      }
+    },
+    {
+      "scenario_id": "model-assist-fallback",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Model assist enabled advisory path"
+      }
+    },
+    {
+      "scenario_id": "high-confidence-bar",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Strict min confidence still passes mock"
+      }
+    },
+    {
+      "scenario_id": "edge-low-confidence",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Very high confidence threshold may block"
+      }
+    },
+    {
+      "scenario_id": "uno-one-card",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Endgame: small hand simulation tag"
+      }
+    },
+    {
+      "scenario_id": "uno-not-called",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "UNO penalty edge case metadata"
+      }
+    },
+    {
+      "scenario_id": "opponent-skip-context",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "After skip card context"
+      }
+    },
+    {
+      "scenario_id": "opponent-draw2",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Draw two stack context"
+      }
+    },
+    {
+      "scenario_id": "opponent-wild",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Wild color choice context"
+      }
+    },
+    {
+      "scenario_id": "multi-tick-endgame",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Multiple ticks toward game end"
+      }
+    },
+    {
+      "scenario_id": "recovery-resilience",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Flow tolerates replay record miss"
+      }
+    },
+    {
+      "scenario_id": "web-profile-mock",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Web adapter type with mock runtime"
+      }
+    },
+    {
+      "scenario_id": "policy-strict",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "All connection attempts failed",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Policy guard validation"
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "1781524412",
+    "mode": "full_operator"
+  }
+}

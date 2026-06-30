@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UNO Mock Test Target</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem; background: #1a2332; color: #e7ecf3; }
+    .board { display: grid; grid-template-columns: 1fr 200px 1fr; gap: 1rem; align-items: start; }
+    .card { background: #fff; color: #111; border-radius: 8px; padding: 1rem; min-width: 80px; text-align: center; display: inline-block; margin: 4px; }
+    .card.red { background: #ef4444; color: #fff; }
+    .card.blue { background: #3b82f6; color: #fff; }
+    .card.green { background: #22c55e; color: #fff; }
+    .card.yellow { background: #eab308; color: #111; }
+    #chat-messages { height: 120px; overflow-y: auto; border: 1px solid #444; padding: 0.5rem; margin-bottom: 0.5rem; }
+    button { margin: 4px; padding: 0.5rem 1rem; cursor: pointer; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body data-testid="game-ready">
+  <h1 data-testid="page-title">UNO Mock Test Target</h1>
+  <p data-testid="current-player">Current: <span id="current-player-id">bot</span></p>
+
+  <div class="board">
+    <section>
+      <h2>Discard</h2>
+      <div id="discard-area" data-testid="discard-area">
+        <div class="card red" data-testid="discard-top-card" data-color="red" data-value="5">Red 5</div>
+      </div>
+      <p>Draw pile: <span data-testid="draw-pile-count">80</span></p>
+    </section>
+
+    <section>
+      <h2>Actions</h2>
+      <button data-testid="btn-draw" id="btn-draw">Draw</button>
+      <button data-testid="btn-play-red5" id="btn-play">Play Red 5</button>
+    </section>
+
+    <section>
+      <h2>Hand</h2>
+      <div id="player-hand" data-testid="player-hand">
+        <div class="card red" data-testid="hand-card" data-color="red" data-value="5">Red 5</div>
+        <div class="card blue" data-testid="hand-card" data-color="blue" data-value="3">Blue 3</div>
+        <div class="card yellow" data-testid="hand-card" data-color="yellow" data-value="skip">Yellow Skip</div>
+      </div>
+    </section>
+  </div>
+
+  <section style="margin-top: 1rem;">
+    <h2>Chat</h2>
+    <div id="chat-messages" data-testid="chat-messages">
+      <div class="chat-line" data-testid="chat-line">Player2: hey bot, what are the rules?</div>
+    </div>
+    <input type="text" data-testid="chat-input" id="chat-input" placeholder="Type message..." />
+    <button data-testid="chat-send" id="chat-send">Send</button>
+  </section>
+
+  <script>
+    const STATES = {
+      default: {},
+      chat: { chat: ["Player2: hey bot, what are the rules?", "Player1: gl hf"] },
+      no_play: { hand: [] },
+    };
+    const params = new URLSearchParams(location.search);
+    const stateName = params.get("state") || "default";
+    const state = STATES[stateName] || STATES.default;
+
+    if (state.chat) {
+      const box = document.getElementById("chat-messages");
+      box.innerHTML = state.chat.map(t => `<div class="chat-line" data-testid="chat-line">${t}</div>`).join("");
+    }
+    if (state.hand) {
+      document.getElementById("player-hand").innerHTML = state.hand.length
+        ? state.hand.map(c => `<div class="card" data-testid="hand-card">${c}</div>`).join("")
+        : "<span data-testid='hand-empty'>No cards</span>";
+    }
+
+    document.getElementById("chat-send").addEventListener("click", () => {
+      const input = document.getElementById("chat-input");
+      if (!input.value.trim()) return;
+      const box = document.getElementById("chat-messages");
+      const line = document.createElement("div");
+      line.className = "chat-line";
+      line.dataset.testid = "chat-line";
+      line.textContent = "You: " + input.value.trim();
+      box.appendChild(line);
+      input.value = "";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "prompt_id": "chat_intent",
+  "version": "1.0.0",
+  "use_case": "chat_intent",
+  "template": "Classify if the message is directed at the bot.\nMessage: {message}\nRespond JSON only: {\"directed_at_bot\": bool, \"reply_required\": bool, \"confidence\": float}",
+  "expected_output_schema": {
+    "type": "object",
+    "properties": {
+      "directed_at_bot": {"type": "boolean"},
+      "reply_required": {"type": "boolean"},
+      "confidence": {"type": "number"}
+    },
+    "required": ["directed_at_bot", "reply_required", "confidence"]
+  },
+  "safety_notes": "Advisory only — chat-intent-service validates deterministically",
+  "compatible_model_families": ["mock", "llama_cpp_openai", "vllm_openai"],
+  "active": true
+}

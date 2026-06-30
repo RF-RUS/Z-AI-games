@@ -1,0 +1,47 @@
+{
+  "run_id": "acb26351-f868-4ec1-b2f3-2d8fe0fa5914",
+  "mode": "full_operator",
+  "dataset": "full_operator_smoke",
+  "profile_id": null,
+  "scenarios": 2,
+  "success_rate": 0.0,
+  "avg_score": 0.30000000000000004,
+  "avg_ticks": 0.0,
+  "policy_accept_rate": 1.0,
+  "case_results": [
+    {
+      "scenario_id": "smoke-1",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "Playwright startup failed at stage=page_goto (4328ms): Page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:8765/\nCall log:\n  - navigating to \"http://127.0.0.1:8765/\", waiting until \"domcontentloaded\"\n",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Single tick smoke"
+      }
+    },
+    {
+      "scenario_id": "smoke-2",
+      "success": false,
+      "score": 0.30000000000000004,
+      "ticks_run": 0,
+      "legal_action_ok": false,
+      "policy_pass_ok": true,
+      "flow_complete_ok": false,
+      "error": "Playwright startup failed at stage=page_goto (4372ms): Page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:8765/\nCall log:\n  - navigating to \"http://127.0.0.1:8765/\", waiting until \"domcontentloaded\"\n",
+      "failure_reason": "{\"legal_action\": 0.0, \"flow_complete\": 0.0, \"no_error\": 0.0}",
+      "flow_steps": 0,
+      "metadata": {
+        "description": "Two ticks smoke"
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "1782001283",
+    "mode": "full_operator"
+  }
+}

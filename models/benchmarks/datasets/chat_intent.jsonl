@@ -1,0 +1,4 @@
+{"case_id": "ci-1", "use_case": "chat_intent", "input": {"message": "hey bot what are the rules?"}, "expected": {"directed_at_bot": true, "reply_required": true}, "tags": ["addressed"]}
+{"case_id": "ci-2", "use_case": "chat_intent", "input": {"message": "nice play everyone"}, "expected": {"directed_at_bot": false, "reply_required": false}, "tags": ["ambient"]}
+{"case_id": "ci-3", "use_case": "chat_intent", "input": {"message": "@bot help"}, "expected": {"directed_at_bot": true, "reply_required": true}, "tags": ["addressed"]}
+{"case_id": "ci-4", "use_case": "chat_intent", "input": {"message": "gg"}, "expected": {"directed_at_bot": false, "reply_required": false}, "tags": ["social"]}

@@ -1,0 +1,42 @@
+{
+  "snapshot_id": "bdf1b7ec-7bfd-49aa-8790-2374b7f1327a",
+  "url": "http://127.0.0.1:8765/",
+  "captured_at_ms": 1781520812784,
+  "profile_id": "local-mock-uno",
+  "nodes": [
+    {
+      "selector": "[mock]",
+      "tag": null,
+      "text": "Red 5",
+      "test_id": "discard-top-card",
+      "attributes": {
+        "data-color": "red",
+        "data-value": "5"
+      },
+      "bbox": null
+    },
+    {
+      "selector": "[mock-chat]",
+      "tag": null,
+      "text": "Player2: hey bot, what are the rules?",
+      "test_id": "chat-line",
+      "attributes": {},
+      "bbox": null
+    }
+  ],
+  "extracted": {
+    "top_card": {
+      "color": "red",
+      "value": "5"
+    },
+    "current_player_id": "bot",
+    "draw_pile_count": 80,
+    "discard_pile_count": 5,
+    "direction": 1,
+    "pending_draw": 0,
+    "chat_messages": [
+      "Player2: hey bot, what are the rules?"
+    ]
+  },
+  "confidence": 0.85
+}

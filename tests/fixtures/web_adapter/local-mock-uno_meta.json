@@ -1,0 +1,22 @@
+{
+  "profile_id": "local-mock-uno",
+  "mode": "mock",
+  "url": "http://127.0.0.1:8765/",
+  "chat_messages": [
+    "Player2: hey bot, what are the rules?"
+  ],
+  "extracted": {
+    "top_card": {
+      "color": "red",
+      "value": "5"
+    },
+    "current_player_id": "bot",
+    "draw_pile_count": 80,
+    "discard_pile_count": 5,
+    "direction": 1,
+    "pending_draw": 0,
+    "chat_messages": [
+      "Player2: hey bot, what are the rules?"
+    ]
+  }
+}

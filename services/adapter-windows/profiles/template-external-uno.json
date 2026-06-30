@@ -1,0 +1,48 @@
+{
+  "profile_id": "template-external-uno",
+  "display_name": "Template — External UNO Desktop Client",
+  "game_type": "uno",
+  "window": {
+    "title_regex": "UNO",
+    "class_name": null,
+    "process_name": null,
+    "executable_hint": "C:\\Path\\To\\UnoClient.exe"
+  },
+  "preferred_backend": "uia",
+  "fallback_backend": "win32",
+  "readiness_timeout_ms": 20000,
+  "selectors": {
+    "discard_top_card": {
+      "auto_id": "DiscardPile",
+      "control_type": "Custom",
+      "title_regex": null
+    },
+    "hand_area": {
+      "auto_id": "PlayerHand",
+      "control_type": "Pane"
+    },
+    "draw_button": {
+      "auto_id": "DrawButton",
+      "title": "Draw"
+    }
+  },
+  "chat_selectors": {
+    "chat_messages": {
+      "auto_id": "ChatLog",
+      "control_type": "List"
+    },
+    "chat_input": {
+      "auto_id": "ChatInput",
+      "control_type": "Edit"
+    }
+  },
+  "action_mappings": {
+    "draw": "DrawButton"
+  },
+  "notes": "Template only — customize selectors after inspecting target UI tree.",
+  "limitations": [
+    "Not validated against any commercial client",
+    "May require elevated privileges if game runs elevated",
+    "Sparse accessibility trees may need OCR/VLM fallback"
+  ]
+}

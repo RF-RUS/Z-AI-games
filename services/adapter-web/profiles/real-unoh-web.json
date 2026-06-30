@@ -1,0 +1,94 @@
+{
+  "profile_id": "real-unoh-web",
+  "display_name": "Pizzuno (pizz.uno) — Real UNO Web",
+  "game_type": "uno",
+  "launch_url": "https://pizz.uno/singleplayer",
+  "allowed_domains": ["pizz.uno"],
+  "readiness_selector": "body",
+  "readiness_timeout_ms": 15000,
+  "block_consent_scripts": true,
+  "health": {
+    "required": ["game_root", "hand_area", "discard_top_card", "draw_button"],
+    "optional": ["play_button", "current_player", "uno_indicator", "chat_messages", "bootstrap_start_game"]
+  },
+  "selectors": {
+    "game_root": {
+      "primary": "#app",
+      "fallbacks": ["#player-hand", "div.table-center"]
+    },
+    "discard_top_card": {
+      "primary": "#playedCards .card:last-child",
+      "fallbacks": [".current-card-wrapper .card", "div.table-center .card:not(.back)"]
+    },
+    "hand_area": {
+      "primary": "#player-hand",
+      "fallbacks": [".bottom-hand", ".cards-hand"]
+    },
+    "hand_cards": {
+      "primary": "#player-hand .card",
+      "fallbacks": [".bottom-hand .card", ".cards-hand .card"]
+    },
+    "draw_pile_count": {
+      "primary": "#deck .card",
+      "fallbacks": ["#deck"]
+    },
+    "current_player": {
+      "primary": ".player-turn-indicator",
+      "fallbacks": [".player-name", ".glow-hand"]
+    },
+    "opponent_left_hand": {
+      "primary": "aside.left-hand",
+      "fallbacks": [".player-left .cards-hand"]
+    },
+    "opponent_right_hand": {
+      "primary": "aside.right-hand",
+      "fallbacks": [".player-right .cards-hand"]
+    },
+    "opponent_top_hand": {
+      "primary": ".top-hand",
+      "fallbacks": ["div.top-hand .card.back"]
+    },
+    "uno_indicator": {
+      "primary": "button.uno",
+      "fallbacks": ["a.uno", "[class*='uno-button']"]
+    },
+    "chat_messages": {
+      "primary": "#chat",
+      "fallbacks": [".chat-messages"]
+    },
+    "chat_lines": {
+      "primary": ".chat-line",
+      "fallbacks": []
+    },
+    "chat_input": {
+      "primary": "#chat-input",
+      "fallbacks": [".chat-input"]
+    },
+    "draw_button": {
+      "primary": "#deck",
+      "fallbacks": ["#deck .card.back", "div.table-center #deck"]
+    },
+    "play_button": {
+      "primary": "#player-hand .card.playable",
+      "fallbacks": [".bottom-hand .card.playable", ".card.playable"]
+    }
+  },
+  "action_mappings": {
+    "bootstrap_dismiss_cookie": "#consent-buttons button:last-child",
+    "bootstrap_start_game": "a.singleplayer-play-game",
+    "draw": "#deck",
+    "play_playable": "#player-hand .card.playable"
+  },
+  "screenshot_crops": {
+    "table": {"x": 0, "y": 80, "width": 1280, "height": 720}
+  },
+  "notes": "Targets Pizzuno at https://pizz.uno (UNO-like, browser DOM). Verified 2026-06. Cards use CSS classes: card red numeric num-4. Bootstrap actions auto-start singleplayer.",
+  "limitations": [
+    "Site is third-party; selectors may break on redesign",
+    "Cookie banner must be dismissed (bootstrap in action_mappings)",
+    "No in-game chat in singleplayer mode",
+    "Card UUID ids change each hand — use class selectors not #uuid",
+    "Ads may overlay; run headless with viewport 1280x900",
+    "Run scripts/nightly-profile-smoke.py to detect drift"
+  ]
+}

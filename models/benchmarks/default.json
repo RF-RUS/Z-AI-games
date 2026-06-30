@@ -1,0 +1,21 @@
+{
+  "datasets": [
+    {
+      "name": "uno_chat_replies",
+      "description": "Sample chat reply latency benchmark",
+      "prompts": [
+        "Reply briefly to: hey bot, what are the UNO rules?",
+        "Reply briefly to: nice play!",
+        "Reply briefly to: what card should I play?"
+      ]
+    },
+    {
+      "name": "uno_action_ranking",
+      "description": "Rank legal UNO actions",
+      "prompts": [
+        "Given legal actions [play red 5, draw], rank best move.",
+        "Given legal actions [wild, play blue skip], rank best move."
+      ]
+    }
+  ]
+}

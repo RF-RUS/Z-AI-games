@@ -1,0 +1,48 @@
+{
+  "before": {
+    "screen": "in_game",
+    "hand_cards": 1,
+    "draw_pile": true,
+    "confidence": 0.2634266886326194,
+    "viewport": {
+      "w": 1920,
+      "h": 945
+    }
+  },
+  "gesture": {
+    "type": "click",
+    "confidence": "high"
+  },
+  "coords": {
+    "raw": {
+      "x": 977,
+      "y": 507
+    },
+    "css": {
+      "x": 977.0,
+      "y": 507.0
+    }
+  },
+  "after": {
+    "screen": "in_game",
+    "hand_cards": 1,
+    "draw_pile": true,
+    "confidence": 0.28072487644151567
+  },
+  "verification": {
+    "delivery": "delivered",
+    "outcome": "unknown",
+    "rationale": "no observable draw effect | hand: 1->1 (changed=False); top_card: {'color': 'yellow', 'number': '7'}->{'color': 'yellow', 'number': '7'} (changed=False); draw_pile: True->True (changed=False); colors_before=['yellow'] colors_after=['yellow']; regions_before=2 regions_after=2"
+  },
+  "evidence": {
+    "before_colors": [
+      "yellow"
+    ],
+    "after_colors": [
+      "yellow"
+    ],
+    "hand_count_changed": false,
+    "top_card_changed": false,
+    "draw_pile_changed": false
+  }
+}

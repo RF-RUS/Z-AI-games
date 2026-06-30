@@ -1,0 +1,6 @@
+{
+  "profile_id": "real-unoh-web",
+  "expected_status": "healthy",
+  "required_selectors": ["game_root", "hand_area", "discard_top_card", "draw_button"],
+  "notes": "Sample expected output after successful smoke on Pizzuno. Update when site changes."
+}

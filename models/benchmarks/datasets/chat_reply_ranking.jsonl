@@ -1,0 +1,2 @@
+{"case_id": "cr-1", "use_case": "chat_reply", "input": {"message": "what are the rules?", "candidates": "[\"UNO rules: match color or number.\", \"I don't know.\", \"Play a card.\"]"}, "expected": {"best_index": 0}, "tags": ["ranking"]}
+{"case_id": "cr-2", "use_case": "chat_reply", "input": {"message": "thanks!", "candidates": "[\"You're welcome!\", \"Play draw four.\", \"???\"]"}, "expected": {"best_index": 0}, "tags": ["ranking"]}

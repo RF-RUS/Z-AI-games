@@ -1,0 +1,13 @@
+{
+  "profile_id": "local/vllm",
+  "display_name": "Local vLLM OpenAI server",
+  "provider": "vllm_openai",
+  "base_url": "http://127.0.0.1:8000/v1",
+  "model_name": "local-model",
+  "enabled": false,
+  "use_cases": ["chat_intent", "explanation", "benchmark_only"],
+  "priority": 60,
+  "supports_json_mode": true,
+  "timeout_seconds": 60.0,
+  "metadata": {"setup": "vllm serve <model>"}
+}

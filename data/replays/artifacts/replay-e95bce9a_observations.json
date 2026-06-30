@@ -1,0 +1,173 @@
+[
+  {
+    "observation_id": "316aa1a4-f3be-44ac-b82f-10141ede64f0",
+    "session_id": "e95bce9a-c5c1-44c3-83c0-3fcae8ace4dd",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "316aa1a4-f3be-44ac-b82f-10141ede64f0",
+      "session_id": "e95bce9a-c5c1-44c3-83c0-3fcae8ace4dd",
+      "timestamp_ms": 1782074907833,
+      "game_type": null,
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "canvas_coordinate",
+              "canvas_detected": true,
+              "canvas_bounds": {
+                "x": 0.0,
+                "y": 0.0,
+                "width": 929.0,
+                "height": 917.0
+              },
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "In-match canvas is active; card actions use canvas-relative coordinates, not UIA or DOM selectors.",
+              "recommended_action": "Execute CLICK_COORDINATE using profile layout_targets relative to canvas bounds."
+            },
+            "canvas_bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 929,
+              "height": 917
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "1d558d57-132a-4b22-b87f-da9da946d8db"
+  },
+  {
+    "observation_id": "1d864783-c966-47cc-bf1a-f929cccbf504",
+    "session_id": "e95bce9a-c5c1-44c3-83c0-3fcae8ace4dd",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "1d864783-c966-47cc-bf1a-f929cccbf504",
+      "session_id": "e95bce9a-c5c1-44c3-83c0-3fcae8ace4dd",
+      "timestamp_ms": 1782074912438,
+      "game_type": null,
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "canvas_coordinate",
+              "canvas_detected": true,
+              "canvas_bounds": {
+                "x": 0.0,
+                "y": 0.0,
+                "width": 929.0,
+                "height": 917.0
+              },
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "In-match canvas is active; card actions use canvas-relative coordinates, not UIA or DOM selectors.",
+              "recommended_action": "Execute CLICK_COORDINATE using profile layout_targets relative to canvas bounds."
+            },
+            "canvas_bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 929,
+              "height": 917
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "bdbe3c95-db7f-4a58-a447-7211d10d35d1"
+  },
+  {
+    "observation_id": "6a408e67-330c-4f66-becd-a63e5ba3c101",
+    "session_id": "e95bce9a-c5c1-44c3-83c0-3fcae8ace4dd",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "6a408e67-330c-4f66-becd-a63e5ba3c101",
+      "session_id": "e95bce9a-c5c1-44c3-83c0-3fcae8ace4dd",
+      "timestamp_ms": 1782074918379,
+      "game_type": null,
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "canvas_coordinate",
+              "canvas_detected": true,
+              "canvas_bounds": {
+                "x": 0.0,
+                "y": 0.0,
+                "width": 929.0,
+                "height": 917.0
+              },
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "In-match canvas is active; card actions use canvas-relative coordinates, not UIA or DOM selectors.",
+              "recommended_action": "Execute CLICK_COORDINATE using profile layout_targets relative to canvas bounds."
+            },
+            "canvas_bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 929,
+              "height": 917
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "fe2309d7-7543-43c3-b08f-69f7dcbcbb0e"
+  }
+]

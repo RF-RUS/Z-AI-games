@@ -1,0 +1,62 @@
+[
+  {
+    "observation_id": "3b7dafe0-6889-417a-93c6-b1fca27b331f",
+    "session_id": "db37233f-51de-4be2-b7a0-07201c2a67de",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "3b7dafe0-6889-417a-93c6-b1fca27b331f",
+      "session_id": "db37233f-51de-4be2-b7a0-07201c2a67de",
+      "timestamp_ms": 1781543965526,
+      "table_state": {
+        "top_card": {
+          "color": "red",
+          "value": "5"
+        },
+        "draw_pile_count": 80,
+        "discard_pile_count": 5,
+        "current_player_id": "bot",
+        "direction": 1,
+        "pending_draw": 0
+      },
+      "hand_cards": [],
+      "visible_chat": [
+        "Player2: hey bot, what are the rules?"
+      ],
+      "confidence": {
+        "overall": 0.5,
+        "table_state": 0.5,
+        "hand_state": 0.0,
+        "chat_visible": 0.8
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {
+            "[mock]": "Red 5",
+            "[mock-chat]": "Player2: hey bot, what are the rules?"
+          },
+          "snapshot": {
+            "top_card": {
+              "color": "red",
+              "value": "5"
+            },
+            "current_player_id": "bot",
+            "draw_pile_count": 80,
+            "discard_pile_count": 5,
+            "direction": 1,
+            "pending_draw": 0,
+            "chat_messages": [
+              "Player2: hey bot, what are the rules?"
+            ]
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "6757321a-5c54-420f-a9e3-8dbecf32f70d"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "profile_id": "local-mock-uno",
+  "mode": "mock",
+  "chat_messages": [
+    "Player2: hey bot, what are the rules?"
+  ],
+  "extracted": {
+    "top_card": {
+      "color": "red",
+      "value": "5"
+    },
+    "draw_pile_count": 80,
+    "current_player_id": "bot",
+    "chat_messages": [
+      "Player2: hey bot, what are the rules?"
+    ],
+    "discard_pile_count": 1,
+    "direction": 1,
+    "pending_draw": 0
+  }
+}

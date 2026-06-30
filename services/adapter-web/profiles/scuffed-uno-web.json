@@ -1,0 +1,114 @@
+{
+  "profile_id": "scuffed-uno-web",
+  "display_name": "Scuffed Uno (canvas / WebGL)",
+  "game_type": "uno",
+  "launch_url": "https://scuffeduno.online/",
+  "allowed_domains": [
+    "scuffeduno.online"
+  ],
+  "readiness_selector": null,
+  "readiness_timeout_ms": 15000,
+  "readiness_required": false,
+  "goto_timeout_ms": 60000,
+  "goto_wait_until": "commit",
+  "browser_launch_timeout_ms": 60000,
+  "bootstrap_on_attach": false,
+  "match_automation": "canvas_coordinate",
+  "canvas_selector": "canvas",
+  "lobby_selectors": {
+    "quick_play": {
+      "primary": "button:has-text('Quick Play')",
+      "fallbacks": [
+        "a:has-text('Quick Play')"
+      ]
+    },
+    "create_room": {
+      "primary": "button:has-text('Create Room')",
+      "fallbacks": [
+        "a:has-text('Create Room')"
+      ]
+    }
+  },
+  "layout_targets": {
+    "hand_area": {
+      "x": 0,
+      "y": 661,
+      "width": 1920,
+      "height": 236
+    },
+    "draw_area": {
+      "x": 705,
+      "y": 392,
+      "width": 512,
+      "height": 230
+    },
+    "hand_slot_0": {
+      "x": 0,
+      "y": 661,
+      "width": 1872,
+      "height": 231,
+      "click_x": 936,
+      "click_y": 776,
+      "label": "Calibrated hand_slot_0 (red)"
+    },
+    "hand_slot_1": {
+      "x_ratio": 0.4,
+      "y_ratio": 0.82,
+      "label": "Hand slot 1"
+    },
+    "hand_slot_2": {
+      "x_ratio": 0.45,
+      "y_ratio": 0.82,
+      "label": "Hand slot 2"
+    },
+    "hand_slot_3": {
+      "x_ratio": 0.5,
+      "y_ratio": 0.82,
+      "label": "Hand slot 3"
+    },
+    "hand_slot_4": {
+      "x_ratio": 0.55,
+      "y_ratio": 0.82,
+      "label": "Hand slot 4"
+    },
+    "hand_slot_5": {
+      "x_ratio": 0.6,
+      "y_ratio": 0.82,
+      "label": "Hand slot 5 (rightmost)"
+    },
+    "draw": {
+      "x": 705,
+      "y": 392,
+      "width": 512,
+      "height": 230,
+      "click_x": 961,
+      "click_y": 507,
+      "label": "Calibrated draw pile"
+    }
+  },
+  "action_mappings": {
+    "bootstrap_quick_play": "button:has-text('Quick Play')"
+  },
+  "selectors": {},
+  "health": {
+    "required": [],
+    "optional": [
+      "quick_play"
+    ]
+  },
+  "notes": "Scuffed Uno renders gameplay on canvas; match actions use coordinate clicks via Playwright, not UIA.",
+  "gesture_hints": {
+    "preferred_play_gesture": "click",
+    "preferred_draw_gesture": "click",
+    "draggable_cards": false,
+    "requires_drop_zone": false,
+    "hover_before_click": false,
+    "animation_duration_ms": 300
+  },
+  "limitations": [
+    "Canvas coordinates are approximate until calibrated against live layout",
+    "Lobby HTML is DOM-clickable; in-match cards are not UIA/DOM accessible",
+    "Do not use Windows UIA adapter for match card play on this site",
+    "Attach waits for commit first; lobby/canvas readiness is checked separately"
+  ]
+}

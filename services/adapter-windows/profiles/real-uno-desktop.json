@@ -1,0 +1,48 @@
+{
+  "profile_id": "real-uno-desktop",
+  "display_name": "Existing UNO Desktop Game Window",
+  "game_type": "uno",
+  "window": {
+    "title_regex": "UNO",
+    "exclude_title_regex": "Mock Test Target",
+    "process_name": null
+  },
+  "preferred_backend": "uia",
+  "fallback_backend": "win32",
+  "readiness_timeout_ms": 20000,
+  "selectors": {
+    "discard_top_card": {
+      "auto_id": "DiscardPile",
+      "control_type": "Custom"
+    },
+    "hand_area": {
+      "auto_id": "PlayerHand",
+      "control_type": "Pane"
+    },
+    "draw_button": {
+      "auto_id": "DrawButton",
+      "title": "Draw"
+    }
+  },
+  "chat_selectors": {
+    "chat_messages": {
+      "auto_id": "ChatLog",
+      "control_type": "List"
+    },
+    "chat_input": {
+      "auto_id": "ChatInput",
+      "control_type": "Edit"
+    }
+  },
+  "action_mappings": {
+    "draw": "DrawButton"
+  },
+  "match_automation": "web_only",
+  "notes": "Attach for live preview only. Match card play must use web adapter profile scuffed-uno-web (Playwright canvas coordinates).",
+  "limitations": [
+    "Does not launch the tkinter mock target",
+    "Selectors are template placeholders until validated against your client",
+    "Automation stays scoped to the attached top-level window",
+    "Browser UNO match play is not UIA-actionable — use scuffed-uno-web web adapter instead"
+  ]
+}

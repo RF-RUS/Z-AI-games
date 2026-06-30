@@ -1,0 +1,17 @@
+{
+  "step": 2,
+  "phase": "execute_after",
+  "action": "draw_card",
+  "gesture": "click",
+  "coords": {
+    "x": 351.0,
+    "y": 210.0
+  },
+  "hand_before": 1,
+  "hand_after": 1,
+  "verification": {
+    "delivery": "delivered",
+    "outcome": "unknown",
+    "rationale": "no observable draw effect"
+  }
+}

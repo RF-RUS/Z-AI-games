@@ -1,0 +1,131 @@
+[
+  {
+    "observation_id": "47788d39-641e-4a88-9730-5473801d3427",
+    "session_id": "c59c35bc-d550-4eea-9716-7d12a05ee2fd",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "47788d39-641e-4a88-9730-5473801d3427",
+      "session_id": "c59c35bc-d550-4eea-9716-7d12a05ee2fd",
+      "timestamp_ms": 1781553600040,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Scuffed Uno | Game - Google Chrome",
+            "backend": "uia",
+            "nodes_count": 111,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "12dac942-e222-490e-8d27-b59653967136"
+  },
+  {
+    "observation_id": "a32e3272-4331-4993-8a2a-3675e407a347",
+    "session_id": "c59c35bc-d550-4eea-9716-7d12a05ee2fd",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "a32e3272-4331-4993-8a2a-3675e407a347",
+      "session_id": "c59c35bc-d550-4eea-9716-7d12a05ee2fd",
+      "timestamp_ms": 1781553636723,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Scuffed Uno | Game - Google Chrome",
+            "backend": "uia",
+            "nodes_count": 111,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "5e842705-2b7a-4d23-84b4-6b13a9c48c10"
+  },
+  {
+    "observation_id": "6cd98d66-d76a-4fb2-9772-e3f701ef9b9f",
+    "session_id": "c59c35bc-d550-4eea-9716-7d12a05ee2fd",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "6cd98d66-d76a-4fb2-9772-e3f701ef9b9f",
+      "session_id": "c59c35bc-d550-4eea-9716-7d12a05ee2fd",
+      "timestamp_ms": 1781553644608,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "Scuffed Uno | Game - Google Chrome",
+            "backend": "uia",
+            "nodes_count": 111,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "9ae450da-fd8d-4591-9f61-451a7fc8fcfc"
+  }
+]

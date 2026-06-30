@@ -1,0 +1,17 @@
+{
+  "prompt_id": "chat_reply_ranking",
+  "version": "1.0.0",
+  "use_case": "chat_reply",
+  "template": "Rank candidate replies for the user message. Pick best_index (0-based).\nMessage: {message}\nCandidates: {candidates}\nRespond JSON: best_index int, confidence float",
+  "expected_output_schema": {
+    "type": "object",
+    "properties": {
+      "best_index": {"type": "integer"},
+      "confidence": {"type": "number"}
+    },
+    "required": ["best_index", "confidence"]
+  },
+  "safety_notes": "Advisory ranking only",
+  "compatible_model_families": ["mock", "llama_cpp_openai", "vllm_openai"],
+  "active": true
+}

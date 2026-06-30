@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-24T07:22:50.341Z",
+  "session_id": "e2e-pw",
+  "step_counter": 1,
+  "phase": "observe",
+  "url": "http://127.0.0.1:8765/",
+  "title": "UNO Mock Test Target",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "dpr": 1.0,
+  "screen": null
+}

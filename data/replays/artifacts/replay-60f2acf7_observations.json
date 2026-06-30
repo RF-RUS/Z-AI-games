@@ -1,0 +1,48 @@
+[
+  {
+    "observation_id": "98de89ef-2926-4e4b-acd0-c7afdc0c9ebe",
+    "session_id": "60f2acf7-e1b9-46c1-852b-9b6348aa8e0d",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "98de89ef-2926-4e4b-acd0-c7afdc0c9ebe",
+      "session_id": "60f2acf7-e1b9-46c1-852b-9b6348aa8e0d",
+      "timestamp_ms": 1781558660592,
+      "table_state": null,
+      "hand_cards": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.5,
+        "table_state": 0.0,
+        "hand_state": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "dom",
+          "selectors": {},
+          "snapshot": {
+            "chat_messages": [],
+            "discard_pile_count": 1,
+            "direction": 1,
+            "pending_draw": 0,
+            "page_diagnostics": {
+              "automation_mode": "unknown",
+              "canvas_detected": false,
+              "canvas_bounds": null,
+              "lobby_control_count": 0,
+              "uia_actionable_in_match": false,
+              "message": "Neither canvas nor lobby controls detected on the page.",
+              "recommended_action": "Verify launch_url, canvas_selector, and page load state."
+            }
+          },
+          "confidence": 0.5
+        }
+      ],
+      "discrepancies": [],
+      "inferred_wild_color": null
+    },
+    "artifacts": [],
+    "correlation_id": "92b924a1-9e30-4d36-9fc1-544a11f1d542"
+  }
+]

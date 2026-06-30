@@ -1,0 +1,16 @@
+features:
+  chat_enabled: true
+  model_assist: false
+  vlm_perception: false
+
+defaults:
+  adapter_type: mock
+  strategy_id: heuristic
+  chat_mode: detect_only
+  min_confidence: 0.5
+
+services:
+  uno-core: "http://127.0.0.1:8101"
+  perception-service: "http://127.0.0.1:8103"
+  decision-service: "http://127.0.0.1:8106"
+  policy-guard: "http://127.0.0.1:8107"

@@ -1,0 +1,47 @@
+{
+  "run_id": "1f616c7a-227d-40ec-99e2-67b7b4191442",
+  "mode": "full_operator",
+  "dataset": "full_operator_smoke",
+  "profile_id": null,
+  "scenarios": 2,
+  "success_rate": 1.0,
+  "avg_score": 1.0,
+  "avg_ticks": 1.5,
+  "policy_accept_rate": 1.0,
+  "case_results": [
+    {
+      "scenario_id": "smoke-1",
+      "success": true,
+      "score": 1.0,
+      "ticks_run": 1,
+      "legal_action_ok": true,
+      "policy_pass_ok": true,
+      "flow_complete_ok": true,
+      "error": null,
+      "failure_reason": null,
+      "flow_steps": 7,
+      "metadata": {
+        "description": "Single tick smoke"
+      }
+    },
+    {
+      "scenario_id": "smoke-2",
+      "success": true,
+      "score": 1.0,
+      "ticks_run": 2,
+      "legal_action_ok": true,
+      "policy_pass_ok": true,
+      "flow_complete_ok": true,
+      "error": null,
+      "failure_reason": null,
+      "flow_steps": 14,
+      "metadata": {
+        "description": "Two ticks smoke"
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "1781525310",
+    "mode": "full_operator"
+  }
+}

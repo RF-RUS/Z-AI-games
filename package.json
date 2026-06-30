@@ -1,0 +1,10 @@
+{
+  "name": "uno-operator",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/control-center", "packages/client-sdk-ts"],
+  "scripts": {
+    "dev:desktop": "npm run dev --workspace=control-center",
+    "build:desktop": "npm run build --workspace=control-center"
+  }
+}

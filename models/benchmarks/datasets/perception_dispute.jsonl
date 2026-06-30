@@ -1,0 +1,2 @@
+{"case_id": "pd-1", "use_case": "perception_dispute", "input": {"evidence_a": "top card: red 5", "evidence_b": "top card: red 7"}, "expected": {"resolution_class": "insufficient_confidence"}, "tags": ["conflict"]}
+{"case_id": "pd-2", "use_case": "perception_dispute", "input": {"evidence_a": "hand count: 3", "evidence_b": "hand count: 3"}, "expected": {"resolution_class": "agree"}, "tags": ["agree"]}
