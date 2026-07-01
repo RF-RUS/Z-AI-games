@@ -60,10 +60,10 @@ pythonpath = [
 ]
 asyncio_mode = "auto"
 markers = [
-    "smoke: smoke tests",
+    "smoke: smoke tests (autonomous, no network/live services)",
     "contract: contract tests",
-    "integration: integration tests",
-    "e2e: end-to-end tests",
+    "integration: integration tests (may require live services / processes)",
+    "e2e: end-to-end tests (require network, browsers, or real game windows)",
 ]
 
 [tool.ruff]

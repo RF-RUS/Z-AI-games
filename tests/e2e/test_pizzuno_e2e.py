@@ -1,9 +1,9 @@
-"""Pizzuno E2E smoke test — regression guard for confirmed flow.
+"""Pizzuno E2E test — regression guard for confirmed flow.
 
 Runs full cycle: attach → observe → perceive → decide → guard → execute
 against real Pizzuno site. Requires network + Playwright.
 
-Marked as @pytest.mark.smoke so it runs in nightly builds.
+Run with: pytest tests/e2e/test_pizzuno_e2e.py -m e2e
 """
 
 import asyncio
@@ -27,7 +27,7 @@ from uno_schemas.orchestrator import AttachAdapterBody, SessionSpec
 from uno_schemas.session import AdapterType, SessionConfig
 
 
-@pytest.mark.smoke
+@pytest.mark.e2e
 @pytest.mark.asyncio
 async def test_pizzuno_e2e_full_cycle():
     """Full E2E cycle on real Pizzuno: attach → observe → decide → execute."""

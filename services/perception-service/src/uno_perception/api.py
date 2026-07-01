@@ -6,6 +6,7 @@ from uno_schemas.perception import (
   DomEvidence,
   Observation,
   OcrEvidence,
+  ScreenshotFrame,
   UiEvidence,
   VisionInference,
 )
@@ -24,6 +25,7 @@ class PerceptionRequest(BaseModel):
   ui: UiEvidence | None = None
   ocr: OcrEvidence | None = None
   vlm: VisionInference | None = None
+  screenshot: ScreenshotFrame | None = None
   game_type: str | None = None
 
 
@@ -31,7 +33,7 @@ class PerceptionRequest(BaseModel):
 async def perceive(req: PerceptionRequest) -> Observation:
   return build_observation(
     req.session_id, dom=req.dom, ui=req.ui, ocr=req.ocr, vlm=req.vlm,
-    game_type=req.game_type,
+    screenshot=req.screenshot, game_type=req.game_type,
   )
 
 

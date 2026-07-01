@@ -1,0 +1,1 @@
+{"event_id":"76edd98a-1d16-41cd-acf0-3fb0ed07f08e","event_type":"action_executed","game_id":"2d356557-6610-4051-8ad6-4e9ddeede2a6","session_id":"66c0d6ad-f4a2-4608-991c-b2e89f275f83","sequence":1,"timestamp_ms":1782835881098,"payload":{"flow_state":"active","game_type":"uno_canvas"},"correlation_id":"4f0c1cbb-09fa-4632-9fdd-e4273881102a"}

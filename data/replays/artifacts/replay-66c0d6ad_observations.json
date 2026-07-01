@@ -1,0 +1,45 @@
+[
+  {
+    "observation_id": "bcdca84c-9f72-4019-b668-f3d7dd2d7b50",
+    "session_id": "66c0d6ad-f4a2-4608-991c-b2e89f275f83",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "bcdca84c-9f72-4019-b668-f3d7dd2d7b50",
+      "session_id": "66c0d6ad-f4a2-4608-991c-b2e89f275f83",
+      "timestamp_ms": 1782835878935,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "4f0c1cbb-09fa-4632-9fdd-e4273881102a"
+  }
+]
