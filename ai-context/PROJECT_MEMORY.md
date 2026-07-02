@@ -58,5 +58,4 @@ Full spec: `docs/architecture/intermediate-contract.md`.
 - Contract edits without updating all consuming plugins → silent pipeline breakage (caught by `tests/contracts`).
 - Requires-python is 3.11+ but ruff/CI target 3.12 — avoid 3.12-only syntax if 3.11 support matters.
 
-## Status
-Beta (~85%). CI designed (lint→unit→smoke-mock→integration) + nightly-e2e; treat as needs-validation.
+_Current maturity / sprint status is volatile — read `.mimocode/STATE.md`, not here._

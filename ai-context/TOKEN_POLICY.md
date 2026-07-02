@@ -20,7 +20,7 @@ Three tiers. Default to loading as little as possible.
 - `.mimocode/STATE.md` — onboarding/audit only.
 
 ## Rules
-- MUST route via LOAD_RULES before opening files. MUST NOT bulk-read `services/*` or `docs/**`.
+- Routing and boundary guardrails live in `LOAD_RULES.md` — follow them, not restated here.
 - SHOULD read one service at a time; expand only if a boundary/contract forces it.
-- MUST NOT paste large `artifacts/` binaries or whole test dirs into context.
+- MUST NOT bulk-read `services/*` / `docs/**`, or paste `artifacts/` binaries or whole test dirs.
 - Keep Tier 1 stable: edit PROJECT_MEMORY only when an invariant, port, or convention actually changes.

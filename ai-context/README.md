@@ -4,19 +4,15 @@ Compact, load-on-demand working context for AI-assisted development (v0 / Cursor
 
 ## Files
 
-| File | Load when | Size intent |
-|------|-----------|-------------|
-| `PROJECT_MEMORY.md` | **Always** (every session) | Small, stable |
-| `LOAD_RULES.md` | Start of any task — tells you what else to load | Tiny |
-| `SKILLS_INDEX.md` | To pick the right skill for the task | Small |
-| `PROMPT_TEMPLATES.md` | When starting audit/patch/bug/release work | Small |
-| `TOKEN_POLICY.md` | To decide what to keep in vs out of context | Tiny |
-| `RUNBOOKS.md` | Setup / run / test / deploy / incident | Index only |
+| File | Purpose |
+|------|---------|
+| `PROJECT_MEMORY.md` | Always-load invariants (stack, pipeline, boundaries, ports). |
+| `LOAD_RULES.md` | Router: task type → exactly what else to load. |
+| `SKILLS_INDEX.md` | Project skills: trigger · scope · keep-out. |
+| `PROMPT_TEMPLATES.md` | Copy-paste task starters. |
+| `TOKEN_POLICY.md` | What stays in vs out of context. |
+| `RUNBOOKS.md` | Pointers to `docs/runbooks/*` + scripts. |
 
-## Rule of use
+**Start here:** load `PROJECT_MEMORY.md`, then route with `LOAD_RULES.md`. Loading tiers are defined in `TOKEN_POLICY.md`.
 
-1. Always load `PROJECT_MEMORY.md`.
-2. Read `LOAD_RULES.md`, match your task type, load only what it lists.
-3. Pull deeper files (`docs/**`, service source) **on demand**, never preemptively.
-
-Do not duplicate `docs/**` here. This folder indexes and constrains; `docs/**` remains the source of truth for design detail.
+This folder is an index/router, not documentation. `docs/**` stays the source of truth for design detail; never copy it here.
