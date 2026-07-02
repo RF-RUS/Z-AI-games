@@ -15,7 +15,6 @@ async def test_tick_skips_while_attaching():
   )
   detail = orch.create_session(spec)
   detail.flow_state = FlowState.ATTACHING
-  session = orch._sessions[detail.session_id]
 
   result = await orch.run_tick(detail.session_id)
 

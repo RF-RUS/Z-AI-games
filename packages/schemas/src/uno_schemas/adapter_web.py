@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from uno_schemas.game import DomainEvent
 from uno_schemas.ids import AdapterId, Confidence, SessionId, TimestampMs
 from uno_schemas.perception import DomEvidence, Observation, ScreenshotFrame
 
@@ -341,9 +342,6 @@ class ObservationArtifactBundle(BaseModel):
   observation: Observation | None = None
   artifacts: list[ReplayArtifactRef] = Field(default_factory=list)
   correlation_id: str | None = None
-
-
-from uno_schemas.game import DomainEvent
 
 
 class ReplayDetail(BaseModel):

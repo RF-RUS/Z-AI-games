@@ -4,10 +4,6 @@ from __future__ import annotations
 
 import time
 
-from uno_shared.logging import get_logger
-
-logger = get_logger("adapter-windows")
-
 from uno_adapter_windows.browser_attach import is_browser_host, verify_browser_attach
 from uno_adapter_windows.extraction import build_window_snapshot, window_snapshot_to_ui_evidence
 from uno_adapter_windows.rpa.driver.window_driver import (
@@ -37,6 +33,9 @@ from uno_schemas.adapter_windows import (
   WindowsRpaStatus,
 )
 from uno_schemas.perception import ScreenshotFrame
+from uno_shared.logging import get_logger
+
+logger = get_logger("adapter-windows")
 
 
 class PywinautoWindowsAdapter:

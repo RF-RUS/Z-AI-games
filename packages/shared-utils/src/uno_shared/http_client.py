@@ -10,7 +10,7 @@ from pydantic import BaseModel
 T = TypeVar("T", bound=BaseModel)
 
 
-async def post_json(
+async def post_json(  # noqa: UP047 - keep TypeVar form for Python 3.11 compatibility
   client: httpx.AsyncClient,
   url: str,
   body: BaseModel,
@@ -25,7 +25,7 @@ async def post_json(
   return response_model.model_validate(resp.json())
 
 
-async def get_json(client: httpx.AsyncClient, url: str, response_model: type[T]) -> T:
+async def get_json(client: httpx.AsyncClient, url: str, response_model: type[T]) -> T:  # noqa: UP047 - keep TypeVar form for Python 3.11 compatibility
   resp = await client.get(url, timeout=10.0)
   resp.raise_for_status()
   return response_model.model_validate(resp.json())

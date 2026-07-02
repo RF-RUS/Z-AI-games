@@ -31,7 +31,7 @@ async def ingest_log(entry: LogEntry) -> dict:
 async def get_logs(limit: int = 50, correlation_id: str | None = None) -> list[LogEntry]:
   logs = list(_log_buffer)
   if correlation_id:
-    logs = [l for l in logs if l.correlation_id == correlation_id]
+    logs = [entry for entry in logs if entry.correlation_id == correlation_id]
   return logs[-limit:]
 
 

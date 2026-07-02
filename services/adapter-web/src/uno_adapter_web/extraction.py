@@ -55,8 +55,6 @@ def build_extracted_snapshot(profile: WebAdapterProfile, nodes: list[DomNodeEvid
   extracted: dict = {}
   chat_messages: list[str] = []
 
-  by_selector = {n.selector: n for n in nodes}
-
   discard_sel = profile.selectors.get("discard_top_card")
   if discard_sel:
     node = _find_node(nodes, discard_sel)

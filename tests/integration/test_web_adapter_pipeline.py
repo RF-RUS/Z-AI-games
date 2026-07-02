@@ -41,7 +41,6 @@ def test_fixture_file_perception_pipeline():
   if not meta_path.exists():
     pytest.skip("fixture not captured yet — run scripts/capture-web-fixture.py")
 
-  meta = json.loads(meta_path.read_text(encoding="utf-8"))
   evidence_path = FIXTURES / "local-mock-uno_dom_evidence.json"
   evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
 

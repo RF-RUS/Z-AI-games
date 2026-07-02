@@ -11,8 +11,6 @@ def test_list_profiles(tmp_path):
 
 
 def test_route_chat_intent():
-  reg = ModelRegistry(tmp_path := __import__("pathlib").Path("./models/registry"))
-  # use real profiles path
   from pathlib import Path
   reg = ModelRegistry(Path("./models/registry"), Path("./models/profiles"))
   route = reg.route(ModelUseCase.CHAT_INTENT)

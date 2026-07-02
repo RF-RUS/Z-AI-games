@@ -261,7 +261,7 @@ class TestAuditLogging:
         real_logger.warning = capture_warning
 
         with patch.object(executor, "capture_live_frame", new_callable=AsyncMock, return_value=None):
-            result = await executor._execute_visual("test-audit", req)
+            await executor._execute_visual("test-audit", req)
 
         real_logger.warning = original_warning
         assert len(mock_info_calls) > 0
