@@ -81,7 +81,9 @@ def generate_legal_actions(state: SvintusState, player_id: str | None = None) ->
 
 def is_action_legal(state: SvintusState, action: dict) -> bool:
     legal = generate_legal_actions(state, action.get("player_id"))
-    return any(a["action_id"] == action.get("action_id") for a in legal) or _match_action(legal, action)
+    return any(
+        a["action_id"] == action.get("action_id") for a in legal
+    ) or _match_action(legal, action)
 
 
 def _match_action(legal: list[dict], action: dict) -> bool:
@@ -89,7 +91,8 @@ def _match_action(legal: list[dict], action: dict) -> bool:
         if (a["action_type"] == action.get("action_type")
             and a["player_id"] == action.get("player_id")
             and a.get("payload", {}).get("card") == action.get("payload", {}).get("card")
-            and a.get("payload", {}).get("chosen_color") == action.get("payload", {}).get("chosen_color")):
+            and a.get("payload", {}).get("chosen_color")
+            == action.get("payload", {}).get("chosen_color")):
             return True
     return False
 

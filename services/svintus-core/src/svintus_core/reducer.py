@@ -5,7 +5,9 @@ from __future__ import annotations
 from svintus_core.state import SvintusCard, SvintusState
 
 
-def apply_action(state: SvintusState, action: dict, session_id: str | None = None) -> tuple[SvintusState, list[dict]]:
+def apply_action(
+    state: SvintusState, action: dict, session_id: str | None = None
+) -> tuple[SvintusState, list[dict]]:
     """Apply an action to the game state and return new state + events."""
     action_type = action.get("action_type")
     player_id = action.get("player_id")
@@ -28,10 +30,18 @@ def apply_action(state: SvintusState, action: dict, session_id: str | None = Non
 
         if len(state.hands.get(player_id, [])) == 0:
             state.winner_id = player_id
-            events.append({"event_type": "player_won", "game_id": state.game_id, "payload": {"winner_id": player_id}})
+            events.append({
+                "event_type": "player_won",
+                "game_id": state.game_id,
+                "payload": {"winner_id": player_id},
+            })
 
         _apply_card_effect(state, card)
-        events.append({"event_type": "card_played", "game_id": state.game_id, "payload": {"card": card_data, "player_id": player_id}})
+        events.append({
+            "event_type": "card_played",
+            "game_id": state.game_id,
+            "payload": {"card": card_data, "player_id": player_id},
+        })
 
     elif action_type == "draw_card":
         for _ in range(max(1, state.pending_draw)):
@@ -44,11 +54,19 @@ def apply_action(state: SvintusState, action: dict, session_id: str | None = Non
                     drawn = state.draw_pile.pop()
                     state.hands.setdefault(player_id, []).append(drawn)
         state.pending_draw = 0
-        events.append({"event_type": "card_drawn", "game_id": state.game_id, "payload": {"player_id": player_id}})
+        events.append({
+            "event_type": "card_drawn",
+            "game_id": state.game_id,
+            "payload": {"player_id": player_id},
+        })
 
     elif action_type == "call_svintus":
         state.said_svintus.add(player_id)
-        events.append({"event_type": "svintus_called", "game_id": state.game_id, "payload": {"player_id": player_id}})
+        events.append({
+            "event_type": "svintus_called",
+            "game_id": state.game_id,
+            "payload": {"player_id": player_id},
+        })
 
     state.advance_turn()
     state.sequence += 1
