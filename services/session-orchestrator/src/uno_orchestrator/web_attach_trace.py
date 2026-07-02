@@ -49,4 +49,8 @@ def parse_attach_web_http_response(body_text: str) -> AttachWebAdapterResponse |
 
 
 def log_attach_diagnostics_checkpoint(checkpoint: int, session_id: str, **fields: Any) -> None:
-  trace_logger.info(f"web_attach_diagnostics_checkpoint_{checkpoint}", session_id=session_id, **fields)
+  trace_logger.info(
+    f"web_attach_diagnostics_checkpoint_{checkpoint}",
+    session_id=session_id,
+    **fields,
+  )
