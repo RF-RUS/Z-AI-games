@@ -40,6 +40,7 @@ members = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [
+    ".",
     "packages/schemas/src",
     "packages/shared-utils/src",
     "packages/client-sdk-python/src",
