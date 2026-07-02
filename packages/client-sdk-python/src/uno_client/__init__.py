@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 from uno_schemas.api import SERVICE_PORTS, HealthResponse
 from uno_schemas.decision import DecisionRequest, DecisionResult
-from uno_schemas.game import LegalAction, ReplayEnvelope
+from uno_schemas.game import LegalAction
 from uno_schemas.model import ModelManifest
 
 

@@ -65,8 +65,6 @@ class ChatPolicy:
         recent_replies: list[ChatReply] | None = None,
     ) -> ChatPolicyResult:
         """Evaluate whether the bot should respond to this intent."""
-        violations = []
-        
         # Master kill switch
         if not self.config.chat_enabled:
             return ChatPolicyResult(allowed=False, reason="chat_disabled")

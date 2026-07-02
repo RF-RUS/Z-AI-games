@@ -299,7 +299,6 @@ def build_verification(
   category = classify_action_category(action_type)
   profile = derive_expected_outcome_profile(action_type, pre_state)
   family = profile["action_family"]
-  strength = profile["expectation_strength"]
   hint = profile["summary_hint"]
 
   obs_improvement = derive_observability_improvement(

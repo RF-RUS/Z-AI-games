@@ -588,8 +588,8 @@ class PlaywrightSession:
 
         if self.profile.match_automation == "canvas_coordinate":
           try:
-            from uno_adapter_web.hand_detection import detect_game_elements
             from PIL import Image as _Image
+            from uno_adapter_web.hand_detection import detect_game_elements
             img = _Image.open(screenshot_path)
             hand_region = self.profile.layout_targets.get("hand_area") if hasattr(self.profile, "layout_targets") else None
             draw_region = (self.profile.layout_targets.get("draw_area")
@@ -675,7 +675,6 @@ class PlaywrightSession:
       from uno_adapter_web.agent_trace import TraceManager
       from uno_adapter_web.coordinate_reliability import (
         convert_cv_to_css,
-        coordinate_to_dict,
         validate_click_target,
       )
       from uno_adapter_web.gesture_planner import GestureType, plan_gesture
@@ -735,7 +734,6 @@ class PlaywrightSession:
       # --- Trace before ---
       grounding_before = self._last_grounding
       self._trace_step += 1
-      coord_dict = coordinate_to_dict(coord_conv) if coord_conv else None
       try:
         await TraceManager.capture_execute_before(self.session_id, self._trace_step, self._page, action_str, selector_key, click_point, self._dpr, target_source, grounding_before)
       except Exception as trace_exc:

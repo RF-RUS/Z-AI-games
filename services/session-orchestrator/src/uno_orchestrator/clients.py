@@ -27,9 +27,9 @@ from uno_schemas.adapter_windows import (
   WindowsEvidenceBundle,
 )
 from uno_schemas.api import SERVICE_PORTS
+from uno_schemas.chat import ChatIntent, ChatMessage, ChatReply, ChatReplyRequest
 from uno_schemas.decision import DecisionRequest, DecisionResult
 from uno_schemas.game import DomainEvent, LegalAction
-from uno_schemas.chat import ChatIntent, ChatMessage, ChatReply, ChatReplyRequest
 from uno_schemas.model import ModelInvocationRequest
 from uno_schemas.orchestrator import AdapterBinding
 from uno_schemas.perception import DomEvidence, Observation, ScreenshotFrame, UiEvidence

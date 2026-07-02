@@ -3,7 +3,6 @@
 from httpx import ASGITransport, AsyncClient
 from uno_adapter_web.api import app as web_app
 from uno_core.api import app as core_app
-from uno_decision.api import app as decision_app
 from uno_model_runtime.api import app as model_runtime_app
 from uno_orchestrator.clients import ServiceClients
 from uno_perception.api import app as perception_app
@@ -323,6 +322,7 @@ class InProcessClients(ServiceClients):
 
   async def send_bot_message(self, session_id, text, correlation_id=""):
     from time import time as _time
+
     from uno_schemas.chat import ChatMessage
     return ChatMessage(
       message_id=f"bot-{correlation_id[:8]}", sender="bot", text=text,

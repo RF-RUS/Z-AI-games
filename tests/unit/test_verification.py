@@ -15,6 +15,7 @@ from uno_orchestrator.orchestrator import (
     build_verification,
     classify_action_category,
     derive_expected_outcome_profile,
+    derive_observability_improvement,
 )
 
 # --- classify_action_category tests ---
@@ -240,8 +241,6 @@ def test_expected_transition_reflects_family():
 
 
 # --- derive_observability_improvement tests ---
-
-from uno_orchestrator.orchestrator import derive_observability_improvement
 
 
 def test_obs_improvement_unknown_to_known():

@@ -24,7 +24,9 @@ def _now_ms() -> int:
   return int(time.time() * 1000)
 
 
-def apply_action(state: GameState, action: LegalAction, session_id: str | None = None) -> tuple[GameState, list[DomainEvent]]:
+def apply_action(
+  state: GameState, action: LegalAction, session_id: str | None = None
+) -> tuple[GameState, list[DomainEvent]]:
   ok, msg = validate_action(state, action)
   if not ok:
     raise ValueError(msg)

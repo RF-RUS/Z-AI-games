@@ -74,6 +74,12 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# CLI scripts and E2E tests must extend sys.path before importing workspace
+# packages, so module-level imports intentionally follow that setup (E402).
+"scripts/*" = ["E402"]
+"tests/e2e/*" = ["E402"]
+
 [tool.coverage.run]
 source = ["services", "packages"]
 omit = ["*/test*", "*/__pycache__/*"]

@@ -5,12 +5,11 @@ from __future__ import annotations
 import time
 from typing import Any, Protocol
 
+from uno_adapter_web.profile_metrics import METRICS
 from uno_schemas.adapter_web import ProfileSelector, SelectorCheckResult, SelectorMatchStatus
 from uno_shared.logging import get_logger
 
 logger = get_logger("adapter-web.selector")
-
-from uno_adapter_web.profile_metrics import METRICS
 
 
 class PageLike(Protocol):

@@ -252,7 +252,7 @@ async def validate_live(cdp_url: str, do_calibrate: bool = False, do_click_draw:
 
             if cal.hand_slots:
                 profile_path = Path(__file__).resolve().parents[1] / "services" / "adapter-web" / "profiles" / "scuffed-uno-web.json"
-                report_data = save_calibration(cal, profile_path)
+                save_calibration(cal, profile_path)
                 print(f"  Saved to {profile_path}")
                 print(f"  Hand region: {cal.hand_region}")
                 print(f"  Draw region: {cal.draw_region}")

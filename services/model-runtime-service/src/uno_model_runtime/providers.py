@@ -78,7 +78,7 @@ class MockProvider(ModelProvider):
       return json.dumps({"summary": f"Playing {action} {card}".strip(), "confidence": 0.8})
     if use_case == "policy_advice":
       actions_text = req.variables.get("legal_actions", "")
-      lines = [l.strip() for l in actions_text.strip().split("\n") if l.strip()]
+      lines = [line.strip() for line in actions_text.strip().split("\n") if line.strip()]
       # Pick first play action, or first action overall
       chosen_idx = 0
       for line in lines:
