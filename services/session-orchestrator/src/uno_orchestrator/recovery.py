@@ -14,7 +14,9 @@ def format_exception_message(exc: Exception) -> str:
   return type(exc).__name__
 
 
-def classify_error(exc: Exception, policy_blocked: bool = False, low_confidence: bool = False) -> ErrorClass:
+def classify_error(
+  exc: Exception, policy_blocked: bool = False, low_confidence: bool = False
+) -> ErrorClass:
   if policy_blocked:
     return ErrorClass.POLICY_BLOCKED
   if low_confidence:
@@ -74,7 +76,9 @@ def decide_recovery(
   detail = message.strip() or "unknown error"
   if error_class == ErrorClass.POLICY_BLOCKED:
     return RecoveryDecision(
-      error_class=error_class, action=RecoveryMode.RETRY, reason=f"policy blocked — retrying: {detail}",
+      error_class=error_class,
+      action=RecoveryMode.RETRY,
+      reason=f"policy blocked — retrying: {detail}",
       retry_after_ms=config.backoff_ms,
     )
   if error_class == ErrorClass.PERCEPTION_LOW_CONFIDENCE and retry_count < config.max_retries:
@@ -92,13 +96,25 @@ def decide_recovery(
       retry_after_ms=config.backoff_ms * (retry_count + 1),
     )
   if classify_all_permanent:
-    return RecoveryDecision(error_class=error_class, action=RecoveryMode.STOP, reason=f"unrecoverable: {detail}")
+    return RecoveryDecision(
+      error_class=error_class,
+      action=RecoveryMode.STOP,
+      reason=f"unrecoverable: {detail}",
+    )
   if fallback_to_mock:
     return RecoveryDecision(
-      error_class=error_class, action=RecoveryMode.FALLBACK_MOCK, reason=f"exhausted retries — mock adapter: {detail}"
+      error_class=error_class,
+      action=RecoveryMode.FALLBACK_MOCK,
+      reason=f"exhausted retries — mock adapter: {detail}",
     )
   if fallback_to_manual:
     return RecoveryDecision(
-      error_class=error_class, action=RecoveryMode.FALLBACK_MANUAL, reason=f"switching to manual mode: {detail}"
+      error_class=error_class,
+      action=RecoveryMode.FALLBACK_MANUAL,
+      reason=f"switching to manual mode: {detail}",
     )
-  return RecoveryDecision(error_class=error_class, action=RecoveryMode.STOP, reason=f"unrecoverable: {detail}")
+  return RecoveryDecision(
+    error_class=error_class,
+    action=RecoveryMode.STOP,
+    reason=f"unrecoverable: {detail}",
+  )
