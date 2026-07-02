@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import HeroImage from "./HeroImage";
 import StepBadge from "./StepBadge";
 import StepNavControls from "./StepNavControls";
 import { TraceStep } from "../../unoApiClient";
 import { traceFrameUrl, traceLatestFrameUrl } from "../../unoApiClient";
+
+const SCREENSHOT_POLL_MS = 2000;
 
 interface Props {
   sessionId: string | null;
@@ -28,8 +30,10 @@ function buildTraceSrc(sessionId: string, step: TraceStep | null): string | null
 export default function HeroFrame({ sessionId, selectedStep, followLatest, adapterType, onPrev, onNext, onToggleFollow }: Props) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
+  // Monotonic generation counter so stale responses cannot overwrite fresher frames
+  const genRef = useRef(0);
 
-  // For Windows adapter, fetch screenshot JSON and convert to data URL
+  // For Windows adapter, poll screenshot JSON and convert to data URL
   useEffect(() => {
     if (adapterType !== "windows" || !sessionId) {
       setDataUrl(null);
@@ -37,30 +41,39 @@ export default function HeroFrame({ sessionId, selectedStep, followLatest, adapt
     }
 
     let cancelled = false;
-    setFetching(true);
+    const generation = ++genRef.current;
+    let fetchCount = 0;
 
-    fetch(`http://127.0.0.1:8100/sessions/${sessionId}/screenshot`)
-      .then(r => {
+    const fetchScreenshot = async () => {
+      try {
+        const r = await fetch(`http://127.0.0.1:8100/sessions/${sessionId}/screenshot`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(data => {
-        if (cancelled) return;
+        const data = await r.json();
+        if (cancelled || generation !== genRef.current) return;
         if (data.data_base64) {
           setDataUrl(`data:image/png;base64,${data.data_base64}`);
         } else {
           setDataUrl(null);
         }
-        setFetching(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDataUrl(null);
-          setFetching(false);
+        if (fetchCount === 0) setFetching(false);
+      } catch {
+        if (!cancelled && generation === genRef.current) {
+          if (fetchCount === 0) {
+            setDataUrl(null);
+            setFetching(false);
+          }
         }
-      });
+      }
+      fetchCount++;
+    };
 
-    return () => { cancelled = true; };
+    setFetching(true);
+    fetchScreenshot();
+    const id = setInterval(fetchScreenshot, SCREENSHOT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [sessionId, adapterType]);
 
   // For web adapter, use trace pipeline directly
