@@ -35,7 +35,12 @@
     }
   },
   "action_mappings": {
-    "draw": "DrawButton"
+    "draw": "DrawButton",
+    "play_red_five": "Play Red 5"
+  },
+  "layout_targets": {
+    "draw_button": {"x_ratio": 0.44, "y_ratio": 0.34, "label": "Draw"},
+    "play_button": {"x_ratio": 0.56, "y_ratio": 0.34, "label": "Play Red 5"}
   },
   "match_automation": "web_only",
   "notes": "Attach for live preview only. Match card play must use web adapter profile scuffed-uno-web (Playwright canvas coordinates).",

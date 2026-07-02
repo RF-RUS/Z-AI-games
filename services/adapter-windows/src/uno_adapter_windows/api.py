@@ -114,6 +114,76 @@ async def get_screenshot(adapter_id: str):
   return FileResponse(bundle.screenshot.path, media_type="image/png")
 
 
+@app.get("/adapters/{adapter_id}/calibration", tags=["adapter"])
+async def get_calibration(adapter_id: str) -> dict:
+  """Return window vs client bounds for coordinate-space calibration."""
+  a = get_adapter(adapter_id)
+  if not a:
+    raise HTTPException(404, "adapter not found")
+  window_bounds = None
+  client_bounds = None
+
+  # Get window handle
+  handle = None
+  if hasattr(a, "window_handle") and a.window_handle:
+    handle = a.window_handle
+  elif hasattr(a, "_window") and a._window and hasattr(a._window, "handle"):
+    try:
+      handle = int(a._window.handle)
+    except Exception:
+      pass
+
+  # Get window rect (screen coordinates)
+  if hasattr(a, "_state") and a._state.attachment:
+    window_bounds = a._state.attachment.bounds
+  if not window_bounds and handle:
+    try:
+      import ctypes
+      from ctypes import wintypes
+      rect = wintypes.RECT()
+      if ctypes.windll.user32.GetWindowRect(handle, ctypes.byref(rect)):
+        window_bounds = {"left": float(rect.left), "top": float(rect.top),
+                         "right": float(rect.right), "bottom": float(rect.bottom)}
+    except Exception:
+      pass
+
+  # Get client rect (local coords → convert to screen coords)
+  if handle:
+    try:
+      import ctypes
+      from ctypes import wintypes
+      client_rect_local = wintypes.RECT()
+      ctypes.windll.user32.GetClientRect(handle, ctypes.byref(client_rect_local))
+      wl = window_bounds["left"] if window_bounds else 0
+      wt = window_bounds["top"] if window_bounds else 0
+      client_bounds = {
+        "left": wl + float(client_rect_local.left),
+        "top": wt + float(client_rect_local.top),
+        "right": wl + float(client_rect_local.right),
+        "bottom": wt + float(client_rect_local.bottom),
+      }
+    except Exception:
+      pass
+
+  offset = None
+  if window_bounds and client_bounds:
+    offset = {
+      "left_delta": round(client_bounds["left"] - window_bounds["left"], 1),
+      "top_delta": round(client_bounds["top"] - window_bounds["top"], 1),
+      "right_delta": round(window_bounds["right"] - client_bounds["right"], 1),
+      "bottom_delta": round(window_bounds["bottom"] - client_bounds["bottom"], 1),
+      "description": "title_bar_and_border_offsets",
+    }
+
+  return {
+    "adapter_id": adapter_id,
+    "window_bounds": window_bounds,
+    "client_bounds": client_bounds,
+    "offset": offset,
+    "coordinate_space": "client_area" if client_bounds else "window",
+  }
+
+
 @app.post("/adapters/{adapter_id}/capture-fixture", tags=["adapter"])
 async def capture_fixture(adapter_id: str, output_dir: str = "tests/fixtures/windows_adapter") -> dict:
   from pathlib import Path

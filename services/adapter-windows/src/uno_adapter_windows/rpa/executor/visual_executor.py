@@ -49,6 +49,8 @@ class VisualRpaExecutor:
     state: RpaSessionState,
     session_id: str,
     bounds: dict[str, float] | None = None,
+    zone_store=None,
+    game_id: str | None = None,
   ) -> None:
     self._window = window
     self._profile = profile
@@ -57,6 +59,31 @@ class VisualRpaExecutor:
     self._state = state
     self._session_id = session_id
     self._bounds = bounds or window_bounds(window)
+    self._client_bounds = self._resolve_client_bounds()
+    self._zone_store = zone_store
+    self._game_id = game_id
+
+  def _resolve_client_bounds(self) -> dict[str, float] | None:
+    """Get client area bounds (content-only, excluding title bar / borders)."""
+    try:
+      import ctypes
+      from ctypes import wintypes
+      handle = int(self._window.handle) if hasattr(self._window, "handle") else None
+      if not handle:
+        return None
+      client_rect = wintypes.RECT()
+      if not ctypes.windll.user32.GetClientRect(handle, ctypes.byref(client_rect)):
+        return None
+      wl = self._bounds["left"] if self._bounds else 0
+      wt = self._bounds["top"] if self._bounds else 0
+      return {
+        "left": wl + float(client_rect.left),
+        "top": wt + float(client_rect.top),
+        "right": wl + float(client_rect.right),
+        "bottom": wt + float(client_rect.bottom),
+      }
+    except Exception:
+      return None
 
   async def capture_live_frame(self, label: str = "live") -> str | None:
     path = await capture_window_screenshot(self._window, self._artifacts_dir, label)
@@ -92,6 +119,8 @@ class VisualRpaExecutor:
     start = time.perf_counter()
     before_path = after_path = None
     before_frame = after_frame = None
+    from uno_adapter_windows.rpa.perception.target_locator import ResolutionTrace
+    resolution_trace = ResolutionTrace()
 
     if req.capture_screenshots:
       before_path = await self.capture_live_frame("before")
@@ -142,6 +171,10 @@ class VisualRpaExecutor:
         nodes,
         allow_coordinate_fallback=req.allow_coordinate_fallback,
         window_bounds=self._bounds,
+        client_bounds=self._client_bounds,
+        game_id=self._game_id,
+        zone_store=self._zone_store,
+        trace=resolution_trace,
       )
 
     self._state.current_action = req.domain_action
@@ -229,12 +262,12 @@ class VisualRpaExecutor:
 
     _audit.info(
       "action_executed adapter=windows session=%s selector_key=%s domain=%s method=%s "
-      "confidence=%.2f click=(%s,%s) success=%s error=%s",
+      "confidence=%.2f click=(%s,%s) success=%s error=%s resolution=%s",
       self._session_id, req.selector_key, req.domain_action,
       target.method.value if target else "none",
       target.confidence if target else 0.0,
       int(click_x), int(click_y),
-      error is None, error,
+      error is None, error, resolution_trace.summary(),
     )
 
     self._state.set_status(WindowsRpaStatus.VERIFYING)
@@ -273,6 +306,48 @@ class VisualRpaExecutor:
     self._state.record_action(result, req.selector_key)
     self._state.automation_active = False
     self._state.current_action = None
+
+    # ── Phase 1: Record provisional observation (click dispatched) ──
+    # This is a WEAK signal — only records that we attempted this action.
+    # Does NOT promote confidence.  Verification comes next.
+    if self._zone_store and self._game_id and target and req.selector_key:
+      try:
+        from uno_schemas.learned_zones import BoundingBox, Resolution
+        from uno_shared.learned_zones_pg import _screen_state_hash
+        res = Resolution(
+          width=int(self._bounds.get("right", 0) - self._bounds.get("left", 0)),
+          height=int(self._bounds.get("bottom", 0) - self._bounds.get("top", 0)),
+        ) if self._bounds else Resolution(width=0, height=0)
+        bb = BoundingBox(
+          left=target.bounds["left"], top=target.bounds["top"],
+          right=target.bounds["right"], bottom=target.bounds["bottom"],
+        ) if target.bounds else BoundingBox(left=0, top=0, right=0, bottom=0)
+        self._zone_store.record_provisional(
+          game_id=self._game_id,
+          profile_id=self._profile.profile_id,
+          selector_key=req.selector_key,
+          bounding_box=bb,
+          click_point=target.click_point or {"x": click_x, "y": click_y},
+          resolution=res,
+          semantic_guess=req.domain_action,
+        )
+      except Exception:
+        pass  # don't break execution if zone recording fails
+
+    # ── Phase 2: Record verified outcome (after screenshot comparison) ──
+    # This is the STRONG signal that promotes or demotes confidence.
+    if self._zone_store and self._game_id and req.selector_key and verification.status not in ("skipped",):
+      try:
+        verified_success = success and verification.passed
+        self._zone_store.record_verified_outcome(
+          game_id=self._game_id,
+          profile_id=self._profile.profile_id,
+          selector_key=req.selector_key,
+          success=verified_success,
+        )
+      except Exception:
+        pass
+
     return result
 
   async def _click_uia_element(self, target: UITarget) -> None:

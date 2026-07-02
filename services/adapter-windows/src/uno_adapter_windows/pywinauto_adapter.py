@@ -48,6 +48,8 @@ class PywinautoWindowsAdapter:
     window_pid: int | None = None,
     launch_test_target_flag: bool = False,
     capture_screenshots: bool = True,
+    zone_store=None,
+    game_id: str | None = None,
   ) -> None:
     self.session_id = session_id
     self.profile = profile
@@ -61,6 +63,8 @@ class PywinautoWindowsAdapter:
     self._proc = None
     self.attached = False
     self._adapter_id = ""
+    self._zone_store = zone_store
+    self._game_id = game_id
     self.artifacts_dir = ARTIFACTS_DIR / session_id
     self.artifacts_dir.mkdir(parents=True, exist_ok=True)
     self._state = RpaSessionState("", session_id)
@@ -148,7 +152,8 @@ class PywinautoWindowsAdapter:
     )
     await self._verify_browser_attach()
     self._executor = VisualRpaExecutor(
-      self._window, self.profile, self._backend, self.artifacts_dir, self._state, self.session_id, bounds=bounds
+      self._window, self.profile, self._backend, self.artifacts_dir, self._state, self.session_id,
+      bounds=bounds, zone_store=self._zone_store, game_id=self._game_id,
     )
     stages.append({"stage_name": "attach_adapter", "duration_ms": int((time.time() - stage_start) * 1000), "status": "ok"})
 

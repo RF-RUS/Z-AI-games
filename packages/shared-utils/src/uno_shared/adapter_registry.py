@@ -251,7 +251,7 @@ class GenericAdapterClient:
         )
 
     def _map_action_windows(self, action_type: str, extra: dict[str, Any] | None = None) -> GenericActionRequest:
-        """Windows adapter action mapping — UIA selector keys."""
+        """Windows adapter action mapping — UIA selector keys with coordinate fallback."""
         base_extra = dict(extra) if extra else {}
         selector_key = "draw"
         if action_type == "play_card":
@@ -264,7 +264,7 @@ class GenericAdapterClient:
                 **base_extra,
                 "capture_screenshots": True,
                 "min_confidence": 0.55,
-                "allow_coordinate_fallback": False,
+                "allow_coordinate_fallback": True,
             },
         )
 

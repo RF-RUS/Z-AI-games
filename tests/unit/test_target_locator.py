@@ -64,3 +64,60 @@ def test_locate_targets_dedupes_keys():
   keys = [t.selector_key for t in targets.targets]
   assert "draw_button" in keys or "draw" in keys
   assert len(keys) == len(set(keys))
+
+
+def test_layout_targets_resolve_inside_client_bounds():
+  """layout_targets must resolve against client_bounds, not window_bounds.
+
+  Regression: clicks were landing in the title bar because ratios were
+  applied to the full window rectangle (including chrome).
+  """
+  from uno_adapter_windows.rpa.perception.target_locator import ResolutionTrace, locate_layout_target
+
+  profile = load_profile("local-mock-uno")
+  # Window has a 31px title bar and 8px right border
+  window_bounds = {"left": 100.0, "top": 100.0, "right": 748.0, "bottom": 619.0}
+  # Client area is 640x480, starting at (100, 131)
+  client_bounds = {"left": 100.0, "top": 131.0, "right": 740.0, "bottom": 611.0}
+
+  # With client_bounds, draw_button (x_ratio=0.44, y_ratio=0.34) should land
+  # inside the client area: x = 100 + 640*0.44 = 381.6, y = 131 + 480*0.34 = 294.2
+  target = locate_layout_target("draw_button", profile, window_bounds, client_bounds)
+  assert target is not None
+  cx = target.click_point["x"]
+  cy = target.click_point["y"]
+  assert client_bounds["left"] <= cx <= client_bounds["right"], (
+    f"click_x={cx} should be inside client area [{client_bounds['left']}, {client_bounds['right']}]"
+  )
+  assert client_bounds["top"] <= cy <= client_bounds["bottom"], (
+    f"click_y={cy} should be inside client area [{client_bounds['top']}, {client_bounds['bottom']}]"
+  )
+
+  # Without client_bounds, it falls back to window_bounds
+  target_win = locate_layout_target("draw_button", profile, window_bounds)
+  assert target_win is not None
+  # window_bounds y = 100 + 519*0.34 = 276.46 — 17.7px higher (closer to title bar)
+  # than client_bounds y = 131 + 480*0.34 = 294.2
+  assert target_win.click_point["y"] < target.click_point["y"], (
+    "without client_bounds, click is shifted up toward the title bar"
+  )
+
+
+def test_locate_selector_uses_client_bounds_for_layout():
+  """locate_selector passes client_bounds through to layout_targets."""
+  from uno_adapter_windows.rpa.perception.target_locator import ResolutionTrace
+
+  profile = load_profile("local-mock-uno")
+  window_bounds = {"left": 100.0, "top": 100.0, "right": 748.0, "bottom": 619.0}
+  client_bounds = {"left": 100.0, "top": 131.0, "right": 740.0, "bottom": 611.0}
+
+  trace = ResolutionTrace()
+  target = locate_selector(
+    "draw", profile, [],
+    window_bounds=window_bounds, client_bounds=client_bounds,
+    trace=trace,
+  )
+  assert target is not None
+  assert trace.source == "layout_targets"
+  # Click should be inside client area
+  assert client_bounds["top"] <= target.click_point["y"] <= client_bounds["bottom"]
