@@ -198,6 +198,7 @@ async def run(args) -> int:
 
   deadline = time.monotonic() + args.max_duration if args.max_duration else None
   session_ticks = 0
+  consecutive_errors = 0
 
   while not stop.is_set():
     if args.max_ticks and session_ticks >= args.max_ticks:
@@ -216,17 +217,20 @@ async def run(args) -> int:
         ckpt.ticks_skipped += 1
         ckpt.last_status = "skipped"
         ckpt.last_error = None
+        consecutive_errors = 0
         log.emit("tick_skipped", tick=ckpt.tick_count, reason=result.get("reason"))
       elif isinstance(result, dict) and result.get("error"):
         ckpt.ticks_failed += 1
         ckpt.last_status = "error"
         ckpt.last_error = str(result.get("error"))
+        consecutive_errors += 1
         log.emit("tick_error", tick=ckpt.tick_count, error=ckpt.last_error,
                  latency_ms=int((time.monotonic() - tick_started) * 1000))
       else:
         ckpt.ticks_ok += 1
         ckpt.last_status = "ok"
         ckpt.last_error = None
+        consecutive_errors = 0
         action = result.get("action") if isinstance(result, dict) else None
         log.emit("tick_ok", tick=ckpt.tick_count, action=action,
                  latency_ms=int((time.monotonic() - tick_started) * 1000))
@@ -238,15 +242,24 @@ async def run(args) -> int:
       ckpt.ticks_failed += 1
       ckpt.last_status = "exception"
       ckpt.last_error = f"{type(exc).__name__}: {exc}"
+      consecutive_errors += 1
       log.emit("tick_exception", tick=ckpt.tick_count, error=ckpt.last_error)
 
     ckpt.metrics = _metrics_snapshot(orch, session_id)
     ckpt.updated_at_ms = _now_ms()
     ckpt.save(ckpt_path)
 
+    # Adaptive backoff: after consecutive errors (rate limit, transient blip,
+    # temporary window loss) wait longer before the next tick so the run
+    # self-heals instead of hammering. A single success resets the cadence.
+    sleep_for = args.tick_interval
+    if consecutive_errors:
+      sleep_for = min(args.tick_interval * (2 ** consecutive_errors), args.error_backoff_max)
+      log.emit("backoff", tick=ckpt.tick_count, consecutive_errors=consecutive_errors,
+               sleep_s=round(sleep_for, 2))
     # interruptible sleep between ticks
     with contextlib.suppress(asyncio.TimeoutError):
-      await asyncio.wait_for(stop.wait(), timeout=args.tick_interval)
+      await asyncio.wait_for(stop.wait(), timeout=sleep_for)
 
   ckpt.last_status = "stopped" if stop.is_set() else ckpt.last_status
   ckpt.updated_at_ms = _now_ms()
@@ -274,6 +287,8 @@ def parse_args(argv=None) -> argparse.Namespace:
                  help="seconds; 0 = unlimited")
   p.add_argument("--tick-interval", type=float, default=1.0,
                  help="seconds between ticks")
+  p.add_argument("--error-backoff-max", type=float, default=30.0,
+                 help="cap (s) for adaptive backoff after consecutive tick errors")
   p.add_argument("--run-id", default="default")
   p.add_argument("--resume", action="store_true",
                  help="restore progress from an existing checkpoint")

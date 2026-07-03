@@ -3,21 +3,14 @@
 _Updated: 2026-07-03_
 
 ## In Progress
-- [#4] Process-level watchdog: auto-restart on crash, exponential backoff, `--max-restarts`, resume from checkpoint.
+- [#8] Docs: runbook for autonomous run + resume + watchdog + constraints.
 
 ## Backlog
-### Phase A — Autonomous runtime harness (unblocked, mock-validated)
-- _(next: #4 watchdog — see In Progress)_
-
-### Phase B — Perception/decision/execution hardening
+### Phase B — Perception/decision/execution hardening (unblocked, but touches real-Windows paths)
 - [#6] Harden verification: region-aware/structural check tied to expected outcome (replace global pixel ratio).
+  Note: `verify_screenshot_transition` is unit-testable; the "expected region" design needs profile
+  region metadata — do as a focused follow-up, not blind edits to the perception core.
 - Review confidence/uncertainty thresholds (0.7 gate) against real fragility.
-
-### Phase C — Validation
-- [#5] Long-run mock validation (100+ ticks, zero manual intervention) + fault injection (detach → recover → resume).
-
-### Phase E — Docs
-- [#8] Update README + runbook: launch autonomous agent, resume, watchdog, limits, constraints.
 
 ## Blocked
 - [#7] Real Windows validation — needs Windows host + pywinauto + real UNO target (macOS host here).
@@ -29,3 +22,5 @@ _Updated: 2026-07-03_
 - [#1] In-process windows adapter registry (`setup_in_process_windows_registry`) via ASGI transport.
 - [#2] `scripts/run-windows-agent.py` autonomous continuous runner (limits, logging, graceful stop).
 - [#3] Atomic per-tick checkpoint + `--resume` (validated: ticks 6→8 across restart).
+- [#4] `scripts/watchdog-windows-agent.py` process supervisor (auto-restart, backoff, giveup — validated).
+- [#5] Long-run (100 ticks, 0 crashes) + adaptive backoff self-heal + `kill -9`→resume fault injection.

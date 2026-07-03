@@ -37,3 +37,24 @@ Append-only. Newest last.
   - `ruff check` clean; `pytest test_windows_session_tick + test_orchestrator_windows_attach` → 8 passed.
 - **Result:** Autonomous loop + cross-session resume works end-to-end on the cross-platform mock path.
 - **Next:** [#4] process-level watchdog/auto-restart, then [#5] long-run mock validation + fault injection.
+
+---
+
+### 2026-07-03 17:05 MSK — Watchdog + adaptive backoff + long-run/fault validation (#4,#5)
+- **Did:** Added process supervisor, self-healing backoff, and validated long unattended runs.
+- **Files changed:**
+  - `scripts/watchdog-windows-agent.py` — NEW. Supervises the runner; restarts on crash with
+    exponential backoff (`--backoff`/`--backoff-max`), `--max-restarts`, always `--resume`;
+    forwards SIGINT/SIGTERM; stops on clean child exit (rc=0). Passthrough args → runner.
+  - `scripts/run-windows-agent.py` — adaptive backoff: after N consecutive tick errors, wait
+    `min(interval*2^N, --error-backoff-max)` before next tick; a success resets cadence.
+- **How verified (all on local-mock-uno, in-process):**
+  - Watchdog clean-exit: rc=0 → no restart. Crash path: forced non-zero → 2 restarts w/ backoff → giveup.
+  - 100-tick continuous run: **0 process crashes**, clean exit. (60 "errors" were adapter 429
+    rate-limits from a deliberately aggressive 0.02s interval — an adapter guard, not an agent bug.)
+  - 40 ticks @ 0.15s (under rate limit): **40/40 ok**.
+  - Adaptive backoff @ 0.02s: self-heals — 22/30 ok with 8 backoff→recover cycles (was ~40% without).
+  - **Fault injection:** `kill -9` at tick 5 → checkpoint durable → `--resume` continued 6→9, restarts=1.
+- **Result:** Autonomous + recoverable + resumable + long-run + fault-tolerant — all confirmed on mock.
+  DoD met except the real-Windows/pywinauto run (#B1, needs a Windows host).
+- **Next:** [#8] docs (runbook + resume), then [#6] verification hardening (backlog).

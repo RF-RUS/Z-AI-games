@@ -8,14 +8,24 @@ Screenshot-driven Windows game agent that perceives → decides → acts → rec
 minimal token spend and no lost progress between sessions.
 
 ## Current phase
-Phase A — Autonomous runtime harness. **Runner + checkpoint/resume DONE & mock-validated.**
-Remaining in A: process-level watchdog (#4). Then Phase C long-run validation (#5).
+Phases A + C **DONE & mock-validated**: autonomous runner, checkpoint/resume, watchdog,
+adaptive backoff, long-run + fault-injection. Remaining: docs (#8), verification hardening (#6, backlog),
+real-Windows run (#7, blocked on host #B1).
 
-## Autonomous runner (built 2026-07-03)
-`scripts/run-windows-agent.py` — continuous tick loop, atomic per-tick checkpoint
-(`artifacts/agent-runs/<run_id>/checkpoint.json`), `--resume`, `--max-ticks`/`--max-duration`,
-graceful SIGINT/SIGTERM stop, JSONL run log. In-process (mock, any OS) or `--http`.
-Validated: 5 ticks ok + resume 6→8. Real pywinauto path unchanged, still needs Windows host (#B1).
+## Autonomous harness (built 2026-07-03)
+- `scripts/run-windows-agent.py` — continuous tick loop; atomic per-tick checkpoint
+  (`artifacts/agent-runs/<run_id>/checkpoint.json`); `--resume`; `--max-ticks`/`--max-duration`;
+  adaptive error backoff (`--error-backoff-max`); graceful SIGINT/SIGTERM; JSONL run log.
+  `--in-process` (mock, any OS) or `--http`.
+- `scripts/watchdog-windows-agent.py` — supervises the runner; auto-restart on crash with
+  exponential backoff + `--max-restarts`; always resumes; stops on clean exit.
+- **Validated (mock, in-process):** 100-tick run 0 crashes; 40/40 ok under rate limit;
+  adaptive backoff self-heals; `kill -9` mid-run → resume continued without progress loss.
+- Real pywinauto path unchanged; still needs a Windows host (#B1) for the final DoD run.
+
+## DoD status
+Met on the cross-platform mock path: autonomous perceive→decide→act→verify→record, recovers from
+typical faults, survives long runs, resumes after break/crash. **Open:** real-hardware confirmation (#7/#B1).
 
 ## Source of truth
 - **Code** = ground truth. These `AGENT_*.md` files = updatable state layer.
