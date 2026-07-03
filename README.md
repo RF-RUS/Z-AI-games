@@ -90,8 +90,12 @@ python scripts/start-orchestrator-session-web.py --profile local-mock-uno --url 
 # Real Pizzuno (network + Playwright)
 python scripts/start-orchestrator-session-web.py --profile real-unoh-web --tick
 
-# Windows desktop
+# Windows desktop (single tick)
 python scripts/start-orchestrator-session-windows.py --tick
+
+# Windows desktop — autonomous, long-running, resumable (see runbook)
+python scripts/run-windows-agent.py --profile local-mock-uno --max-ticks 20
+python scripts/watchdog-windows-agent.py --run-id nightly --pywinauto --max-duration 3600
 ```
 
 ## Service Ports
@@ -125,6 +129,7 @@ python scripts/start-orchestrator-session-windows.py --tick
 | [Model Integration](docs/architecture/model-integration.md) | Model providers, routing, GameModelConfig, observability, chat policy |
 | [Usage Guide](docs/USAGE.md) | Operator workflows, runbooks, model usage |
 | [Operator Debug Checkpoint](docs/runbooks/operator-debug-checkpoint.md) | Debug session notes, resume instructions |
+| [Autonomous Windows Agent](docs/runbooks/autonomous-windows-agent.md) | Long unattended runs, checkpoint/resume, watchdog |
 
 ## Repository Layout
 

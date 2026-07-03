@@ -58,3 +58,14 @@ Append-only. Newest last.
 - **Result:** Autonomous + recoverable + resumable + long-run + fault-tolerant — all confirmed on mock.
   DoD met except the real-Windows/pywinauto run (#B1, needs a Windows host).
 - **Next:** [#8] docs (runbook + resume), then [#6] verification hardening (backlog).
+
+---
+
+### 2026-07-03 17:12 MSK — Docs + regression check (#8)
+- **Did:** Documented the autonomous harness for handoff/resume by another session or agent.
+- **Files changed:** `docs/runbooks/autonomous-windows-agent.md` (NEW — modes, quick start, resume,
+  watchdog, flags, two-tier recovery, artifacts, constraints); `README.md` (runbook table + core
+  commands reference the new scripts).
+- **How verified:** ruff clean on all changed files; full `pytest tests/unit` regression run.
+- **Next:** [#6] verification hardening remains in backlog (needs profile region metadata; deferred
+  to avoid unvalidated edits to perception core). [#7] real-Windows run blocked on host (#B1).
