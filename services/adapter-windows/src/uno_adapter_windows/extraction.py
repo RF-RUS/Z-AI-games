@@ -38,6 +38,62 @@ def _parse_card_from_text(text: str) -> dict | None:
   return None
 
 
+def _extract_hand_cards(
+  nodes: list[UiNodeSnapshot],
+  profile: WindowsAdapterProfile,
+) -> list[dict]:
+  """Extract individual cards from the hand area.
+
+  Strategy:
+  1. Find the hand_area node using profile selector
+  2. Find child nodes that look like cards (by name containing color/value)
+  3. Parse each child's name to extract card info
+  4. Return list of {color, value, name, node_id, bounds}
+
+  If no hand_area selector or no children found, scan all nodes for card-like names.
+  """
+  hand_cards: list[dict] = []
+  seen_names: set[str] = set()
+
+  # Strategy 1: Find hand_area node and extract its children
+  hand_sel = profile.selectors.get("hand_area")
+  if hand_sel:
+    hand_nodes = find_matching_nodes(nodes, hand_sel)
+    if hand_nodes:
+      hand_node = hand_nodes[0]
+      hand_id = hand_node.node_id
+      # Find children of hand_area (nodes whose parent_id matches hand_node)
+      for n in nodes:
+        if hasattr(n, "parent_id") and n.parent_id == hand_id:
+          card = _parse_card_from_text(n.name or "")
+          if card and n.name not in seen_names:
+            seen_names.add(n.name)
+            hand_cards.append({
+              **card,
+              "name": n.name,
+              "node_id": n.node_id,
+              "bounds": n.bounds,
+            })
+
+  # Strategy 2: If no children found, scan all nodes for card-like names
+  if not hand_cards:
+    for n in nodes:
+      name = n.name or ""
+      if not name or len(name) > 50:
+        continue
+      card = _parse_card_from_text(name)
+      if card and name not in seen_names:
+        seen_names.add(name)
+        hand_cards.append({
+          **card,
+          "name": name,
+          "node_id": n.node_id,
+          "bounds": n.bounds,
+        })
+
+  return hand_cards
+
+
 def match_node(node: UiNodeSnapshot, sel: ControlSelector) -> bool:
   if sel.auto_id and node.auto_id != sel.auto_id:
     return False
@@ -111,6 +167,12 @@ def build_window_snapshot(
     if n.name and re.search(r"player\d+:\s*", n.name, re.I):
       if n.name not in chat_messages:
         chat_messages.append(n.name.strip())
+
+  # Extract hand cards
+  hand_cards = _extract_hand_cards(nodes, profile)
+  if hand_cards:
+    extracted["hand_cards"] = hand_cards
+    extracted["hand_count"] = len(hand_cards)
 
   extracted["chat_messages"] = chat_messages
   extracted.setdefault("discard_pile_count", 1)

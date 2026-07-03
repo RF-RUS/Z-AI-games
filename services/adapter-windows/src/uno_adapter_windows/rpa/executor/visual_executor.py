@@ -138,7 +138,7 @@ class VisualRpaExecutor:
     )
 
     allowed_keys = set(self._profile.selectors.keys()) | set(self._profile.action_mappings.keys())
-    allowed_keys |= {"draw", "play_red_five"}
+    allowed_keys |= {"draw", "play_red_five", "choose_color"}
 
     import logging
     _audit = logging.getLogger("adapter-windows.audit")
@@ -176,6 +176,19 @@ class VisualRpaExecutor:
         zone_store=self._zone_store,
         trace=resolution_trace,
       )
+
+    # ── Color chooser: detect color buttons and pick the right one ──
+    if req.domain_action == "choose_color" or req.selector_key == "choose_color":
+      color_buttons = self._find_color_buttons(nodes)
+      chosen_color = self._extract_chosen_color(req)
+      if color_buttons and chosen_color:
+        color_target = self._pick_color_button(color_buttons, chosen_color)
+        if color_target:
+          target = color_target
+          _audit.info(
+            "color_chooser_detected adapter=windows session=%s color=%s button=%s",
+            self._session_id, chosen_color, color_target.title or color_target.auto_id,
+          )
 
     self._state.current_action = req.domain_action
     self._state.current_target = target
@@ -380,3 +393,37 @@ class VisualRpaExecutor:
 
     import asyncio
     await asyncio.to_thread(_click)
+
+  def _find_color_buttons(self, nodes: list) -> list[UITarget]:
+    """Scan UIA nodes for color chooser buttons (red, blue, green, yellow)."""
+    from uno_adapter_windows.rpa.perception.target_locator import parse_color_buttons
+    return parse_color_buttons(nodes)
+
+  def _extract_chosen_color(self, req: WindowsActionExecutionRequest) -> str | None:
+    """Extract the chosen color from the action request.
+
+    Checks text field first, then falls back to domain_action parsing.
+    """
+    if req.text:
+      color = req.text.lower().strip()
+      if color in ("red", "blue", "green", "yellow"):
+        return color
+    # Try to extract from domain_action like "choose_color_red"
+    if req.domain_action:
+      for color in ("red", "blue", "green", "yellow"):
+        if color in req.domain_action.lower():
+          return color
+    return None
+
+  def _pick_color_button(self, buttons: list[UITarget], color: str) -> UITarget | None:
+    """Pick the matching color button from detected buttons."""
+    color = color.lower()
+    for btn in buttons:
+      btn_color = (btn.title or btn.auto_id or "").lower()
+      if color in btn_color:
+        return btn
+    # Fallback: try semantic_guess
+    for btn in buttons:
+      if hasattr(btn, "semantic_guess") and color in (btn.semantic_guess or "").lower():
+        return btn
+    return None
