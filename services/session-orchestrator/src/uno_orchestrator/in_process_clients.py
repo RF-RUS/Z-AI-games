@@ -178,6 +178,33 @@ def setup_in_process_adapter_registry() -> None:
     set_adapter_registry(registry)
 
 
+def setup_in_process_windows_registry() -> None:
+    """Register the adapter-windows service as an in-process (ASGI) client.
+
+    Routes all windows adapter calls (attach/evidence/actions/detach) through the
+    real ``GenericAdapterClient`` — so body-building and response-parsing stay
+    identical to networked runs — but over an in-process ASGI transport instead
+    of HTTP. Enables fully autonomous windows sessions (mock profile works on any
+    OS; ``--pywinauto`` still requires a real Windows host) without standing up
+    the microservices. Web/mock are also registered so mixed sessions work.
+    """
+    from uno_adapter_windows.api import app as windows_app
+    from uno_shared.adapter_registry import GenericAdapterClient
+
+    registry = AdapterRegistry()
+    registry.register("web", InProcessAdapterClient("web", web_app))
+    registry.register("mock", InProcessAdapterClient("mock", web_app))
+    registry.register(
+        "windows",
+        GenericAdapterClient(
+            "windows",
+            base_url="http://windows.inprocess",
+            transport=ASGITransport(app=windows_app),
+        ),
+    )
+    set_adapter_registry(registry)
+
+
 class InProcessClients(ServiceClients):
   def _transport(self, app):
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://test", timeout=30.0)

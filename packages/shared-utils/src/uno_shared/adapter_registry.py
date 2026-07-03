@@ -41,10 +41,26 @@ class GenericAdapterClient:
     mapping fields to the expected endpoint format.
     """
 
-    def __init__(self, adapter_type: str, base_url: str, timeout: float = 15.0) -> None:
+    def __init__(
+        self,
+        adapter_type: str,
+        base_url: str,
+        timeout: float = 15.0,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
         self.adapter_type = adapter_type
         self.base_url = base_url
         self.timeout = timeout
+        # Optional ASGI (or custom) transport. When set, all HTTP calls route
+        # through it instead of the network — enables fully in-process runs
+        # (e.g. autonomous mock sessions) without standing up the services.
+        self._transport = transport
+
+    def _client(self, timeout: float | None = None) -> httpx.AsyncClient:
+        return httpx.AsyncClient(
+            timeout=timeout if timeout is not None else self.timeout,
+            transport=self._transport,
+        )
 
     def get_retry_policy(self) -> AdapterRetryPolicy:
         """Return the retry/recovery policy for this adapter type.
@@ -79,7 +95,7 @@ class GenericAdapterClient:
         timeout = self.timeout
         if self.adapter_type == "web" and request.extra.get("mode") == "playwright":
             timeout = 120.0
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with self._client(timeout) as client:
             r = await client.post(f"{self.base_url}/attach", json=body)
             r.raise_for_status()
             data = r.json()
@@ -92,13 +108,13 @@ class GenericAdapterClient:
         )
 
     async def detach(self, adapter_id: str) -> None:
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with self._client() as client:
             await client.post(f"{self.base_url}/adapters/{adapter_id}/detach")
 
     async def capture_evidence(
         self, adapter_id: str, correlation_id: str | None = None
     ) -> GenericEvidenceBundle:
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with self._client() as client:
             params = {}
             if correlation_id:
                 params["correlation_id"] = correlation_id
@@ -116,7 +132,7 @@ class GenericAdapterClient:
         correlation_id: str | None = None,
     ) -> GenericActionResult:
         body = self._build_action_body(action)
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with self._client() as client:
             params = {}
             if correlation_id:
                 params["correlation_id"] = correlation_id
@@ -137,13 +153,13 @@ class GenericAdapterClient:
         )
 
     async def list_profiles(self) -> list[dict[str, Any]]:
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with self._client() as client:
             r = await client.get(f"{self.base_url}/profiles")
             r.raise_for_status()
             return r.json()
 
     async def load_profile(self, profile_id: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with self._client() as client:
             r = await client.get(f"{self.base_url}/profiles/{profile_id}")
             r.raise_for_status()
             return r.json()
