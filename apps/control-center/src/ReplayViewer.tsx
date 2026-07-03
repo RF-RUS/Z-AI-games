@@ -28,12 +28,12 @@ export default function ReplayViewer() {
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    window.unoApi?.listReplays().then((r) => setReplays(r)).catch(() => setReplays([]));
+    window.unoApi?.listReplays().then((r) => setReplays(r as ReplaySummary[])).catch(() => setReplays([]));
   }, []);
 
   useEffect(() => {
     if (!selectedId) return;
-    window.unoApi?.getReplayDetail(selectedId).then(setDetail).catch(() => setDetail(null));
+    window.unoApi?.getReplayDetail(selectedId).then((r) => setDetail(r as ReplayDetail | null)).catch(() => setDetail(null));
   }, [selectedId]);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function ReplayViewer() {
         if (obs?.screenshot?.data_base64) {
           thumbs[a.artifact_id] = `data:image/png;base64,${obs.screenshot.data_base64}`;
         } else if (window.unoApi?.readLocalImage) {
-          const data = window.unoApi.readLocalImage(a.path);
+          const data = window.unoApi.readLocalImage(a.path) as string | null;
           if (data) thumbs[a.artifact_id] = data;
         }
       }
@@ -54,7 +54,7 @@ export default function ReplayViewer() {
         if (o.screenshot?.data_base64) {
           thumbs[o.observation_id] = `data:image/png;base64,${o.screenshot.data_base64}`;
         } else if (o.screenshot?.path && window.unoApi?.readLocalImage) {
-          const data = window.unoApi.readLocalImage(o.screenshot.path);
+          const data = window.unoApi.readLocalImage(o.screenshot.path) as string | null;
           if (data) thumbs[o.observation_id] = data;
         }
       }

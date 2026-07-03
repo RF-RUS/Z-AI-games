@@ -255,6 +255,7 @@ export type OperatorAction =
   | { type: "SET_AGENT_PLAN"; plan: AgentPlan | null }
   | { type: "ADD_TRACE_STEP"; step: ExecutionTraceStep }
   | { type: "CLEAR_TRACE" }
+  | { type: "SET_EXECUTION_TRACE"; trace: ExecutionTraceStep[] | null }
   | { type: "ADD_ESCALATION"; escalation: Escalation }
   | { type: "RESOLVE_ESCALATION"; escalationId: string; status: Escalation["status"]; comment?: string }
   | { type: "DISMISS_ESCALATION"; escalationId: string }
@@ -482,8 +483,6 @@ export function createEscalation(
 }
 
 // --- Pipeline Derivation Helpers (MVP) ---
-
-import { SessionDetail, OrchestratorStatusResponse, FlowStep } from "./unoApiClient";
 
 const PHASE_MAP: Record<string, string> = {
   observe: "observe",

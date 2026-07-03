@@ -185,13 +185,13 @@ export function useSessionPolling(
         dispatch({ type: "SET_OBSERVATION", observation: obsData });
 
         // Derive agent transparency from strategy_snapshot
-        const agentState = (status?.flow_state === "active" ? "observing" :
-          status?.flow_state === "error" ? "needs_help" : "waiting") as import("./operatorStore").AgentState;
+        const agentState = (st?.flow_state === "active" ? "observing" :
+          st?.flow_state === "error" ? "needs_help" : "waiting") as import("./operatorStore").AgentState;
         dispatch({
           type: "SET_AGENT_TRANSPARENCY",
           transparency: {
             currentState: agentState,
-            currentPhase: status?.phase ?? "idle",
+            currentPhase: st?.phase ?? "idle",
             confidence: snapshot?.confidence ?? 0,
             lastReason: snapshot?.next_action ?? "",
             nextStep: snapshot?.goal ?? "",

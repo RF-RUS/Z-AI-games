@@ -213,7 +213,7 @@ export default function OperatorPanel({ initialSessionId }: Props) {
         automatic: true,
         web_profile_id: adapter === "web" ? webProfile : "local-mock-uno",
         windows_profile_id: adapter === "windows" ? windowsProfile : profile,
-      })) as SessionDetail;
+      })) as unknown as SessionDetail;
       if (!s?.session_id) {
         throw new Error("Invalid create session response: missing session_id");
       }
@@ -227,7 +227,7 @@ export default function OperatorPanel({ initialSessionId }: Props) {
       });
       const attached = await attachAdapter(s.session_id, attachPayload);
       assertRequestedAdapterAttached(
-        attached as SessionDetail,
+        attached as unknown as SessionDetail,
         adapter,
         adapter === "web" ? webProfile : adapter === "windows" ? windowsProfile : undefined,
       );

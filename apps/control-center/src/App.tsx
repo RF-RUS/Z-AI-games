@@ -37,12 +37,6 @@ import { parseCommand, executeCommand } from "./operatorCommands";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { logAnalyticsEvent, ANALYTICS_EVENTS } from "./analytics";
 
-declare global {
-  interface Window {
-    unoApi: Record<string, (...args: unknown[]) => Promise<unknown>>;
-  }
-}
-
 export default function App() {
   const [state, dispatch] = useReducer(operatorReducer, initialState);
   const [starting, setStarting] = useState(false);

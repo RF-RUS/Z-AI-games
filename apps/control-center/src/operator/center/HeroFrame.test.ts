@@ -256,7 +256,7 @@ describe("HeroFrame screenshot polling", () => {
   });
 
   it("does not fetch for non-windows adapter", async () => {
-    const adapterType = "web";
+    const adapterType: string = "web";
 
     // Simulate the guard condition in the component
     if (adapterType !== "windows") {

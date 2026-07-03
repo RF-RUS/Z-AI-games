@@ -342,7 +342,7 @@ export async function isAdapterWebOnline(): Promise<boolean> {
 
 export async function listModels(): Promise<Array<{ model_id: string; display_name: string; enabled: boolean }>> {
   if (window.unoApi?.listModels) {
-    return window.unoApi.listModels();
+    return (await window.unoApi.listModels()) as Array<{ model_id: string; display_name: string; enabled: boolean }>;
   }
   return fetchJson(`${API_BASE}:8110/models`);
 }
@@ -399,7 +399,7 @@ export async function attachAdapter(sessionId: string, body: Record<string, unkn
 
 export async function startSession(sessionId: string): Promise<Record<string, unknown>> {
   if (window.unoApi?.startSession) {
-    return window.unoApi.startSession(sessionId);
+    return (await window.unoApi.startSession(sessionId)) as Record<string, unknown>;
   }
   return orchFetch(`/sessions/${sessionId}/start`, { method: "POST" });
 }
@@ -434,28 +434,28 @@ export async function getSessionSteps(sessionId: string): Promise<FlowStep[]> {
 
 export async function pauseSession(sessionId: string): Promise<Record<string, unknown>> {
   if (window.unoApi?.pauseSession) {
-    return window.unoApi.pauseSession(sessionId);
+    return (await window.unoApi.pauseSession(sessionId)) as Record<string, unknown>;
   }
   return orchFetch(`/sessions/${sessionId}/pause`, { method: "POST" });
 }
 
 export async function resumeSession(sessionId: string): Promise<Record<string, unknown>> {
   if (window.unoApi?.resumeSession) {
-    return window.unoApi.resumeSession(sessionId);
+    return (await window.unoApi.resumeSession(sessionId)) as Record<string, unknown>;
   }
   return orchFetch(`/sessions/${sessionId}/resume`, { method: "POST" });
 }
 
 export async function stopSession(sessionId: string): Promise<Record<string, unknown>> {
   if (window.unoApi?.stopSession) {
-    return window.unoApi.stopSession(sessionId);
+    return (await window.unoApi.stopSession(sessionId)) as Record<string, unknown>;
   }
   return orchFetch(`/sessions/${sessionId}/stop`, { method: "POST" });
 }
 
 export async function tickSession(sessionId: string): Promise<Record<string, unknown>> {
   if (window.unoApi?.tickSession) {
-    return window.unoApi.tickSession(sessionId);
+    return (await window.unoApi.tickSession(sessionId)) as Record<string, unknown>;
   }
   return orchFetch(`/sessions/${sessionId}/tick`, { method: "POST" });
 }

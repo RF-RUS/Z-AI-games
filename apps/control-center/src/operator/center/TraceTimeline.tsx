@@ -48,7 +48,7 @@ export default function TraceTimeline({
             stepNum={step.step}
             phase={step.phase}
             isSelected={selectedStepNum === step.step}
-            success={step.meta?.success ?? null}
+            success={(step.meta?.success as boolean) ?? null}
             onClick={() => onStepSelect(step.step)}
           />
         ))}
