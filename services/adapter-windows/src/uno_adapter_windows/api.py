@@ -221,6 +221,23 @@ async def detach(adapter_id: str) -> dict:
   return {"detached": True}
 
 
+@app.get("/zones/{game_id}", tags=["zones"])
+async def get_learned_zones(game_id: str) -> list[dict]:
+  """Inspect learned zones for a game — useful for debugging action memory."""
+  from uno_adapter_windows.registry import _zone_store
+  return _zone_store.inspect(game_id)
+
+
+@app.delete("/zones/{game_id}", tags=["zones"])
+async def reset_learned_zones(game_id: str) -> dict:
+  """Reset all learned zones for a game."""
+  from uno_adapter_windows.registry import _zone_store
+  zones = _zone_store.list_zones(game_id)
+  for z in zones:
+    _zone_store.forget(game_id, z.zone_id)
+  return {"reset": True, "zones_deleted": len(zones)}
+
+
 @app.get("/pywinauto/check", tags=["adapter"])
 async def pywinauto_check() -> dict:
   return {

@@ -17,9 +17,13 @@ from uno_schemas.adapter_windows import (
   WindowsAdapterMode,
   WindowsEvidenceBundle,
 )
+from uno_shared.learned_zones import LearnedZoneStore
 from uno_shared.logging import get_logger
 
 logger = get_logger("adapter-windows")
+
+# Shared zone store instance — file-backed, persists across adapter sessions
+_zone_store = LearnedZoneStore()
 
 
 class WindowsAdapterSession(Protocol):
@@ -44,6 +48,8 @@ def get_adapter(adapter_id: str) -> WindowsAdapterSession | None:
 async def attach_adapter(req: AttachWindowsAdapterRequest) -> AttachWindowsAdapterResponse:
   profile = load_profile(req.profile_id)
   stage_start = time.time()
+  # Derive game_id from profile for zone store lookup
+  game_id = profile.game_type or req.profile_id
   try:
     if req.mode == WindowsAdapterMode.MOCK:
       adapter: WindowsAdapterSession = MockWindowsAdapter(
@@ -63,6 +69,8 @@ async def attach_adapter(req: AttachWindowsAdapterRequest) -> AttachWindowsAdapt
         window_pid=req.window_pid,
         launch_test_target_flag=req.launch_test_target and req.window_handle is None,
         capture_screenshots=req.capture_screenshots,
+        zone_store=_zone_store,
+        game_id=game_id,
       )
       backend = profile.preferred_backend.value
 
