@@ -1,10 +1,16 @@
 """Window selection for Windows attach."""
 
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
 from uno_adapter_windows.profiles import load_profile
 from uno_adapter_windows.runtime import _find_with_backend
+
+pytestmark = pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="pywinauto Desktop is Windows-only",
+)
 
 
 def _win(title: str, *, focused: bool = False, class_name: str = "GameWindow"):

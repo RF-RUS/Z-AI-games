@@ -1,5 +1,6 @@
 """Verification tests for security hardening changes."""
 
+import sys
 import time
 from collections import defaultdict
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -144,6 +145,7 @@ class TestExactMatch:
 # --- 3. _click_uia_element restricted to profile targets ---
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="pywinauto.mouse is Windows-only")
 class TestClickUIARestriction:
     """Verify _click_uia_element only allows profile-registered titles/auto_ids."""
 

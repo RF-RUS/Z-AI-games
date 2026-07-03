@@ -81,6 +81,7 @@ async def test_attach_fails_when_bounds_stay_zero():
   assert adapter._state.message == UNUSABLE_WINDOW_ERROR
 
 
+@pytest.mark.skipif(__import__("sys").platform != "win32", reason="ctypes.windll is Windows-only")
 def test_win32_bounds_for_handle_reads_rectangle():
   with patch("ctypes.windll.user32.GetWindowRect", return_value=1) as get_rect:
     bounds = win32_bounds_for_handle(99)

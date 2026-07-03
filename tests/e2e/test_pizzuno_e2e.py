@@ -21,6 +21,15 @@ sys.path.insert(0, str(ROOT / "services" / "perception-service" / "src"))
 sys.path.insert(0, str(ROOT / "services" / "decision-service" / "src"))
 sys.path.insert(0, str(ROOT / "services" / "policy-guard" / "src"))
 
+
+def _playwright_available() -> bool:
+    try:
+        from playwright.sync_api import sync_playwright
+        return True
+    except ImportError:
+        return False
+
+
 from uno_orchestrator.in_process_clients import InProcessClients
 from uno_orchestrator.orchestrator import SessionOrchestrator
 from uno_schemas.orchestrator import AttachAdapterBody, SessionSpec
@@ -29,6 +38,7 @@ from uno_schemas.session import AdapterType, SessionConfig
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.skipif(not _playwright_available(), reason="Playwright not installed")
 async def test_pizzuno_e2e_full_cycle():
     """Full E2E cycle on real Pizzuno: attach → observe → decide → execute."""
     clients = InProcessClients()
@@ -80,6 +90,7 @@ async def test_pizzuno_e2e_full_cycle():
 
 @pytest.mark.smoke
 @pytest.mark.asyncio
+@pytest.mark.skipif(not _playwright_available(), reason="Playwright not installed")
 async def test_pizzuno_observe_selectors():
     """Verify key Pizzuno selectors resolve after game starts."""
     from uno_adapter_web.registry import attach_adapter, get_adapter
