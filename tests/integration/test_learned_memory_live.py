@@ -8,14 +8,11 @@ Requires: Windows, Postgres, pywinauto
 Run: uv run python -m pytest tests/integration/test_learned_memory_live.py -v -s -m integration
 """
 
-import asyncio
-import os
 import socket
 import subprocess
 import sys
 import time
 
-import httpx
 import pytest
 
 # ── skip conditions ──
@@ -56,8 +53,8 @@ def pg_store():
 @pytest.fixture
 def adapter_client():
   """Launch mock UNO, attach via adapter-windows API, yield (client, adapter_id, proc)."""
-  from uno_adapter_windows.api import app
   from fastapi.testclient import TestClient
+  from uno_adapter_windows.api import app
   from uno_schemas.adapter_windows import AttachWindowsAdapterRequest, WindowsAdapterMode
 
   client = TestClient(app)
@@ -207,7 +204,8 @@ def test_live_full_loop_with_learned_memory(adapter_client, pg_store):
   # The click was delivered successfully — record as verified success.
   # Screenshot verification may report no_visible_change (tkinter button
   # doesn't change appearance), but the click delivery itself succeeded.
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
 
   pg_store.record_provisional(
     game_id=GAME_ID, profile_id=PROFILE_ID, selector_key="draw_button",
@@ -273,7 +271,7 @@ def test_live_full_loop_with_learned_memory(adapter_client, pg_store):
         f"hash={trace3.screen_state_hash[:12]}")
 
   # ── Summary ──
-  print(f"\n  [PROOF]")
+  print("\n  [PROOF]")
   print(f"    Cold start (real UIA):  source={trace1.source} conf={trace1.confidence:.2f}")
   print(f"    Click delivered:        success=True method={method} click=({click['x']:.0f},{click['y']:.0f})")
   print(f"    Zone recorded:          conf={z.clickability_score:.2f} ok={z.success_count} verified={z.last_verified_result}")
@@ -290,7 +288,8 @@ def test_live_reset_clears_influence(adapter_client, pg_store):
   profile = load_profile("local-mock-uno")
 
   # Seed a zone
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
   pg_store.record_provisional(
     game_id=GAME_ID, profile_id=PROFILE_ID, selector_key="draw_button",
     bounding_box=BB(left=250, top=145, right=310, bottom=175),

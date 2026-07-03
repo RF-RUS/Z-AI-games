@@ -10,15 +10,12 @@ Requires: Postgres running (docker-compose up postgres)
 Run: uv run python -m pytest tests/unit/test_learned_memory_runtime.py -v -s
 """
 
-import os
 import socket
 
 import pytest
-
 from uno_adapter_windows.profiles import load_profile
 from uno_adapter_windows.rpa.perception.target_locator import ResolutionTrace, locate_selector
 from uno_schemas.adapter_windows import UiNodeSnapshot
-from uno_schemas.learned_zones import BoundingBox, Resolution
 
 _pg = False
 try:
@@ -75,7 +72,7 @@ def test_after_verified_success_second_resolution_uses_learned_memory(profile, s
   """After recording a verified success, second resolution uses learned memory."""
   # First resolution — cold start
   trace1 = ResolutionTrace()
-  target1 = locate_selector(
+  locate_selector(
     "draw", profile, EMPTY_NODES,
     window_bounds=BOUNDS, game_id=GAME_ID, zone_store=store,
     trace=trace1,
@@ -84,7 +81,8 @@ def test_after_verified_success_second_resolution_uses_learned_memory(profile, s
   print(f"\n  [1st] source={trace1.source}, conf={trace1.confidence:.2f}")
 
   # Record provisional observation
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
   store.record_provisional(
     game_id=GAME_ID, profile_id=PROFILE_ID, selector_key="draw_button",
     bounding_box=BB(left=800, top=300, right=900, bottom=400),
@@ -127,7 +125,7 @@ def test_after_verified_success_second_resolution_uses_learned_memory(profile, s
         f"zone_conf={trace2.zone_confidence:.2f}, "
         f"ok={trace2.zone_success}/fail={trace2.zone_failure}, "
         f"verified={trace2.zone_verified_backed}")
-  print(f"  [PASS] Learned memory took over after verified success")
+  print("  [PASS] Learned memory took over after verified success")
 
 
 # ── 2. Traceability: diagnostics are populated correctly ──
@@ -141,7 +139,8 @@ def test_trace_populated_for_each_source(profile, store):
   assert t1.selector_key == "draw"
 
   # learned_memory (after seeding)
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
   store.record_provisional(
     game_id=GAME_ID, profile_id=PROFILE_ID, selector_key="draw_button",
     bounding_box=BB(left=800, top=300, right=900, bottom=400),
@@ -163,7 +162,8 @@ def test_trace_populated_for_each_source(profile, store):
 
 def test_low_confidence_zone_ignored(profile, store):
   """A zone with confidence < 0.5 is not used for resolution."""
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
   # Seed a zone
   store.record_provisional(
     game_id=GAME_ID, profile_id=PROFILE_ID, selector_key="draw_button",
@@ -183,7 +183,7 @@ def test_low_confidence_zone_ignored(profile, store):
 
   # Resolution should NOT use the low-confidence zone
   trace = ResolutionTrace()
-  target = locate_selector(
+  locate_selector(
     "draw", profile, EMPTY_NODES,
     window_bounds=BOUNDS, game_id=GAME_ID, zone_store=store,
     trace=trace,
@@ -198,7 +198,8 @@ def test_low_confidence_zone_ignored(profile, store):
 
 def test_failure_reduces_confidence(profile, store):
   """A verified failure lowers confidence, eventually below the threshold."""
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
 
   # Seed with a success
   store.record_provisional(
@@ -229,7 +230,8 @@ def test_failure_reduces_confidence(profile, store):
 
 def test_reset_game_clears_influence(profile, store):
   """After reset_game, resolution falls back to layout_targets."""
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
 
   # Seed
   store.record_provisional(
@@ -264,7 +266,8 @@ def test_reset_game_clears_influence(profile, store):
 
 def test_reset_profile_scoped(profile, store):
   """reset_profile only removes zones for the specified profile."""
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
 
   store.record_provisional(
     game_id=GAME_ID, profile_id=PROFILE_ID, selector_key="draw_button",

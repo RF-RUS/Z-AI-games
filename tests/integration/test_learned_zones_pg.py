@@ -4,12 +4,9 @@ Requires a running Postgres instance (docker-compose up postgres).
 Run with: uv run pytest tests/unit/test_learned_zones_pg.py -v
 """
 
-import os
-import time
 
 import pytest
-
-from uno_schemas.learned_zones import BoundingBox, Clickability, LearnedZone, Resolution, ZoneType
+from uno_schemas.learned_zones import BoundingBox, Resolution
 
 # Check Postgres availability — use a simple TCP check + connection test
 _pg_available = False

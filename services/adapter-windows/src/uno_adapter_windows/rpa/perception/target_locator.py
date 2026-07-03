@@ -11,7 +11,7 @@ Priority:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from uno_adapter_windows.extraction import find_matching_nodes
 from uno_schemas.adapter_windows import (

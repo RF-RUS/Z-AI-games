@@ -91,8 +91,8 @@ def main():
     new_yr = args.y / ch
     old_x, old_y = update_profile(new_xr, new_yr)
 
-    print(f"\nNormalization formula:  x_ratio = measured_x / client_width")
-    print(f"                        y_ratio = measured_y / client_height")
+    print("\nNormalization formula:  x_ratio = measured_x / client_width")
+    print("                        y_ratio = measured_y / client_height")
     print(f"  measured_x = {args.x:.1f}, client_width = {cw:.0f}")
     print(f"  measured_y = {args.y:.1f}, client_height = {ch:.0f}")
     print(f"\nOld ratio:  x={old_x:.4f}  y={old_y:.4f}")
@@ -101,11 +101,11 @@ def main():
   else:
     path = capture_screenshot(args.adapter_id)
     print(f"\nScreenshot: {path}")
-    print(f"\nNext steps:")
-    print(f"  1. Open the screenshot in an image editor")
-    print(f"  2. Find the Draw button center — read (pixel_x, pixel_y)")
-    print(f"  3. Those pixels ARE client-area coords (no offset needed)")
-    print(f"  4. Run:")
+    print("\nNext steps:")
+    print("  1. Open the screenshot in an image editor")
+    print("  2. Find the Draw button center — read (pixel_x, pixel_y)")
+    print("  3. Those pixels ARE client-area coords (no offset needed)")
+    print("  4. Run:")
     print(f"     uv run python scripts/calibrate_draw_target.py --adapter-id {args.adapter_id} --x <pixel_x> --y <pixel_y>")
 
 

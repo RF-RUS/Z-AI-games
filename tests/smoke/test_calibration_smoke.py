@@ -13,7 +13,8 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_calibration_endpoint():
-    import subprocess, time
+    import subprocess
+    import time
 
     subprocess.run(["powershell", "-NoProfile", "-Command",
         "Get-Process python -ErrorAction SilentlyContinue | "

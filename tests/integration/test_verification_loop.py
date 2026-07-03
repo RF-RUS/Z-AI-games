@@ -108,7 +108,8 @@ def test_verification_aware_loop(adapter_client, pg_store):
     WindowsActionExecutionRequest,
     WindowsActionType,
   )
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
 
   client, aid = adapter_client
   profile = load_profile("local-mock-uno")
@@ -274,15 +275,15 @@ def test_verification_aware_loop(adapter_client, pg_store):
         f"ok={fz.success_count} fail={fz.failure_count}")
 
   # ── Summary ──
-  print(f"\n  === VERIFICATION LOOP PROOF ===")
-  print(f"  Mock change:       Draw click → counter increments (Drawn: 0→1→2)")
+  print("\n  === VERIFICATION LOOP PROOF ===")
+  print("  Mock change:       Draw click → counter increments (Drawn: 0→1→2)")
   print(f"  Cold start:        source={trace1.source} conf={trace1.confidence:.2f}")
   print(f"  Visual diff #1:    ratio={change_ratio:.6f} confirmed={visual_change}")
   print(f"  Visual diff #2:    ratio={ratio2:.6f} confirmed={visual2}")
   print(f"  Zone after 2 ok:   conf={fz.clickability_score:.2f} ok={fz.success_count} fail={fz.failure_count}")
   print(f"  Learned memory:    source={trace2.source} zone_conf={trace2.zone_confidence:.2f} verified={trace2.zone_verified_backed}")
   print(f"  Artifacts:         {ARTIFACTS_DIR}")
-  print(f"  ================================")
+  print("  ================================")
 
   assert verified_success, "first draw should produce visual change"
   assert visual2, "second draw should also produce visual change"

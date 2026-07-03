@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import sys
 import time
 from pathlib import Path
 
@@ -95,7 +93,6 @@ def write_metadata(
   cb = cal.get("client_bounds")
   wb = cal.get("window_bounds") or bounds
   bounds_used = "client_bounds" if cb else "window_bounds"
-  resolve_ref = cb or wb
 
   meta = {
     "session_id": session_id,
@@ -131,11 +128,11 @@ def write_metadata(
 
 
 def run(adapter_id: str, session_id: str, render_wait: float):
-  from uno_shared.learned_zones_pg import PgLearnedZoneStore
   from uno_adapter_windows.profiles import load_profile
   from uno_adapter_windows.rpa.perception.target_locator import ResolutionTrace, locate_selector
-  from uno_schemas.adapter_windows import WindowsActionExecutionRequest, WindowsActionType
-  from uno_schemas.learned_zones import BoundingBox as BB, Resolution as Res
+  from uno_schemas.learned_zones import BoundingBox as BB
+  from uno_schemas.learned_zones import Resolution as Res
+  from uno_shared.learned_zones_pg import PgLearnedZoneStore
 
   ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
   store = PgLearnedZoneStore()
@@ -156,10 +153,10 @@ def run(adapter_id: str, session_id: str, render_wait: float):
     print(f"  Offset:        left={off.get('left_delta',0)} top={off.get('top_delta',0)} "
           f"right={off.get('right_delta',0)} bottom={off.get('bottom_delta',0)}")
     print(f"  Coord space:   {calibration.get('coordinate_space','unknown')}")
-    print(f"  ⚠  If clicks miss, adjust profile layout_targets by the offset above")
+    print("  ⚠  If clicks miss, adjust profile layout_targets by the offset above")
   else:
-    print(f"  ⚠  Client bounds unavailable — real-game clicks may need layout recalibration")
-    print(f"     (title bar / border offsets may shift effective targets)")
+    print("  ⚠  Client bounds unavailable — real-game clicks may need layout recalibration")
+    print("     (title bar / border offsets may shift effective targets)")
   print(f"  Render wait: {render_wait}s")
 
   # ── 1. Cold start ──
@@ -219,7 +216,7 @@ def run(adapter_id: str, session_id: str, render_wait: float):
         f"verified={trace2.zone_verified_backed} hash={trace2.screen_state_hash[:12]}")
 
   # ── 8. Write metadata ──
-  meta = write_metadata(
+  write_metadata(
     session_id=session_id, adapter_id=adapter_id, window_title=window_title,
     bounds=bounds, screen_state_hash=trace2.screen_state_hash,
     source_1=trace1.source, conf_1=trace1.confidence,
@@ -232,17 +229,17 @@ def run(adapter_id: str, session_id: str, render_wait: float):
 
   store.close()
 
-  print(f"\n  === RESULT ===")
+  print("\n  === RESULT ===")
   print(f"  Cold → Learned: {trace1.source} → {trace2.source}")
   print(f"  Visual change:  {visual_change} (ratio={ratio:.6f})")
   print(f"  Zone promoted:  conf={z.clickability_score:.2f} ok={z.success_count}")
   print(f"  Artifacts:      {ARTIFACTS_DIR}/")
   print(f"  Metadata:       {ARTIFACTS_DIR}/metadata.json")
-  print(f"  =================")
+  print("  =================")
 
   if trace2.source != "learned_memory":
-    print(f"\n  WARNING: second resolution did not use learned_memory")
-    print(f"  Possible causes: zone confidence too low, verification failed, or no zone recorded")
+    print("\n  WARNING: second resolution did not use learned_memory")
+    print("  Possible causes: zone confidence too low, verification failed, or no zone recorded")
 
 
 def main():

@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT / "services" / "policy-guard" / "src"))
 
 def _playwright_available() -> bool:
     try:
-        from playwright.sync_api import sync_playwright
+        import playwright  # noqa: F401
         return True
     except ImportError:
         return False

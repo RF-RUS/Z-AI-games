@@ -326,7 +326,6 @@ class VisualRpaExecutor:
     if self._zone_store and self._game_id and target and req.selector_key:
       try:
         from uno_schemas.learned_zones import BoundingBox, Resolution
-        from uno_shared.learned_zones_pg import _screen_state_hash
         res = Resolution(
           width=int(self._bounds.get("right", 0) - self._bounds.get("left", 0)),
           height=int(self._bounds.get("bottom", 0) - self._bounds.get("top", 0)),

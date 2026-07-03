@@ -30,7 +30,6 @@ from uuid import uuid4
 
 import psycopg
 from psycopg.rows import dict_row
-
 from uno_schemas.learned_zones import (
   BoundingBox,
   Clickability,
@@ -42,8 +41,6 @@ from uno_schemas.learned_zones import (
 
 from .learned_zones import (
   _action_label_fragments,
-  boxes_overlap_or_near,
-  update_clickability_score,
 )
 
 _DEFAULT_DSN = "postgresql://uno:uno_dev@127.0.0.1:5432/uno_operator"

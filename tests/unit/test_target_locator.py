@@ -72,7 +72,9 @@ def test_layout_targets_resolve_inside_client_bounds():
   Regression: clicks were landing in the title bar because ratios were
   applied to the full window rectangle (including chrome).
   """
-  from uno_adapter_windows.rpa.perception.target_locator import ResolutionTrace, locate_layout_target
+  from uno_adapter_windows.rpa.perception.target_locator import (
+    locate_layout_target,
+  )
 
   profile = load_profile("local-mock-uno")
   # Window has a 31px title bar and 8px right border

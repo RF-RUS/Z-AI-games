@@ -25,7 +25,6 @@ from uno_schemas.session import AdapterType, SessionConfig
 from uno_shared.adapter_protocol import GenericActionResult, GenericEvidenceBundle
 from uno_shared.adapter_registry import GenericAdapterClient
 
-
 # ── 1. Target locator: layout_targets fallback ──
 
 def test_real_profile_has_layout_targets():
@@ -72,7 +71,10 @@ def test_action_mapping_enables_coordinate_fallback():
 # ── 2. Full orchestrator cycle with Windows adapter ──
 
 def _make_orch():
-    from uno_orchestrator.in_process_clients import InProcessClients, setup_in_process_adapter_registry
+    from uno_orchestrator.in_process_clients import (
+        InProcessClients,
+        setup_in_process_adapter_registry,
+    )
     setup_in_process_adapter_registry()
     return SessionOrchestrator(clients=InProcessClients())
 
