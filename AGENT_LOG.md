@@ -75,6 +75,30 @@ Append-only. Newest last.
   value recognition + exact count need live tuning on Windows (#B1). B3 resolved.
 - **Next:** [9c] execution grounding — click the chosen card's detected coordinate.
 
+---
+
+### 2026-07-04 — Real Windows run diagnosed + CRITICAL screenshot fix + 9c grounding
+- **Trigger:** User ran on real Windows. Operator showed GAME STATE **Unknown**, screen_state
+  **not_in_game**, "Game state not extractable from UI automation tree", action → draw_card,
+  "coarse state unchanged: not_in_game", "session stale". Mouse moved (cursor visible) but no play.
+- **ROOT CAUSE (critical):** `flow_controller._observe` read a **non-existent** `bundle.screenshot`
+  attribute. `GenericEvidenceBundle` carries the frame as `.screenshot_path` + raw dict in `.extra`,
+  so the screenshot was ALWAYS dropped for real windows/web → screenshot CV never ran → empty
+  game_state → every frame classified `not_in_game` → agent never played. **This is why nothing
+  happened.** Fixed: reconstruct ScreenshotFrame from `extra["screenshot"]` / `screenshot_path`.
+  Verified end-to-end: real frame → game_state{in_game, 7 hand_cards w/ coords}. (commit 6d38cd9)
+- **9c execution grounding (done):** thread the CV-detected card coordinate through
+  `flow._execute` (passes observation.hand_cards) → `map_action`/`_map_action_windows`
+  (`_find_card_center` → target_x/target_y) → `WindowsActionExecutionRequest` (+target_x/y) →
+  `visual_executor._execute_grounded_click` (screenshot→screen transform + humanized click).
+  Now the windows agent clicks the real detected card instead of a static point.
+- **Files:** `flow_controller.py`, `adapter_registry.py`, `adapter_windows.py` (schema),
+  `visual_executor.py`, + tests `test_observe_screenshot_extraction.py`,
+  `test_windows_grounded_click.py`.
+- **Verified:** ruff clean; `pytest tests/unit` 307 passed / 7 skipped (+8); mock autonomous run 3/3 ok.
+- **Needs Windows host (#B1):** validate the screenshot→screen coordinate transform (DPI scaling)
+  and end-to-end real clicks; tune value recognition + exact card count.
+
 ### 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent
 - **Did:** Mapped Windows agent architecture end-to-end (adapter-windows RPA layer, runtime capture,
   orchestrator autonomous loop, recovery). Ran baseline `start-orchestrator-session-windows.py --tick`.

@@ -27,9 +27,13 @@ real-Windows run (#7, blocked on host #B1).
 - **9a done:** CV recognition runs in production (was silently skipped) + detected cards carry bounds+center.
 - **9b done:** per-card hand segmentation (`hand_segmentation.py`) calibrated & tested on 3 REAL frames
   → each hand card now has color + absolute click center. hand7_a exact (G,G,B,B,B,B,wild).
-- **9c NEXT (unblocked, sizable):** execution grounding — thread the detected card coordinate through
-  `flow._execute` → windows action → `visual_executor` so the chosen card's real coord is clicked.
-- **9d/9e pending:** legal actions/turn from detected state; card VALUE recognition + live Windows tuning (#B1).
+- **9-CRITICAL done:** `_observe` never surfaced the adapter screenshot (read a non-existent field) →
+  CV never ran on real Windows → everything was `not_in_game`. **This was the reason nothing happened.**
+  Fixed + verified end-to-end (real frame → in_game + 7 cards w/ coords).
+- **9c done:** execution grounding — the chosen card's CV coordinate is clicked (flow→map_action→
+  schema→`visual_executor._execute_grounded_click`), not a static point.
+- **9d NEXT:** legal actions + whose-turn from the DETECTED state (not the simulated engine).
+- **9e pending:** card VALUE recognition; real-hardware tuning of the coord transform / clicks (#B1).
 
 ## Real-run findings (2026-07-04)
 User ran real UNO.exe → agent captured screen but only looped clicking one fixed point, no play.

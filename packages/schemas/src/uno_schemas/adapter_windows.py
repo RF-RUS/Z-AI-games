@@ -126,6 +126,12 @@ class WindowsActionExecutionRequest(BaseModel):
   min_confidence: Confidence = 0.55
   allow_coordinate_fallback: bool = False
   domain_action: str = ""
+  # Grounded CV target: click point in SCREENSHOT-pixel space (relative to the
+  # captured window frame). When set, the executor clicks it directly instead of
+  # running the UIA / static-layout cascade. Populated from screenshot card
+  # detection. See visual_executor grounded-click path.
+  target_x: int | None = None
+  target_y: int | None = None
 
 
 class WindowsActionExecutionResult(BaseModel):

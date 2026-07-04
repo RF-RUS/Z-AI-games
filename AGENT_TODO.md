@@ -11,10 +11,14 @@ _Updated: 2026-07-03_
     in-memory. (2026-07-04)
   - [9b] ✅ Per-card hand segmentation — `hand_segmentation.py`, calibrated + tested vs 3 real frames
     (count ±1, per-slot bounds/center/colour). Integrated into perception. (2026-07-04)
-  - [9c] **NEXT** — Execution grounding: `visual_executor` clicks the chosen card's detected coordinate
-    (from observation.hand_cards) instead of static layout. Wire in `flow_controller._execute`.
-  - [9d] Legal actions / turn derived from the DETECTED state (hand + top card via uno-core rules).
-  - [9e] Value (number/action) recognition per card + real-hardware tuning (needs Windows host, #B1).
+  - [9c] ✅ Execution grounding — detected card coordinate threaded flow→map_action→schema→executor
+    (`_execute_grounded_click`, screenshot→screen transform). Clicks the real card. (2026-07-04)
+  - [9-crit] ✅ CRITICAL: `_observe` never surfaced the screenshot → CV never ran on real Windows →
+    everything was `not_in_game`. Fixed. (2026-07-04)
+  - [9d] **NEXT** — Legal actions / turn derived from the DETECTED state (hand + top card via uno-core
+    rules) instead of the simulated engine. Also detect whose_turn (self-avatar glow).
+  - [9e] Card VALUE (number/action) recognition per card + real-hardware tuning: coordinate transform
+    (DPI), exact count, real clicks (needs Windows host, #B1).
 - [#7] Real Windows validation — needs Windows host.
 
 ## Backlog

@@ -191,7 +191,11 @@ class GenericAdapterClient:
                 extra=extra_from_payload,
             )
         if self.adapter_type == "windows":
-            return self._map_action_windows(action_type, extra=extra_from_payload)
+            return self._map_action_windows(
+                action_type,
+                card_color=card_color, card_value=card_value, hand_cards=hand_cards,
+                extra=extra_from_payload,
+            )
         return GenericActionRequest(
             action_type=action_type,
             domain_action=action_type,
@@ -266,12 +270,33 @@ class GenericAdapterClient:
             extra=base_extra,
         )
 
-    def _map_action_windows(self, action_type: str, extra: dict[str, Any] | None = None) -> GenericActionRequest:
-        """Windows adapter action mapping — UIA selector keys with coordinate fallback."""
+    def _map_action_windows(
+        self,
+        action_type: str,
+        card_color: str | None = None,
+        card_value: str | None = None,
+        hand_cards: list[dict] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> GenericActionRequest:
+        """Windows adapter action mapping.
+
+        For play_card, GROUND the click to the CV-detected card coordinate when a
+        matching card is found in the (screenshot-derived) hand — this is what lets
+        the agent play the right card on a canvas/Electron game where UIA is empty.
+        Falls back to UIA selector keys + coordinate fallback otherwise.
+        """
         base_extra = dict(extra) if extra else {}
+        card_color = card_color or base_extra.get("card_color")
+        card_value = card_value or base_extra.get("card_value")
+        hand_cards = hand_cards or base_extra.get("hand_cards")
+
         selector_key = "draw"
         if action_type == "play_card":
             selector_key = "play_red_five"
+            center = _find_card_center(hand_cards, card_color, card_value)
+            if center is not None:
+                base_extra["target_x"], base_extra["target_y"] = int(center[0]), int(center[1])
+                base_extra["grounded_by"] = "cv_detection"
         return GenericActionRequest(
             action_type="click_input",
             selector_key=selector_key,
@@ -486,6 +511,51 @@ def _find_card_slot_by_identity(
         card_number_match = not card_value or str(card.get("number", "")) == str(card_value)
         if card_color_match and card_number_match:
             return card.get("slot_index")
+    return None
+
+
+def _card_center(card: dict) -> tuple[int, int] | None:
+    """Extract an absolute click center (screenshot px) from a detected card."""
+    c = card.get("center")
+    if isinstance(c, dict) and "x" in c and "y" in c:
+        return int(c["x"]), int(c["y"])
+    b = card.get("bounds")
+    if isinstance(b, dict) and {"x", "y", "width", "height"} <= set(b):
+        return int(b["x"] + b["width"] / 2), int(b["y"] + b["height"] / 2)
+    return None
+
+
+def _find_card_center(
+    hand_cards: list[dict] | None, card_color: str | None, card_value: str | None
+) -> tuple[int, int] | None:
+    """Resolve the click center of the target card from CV-detected hand cards.
+
+    Prefers an exact color+value match; falls back to the first color match, then
+    (if nothing else) the first detected card. Value matching is lenient because
+    the current heuristic CV recognises colour but not always the number.
+    """
+    if not hand_cards:
+        return None
+    # 1) exact color + value
+    if card_color and card_value:
+        for c in hand_cards:
+            if (c.get("color", "").lower() == card_color.lower()
+                    and str(c.get("value", "")) == str(card_value)):
+                center = _card_center(c)
+                if center:
+                    return center
+    # 2) first color match
+    if card_color:
+        for c in hand_cards:
+            if c.get("color", "").lower() == card_color.lower():
+                center = _card_center(c)
+                if center:
+                    return center
+    # 3) first card with a resolvable center
+    for c in hand_cards:
+        center = _card_center(c)
+        if center:
+            return center
     return None
 
 

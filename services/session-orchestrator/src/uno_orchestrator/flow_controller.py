@@ -192,7 +192,7 @@ class FlowController:
       session.pre_action_had_error = bool(detail.error)
       await self._run_step(session, cid, FlowStepName.EXECUTE, SessionPhase.EXECUTE)
       try:
-        await self._execute(binding, decision, detail, cid)
+        await self._execute(binding, decision, detail, cid, observation)
         session.last_execute_success = True
       except Exception:
         session.last_execute_success = False
@@ -357,7 +357,10 @@ class FlowController:
       game_type=game_type,
     ))
 
-  async def _execute(self, binding: AdapterBinding, decision: DecisionResult, detail: SessionDetail, cid: str) -> None:
+  async def _execute(
+    self, binding: AdapterBinding, decision: DecisionResult, detail: SessionDetail,
+    cid: str, observation: Observation | None = None,
+  ) -> None:
     action = decision.chosen_action
     if detail.game_id:
       await self.clients.apply_action(detail.game_id, action, detail.session_id, cid)
@@ -396,10 +399,19 @@ class FlowController:
 
     player_id = getattr(action, 'player_id', 'unknown')
 
+    # Detected hand cards (screenshot CV) → lets the adapter GROUND the click to
+    # the real card coordinate instead of a static/hardcoded target.
+    hand_cards = None
+    if observation is not None and getattr(observation, "game_state", None):
+      hc = observation.game_state.get("hand_cards")
+      if isinstance(hc, list) and hc:
+        hand_cards = hc
+
     action_req = client.map_action(
       action_type=action_type_str,
       profile_id=binding.profile_id or "local-mock-uno",
       player_id=player_id,
+      hand_cards=hand_cards,
       payload=payload,
     )
 

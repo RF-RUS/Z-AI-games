@@ -102,6 +102,12 @@ class VisualRpaExecutor:
     self._state.planned_action = domain
     self._state.set_status(WindowsRpaStatus.SEARCHING)
 
+    # Grounded CV click: a screenshot-space target was supplied (detected card
+    # coordinate). Click it directly — this is the path that plays the right card
+    # on a canvas/Electron game where UIA has nothing to locate.
+    if req.target_x is not None and req.target_y is not None:
+      return await self._execute_grounded_click(action_id, req)
+
     vreq = VisualActionRequest(
       domain_action=domain,
       selector_key=req.selector_key,
@@ -360,6 +366,94 @@ class VisualRpaExecutor:
       except Exception:
         pass
 
+    return result
+
+  async def _screenshot_to_screen(self, sx: float, sy: float, frame_path: str | None) -> tuple[int, int]:
+    """Map a SCREENSHOT-pixel point to an absolute SCREEN point.
+
+    The captured frame corresponds to the window rectangle, so we scale by
+    (window_size / frame_size) to survive DPI / capture scaling, then offset by
+    the window origin. Falls back to a 1:1 offset if the frame size is unknown.
+    """
+    left = self._bounds.get("left", 0) if self._bounds else 0
+    top = self._bounds.get("top", 0) if self._bounds else 0
+    win_w = (self._bounds.get("right", 0) - left) if self._bounds else 0
+    win_h = (self._bounds.get("bottom", 0) - top) if self._bounds else 0
+    scale_x = scale_y = 1.0
+    if frame_path:
+      try:
+        from PIL import Image
+        with Image.open(frame_path) as im:
+          fw, fh = im.size
+        if fw > 0 and fh > 0 and win_w > 0 and win_h > 0:
+          scale_x, scale_y = win_w / fw, win_h / fh
+      except Exception:
+        pass
+    return int(left + sx * scale_x), int(top + sy * scale_y)
+
+  async def _execute_grounded_click(
+    self, action_id: str, req: WindowsActionExecutionRequest,
+  ) -> VisualActionResult:
+    start = time.perf_counter()
+    before_path = after_path = None
+    before_frame = after_frame = None
+    if req.capture_screenshots:
+      before_path = await self.capture_live_frame("before")
+      if before_path:
+        before_frame = screen_frame_from_path(before_path, self._session_id)
+
+    screen_x, screen_y = await self._screenshot_to_screen(
+      float(req.target_x), float(req.target_y), before_path,
+    )
+    self._state.set_status(WindowsRpaStatus.ACTING)
+    error: str | None = None
+    try:
+      await ensure_focus(self._window)
+      cx, cy = await humanized_move_and_click(screen_x, screen_y, self._bounds)
+      screen_x, screen_y = int(cx), int(cy)
+    except Exception as exc:
+      error = str(exc)
+
+    import logging
+    logging.getLogger("adapter-windows.audit").info(
+      "grounded_click adapter=windows session=%s domain=%s screenshot=(%s,%s) screen=(%s,%s) success=%s error=%s",
+      self._session_id, req.domain_action, req.target_x, req.target_y,
+      screen_x, screen_y, error is None, error,
+    )
+
+    self._state.set_status(WindowsRpaStatus.VERIFYING)
+    verification = VerificationResult(passed=False, status="skipped")
+    if req.capture_screenshots and not error:
+      after_path = await self.capture_live_frame("after")
+      if after_path:
+        after_frame = screen_frame_from_path(after_path, self._session_id)
+      verification = verify_screenshot_transition(before_path, after_path)
+
+    self._state.set_status(WindowsRpaStatus.READY if error is None else WindowsRpaStatus.FAILED, error or "")
+    target = UITarget(
+      selector_key=req.selector_key or req.domain_action,
+      label=f"cv:{req.domain_action}",
+      method=TargetAcquisitionMethod.COORDINATE,
+      confidence=0.7,
+      bounds=None,
+      click_point={"x": float(screen_x), "y": float(screen_y)},
+    )
+    result = VisualActionResult(
+      action_id=action_id,
+      domain_action=req.domain_action,
+      target=target,
+      confidence=0.7,
+      success=error is None,
+      uncertain=False,
+      verification=verification,
+      before_frame=before_frame,
+      after_frame=after_frame,
+      click_point={"x": float(screen_x), "y": float(screen_y)},
+      latency_ms=int((time.perf_counter() - start) * 1000),
+      error=error,
+    )
+    self._state.record_action(result, req.selector_key)
+    self._state.automation_active = False
     return result
 
   async def _click_uia_element(self, target: UITarget) -> None:
