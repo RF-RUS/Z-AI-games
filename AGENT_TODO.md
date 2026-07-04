@@ -6,8 +6,16 @@ _Updated: 2026-07-03_
 - _(idle — awaiting direction on #9 / BLOCKERS #B2)_
 
 ## Blocked
-- [#9] **Real gameplay: wire screenshot CV coords → windows execution.** Root cause of "agent
-  doesn't play". Blocked on direction (CV desktop vs web adapter) + Windows host — see BLOCKERS #B2.
+- [#9] **Real gameplay: CV → windows execution.** Direction decided = CV desktop (Electron). Breakdown:
+  - [9a] ✅ Coordinate plumbing — detected hand_cards carry absolute bounds+center to the observation;
+    recognition now runs in-memory. (done 2026-07-04)
+  - [9b] **Per-card hand segmentation** — detect individual cards in the hand strip. BLOCKED on a real
+    screenshot (BLOCKERS #B3).
+  - [9c] Execution grounding — new `visual_executor` path: click the chosen card's detected coordinate
+    (from observation) instead of static layout. Wire in `flow_controller._execute`.
+  - [9d] Legal actions / turn derived from the DETECTED state (hand + top card via uno-core rules),
+    not the simulated engine.
+  - [9e] Real-hardware validation (needs Windows host, #B1).
 - [#7] Real Windows validation — needs Windows host.
 
 ## Backlog

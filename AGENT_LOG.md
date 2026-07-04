@@ -34,6 +34,28 @@ Append-only. Newest last.
   Real UNO.exe behavior change (no blind click; Pause holds) is unverified on hardware (macOS host).
 - **Next:** #9 CV→execution wiring epic (needs Windows host + direction decision — see BLOCKERS #B2).
 
+---
+
+### 2026-07-04 — Direction decided + CV coordinate plumbing (task #9, step 1)
+- **Direction (user):** UNO.exe is a **native Electron app**; play via **Windows adapter + CV**
+  (screenshot → cards + coords). B2 resolved; Path A (Decision D5).
+- **Two real CV bugs found while wiring:**
+  1. `recognize_cards_from_zones` only ran recognition when `output_dir` was set (it needed a crop
+     file on disk). The production merger passes no `output_dir` → **card recognition never ran in
+     real sessions.** Fixed: crop to a temp file (auto-cleaned) so recognition always runs in-memory.
+  2. Detected `bounds` (absolute screen coords) were **dropped** — `recognition_to_dict` omitted them
+     and `canvas_plugin` kept only `hand_count`. So even if cards were detected, their click coords
+     never reached the observation. Fixed: propagate full `hand_cards` with `bounds` + `center`.
+- **Files changed:** `card_recognition.py` (in-memory recognition + bounds/center in dict),
+  `canvas_plugin.py` (propagate full hand_cards), `tests/unit/test_cv_hand_coordinates.py` (NEW fixture test).
+  (merger already reads `hand_cards` → observation.game_state now carries them.)
+- **Verified:** ruff clean; fixture test proves a synthetic screenshot yields hand_cards with absolute
+  bounds+center in the observation; `pytest tests/unit` 296 passed / 7 skipped. No hardware validation.
+- **Remaining for real play (see BLOCKERS #B3 + TODO #9 breakdown):** per-card hand SEGMENTATION
+  (current CV treats the whole hand strip as ONE card — can't locate individual cards), then execution
+  grounding (click the detected card coord) + legal actions derived from the detected state. Per-card
+  segmentation needs a REAL screenshot of the game to calibrate.
+
 ### 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent
 - **Did:** Mapped Windows agent architecture end-to-end (adapter-windows RPA layer, runtime capture,
   orchestrator autonomous loop, recovery). Ran baseline `start-orchestrator-session-windows.py --tick`.

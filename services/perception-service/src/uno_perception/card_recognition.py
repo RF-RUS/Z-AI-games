@@ -9,6 +9,7 @@ from __future__ import annotations
 import colorsys
 import logging
 import os
+import tempfile
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -375,8 +376,12 @@ def recognize_cards_from_zones(
         w = zone.get("width", 0)
         h = zone.get("height", 0)
 
-        # Crop region
+        # Crop region. Recognition needs a crop file on disk; when no output_dir
+        # is given (the production path), write to a temp file so recognition
+        # STILL RUNS — previously it silently skipped every card without an
+        # output_dir, so real sessions recognized nothing.
         crop_path = None
+        cx = cy = cw = ch = 0
         try:
             img = Image.open(screenshot_path)
             iw, ih = img.size
@@ -389,6 +394,10 @@ def recognize_cards_from_zones(
                     crop_path = os.path.join(output_dir, f"crop_{zone_id}_{cx}_{cy}.png")
                     cropped.save(crop_path)
                     result.crops_generated += 1
+                else:
+                    fd, crop_path = tempfile.mkstemp(prefix=f"crop_{zone_id}_", suffix=".png")
+                    os.close(fd)
+                    cropped.save(crop_path)
         except Exception as e:
             result.errors.append(f"crop_failed_{zone_id}: {e}")
 
@@ -401,14 +410,21 @@ def recognize_cards_from_zones(
         card_bbox = {"x": cx, "y": cy, "width": cw, "height": ch}
 
         # Recognize card from crop (with value detection)
-        card = recognize_card_from_crop(
-            crop_path,
-            card_id=f"{zone_id}_0",
-            location=zone_id,
-            screenshot_path=screenshot_path,
-            card_bbox=card_bbox,
-        )
-        
+        try:
+            card = recognize_card_from_crop(
+                crop_path,
+                card_id=f"{zone_id}_0",
+                location=zone_id,
+                screenshot_path=screenshot_path,
+                card_bbox=card_bbox,
+            )
+        finally:
+            if not output_dir:  # temp crop — clean up
+                try:
+                    os.remove(crop_path)
+                except OSError:
+                    pass
+
         # Map to game state
         if zone_id == "hand" or zone_type == "hand":
             result.hand_cards.append(card)
@@ -438,7 +454,7 @@ def recognize_cards_from_zones(
 def recognition_to_dict(result: CardRecognitionResult) -> dict[str, Any]:
     """Convert recognition result to JSON-serializable dict."""
     def card_dict(card: CardRecognition) -> dict:
-        return {
+        d = {
             "card_id": card.card_id,
             "color": card.color,
             "color_confidence": round(card.color_confidence, 3),
@@ -449,6 +465,14 @@ def recognition_to_dict(result: CardRecognitionResult) -> dict[str, Any]:
             "recognition_method": card.recognition_method,
             "uncertainty_reason": card.uncertainty_reason,
         }
+        # Absolute screenshot bounds (x, y, w, h) + click center — required to
+        # GROUND an action to a real card coordinate in the windows executor.
+        # Without these the detected card cannot be clicked.
+        if card.bounds:
+            x, y, w, h = card.bounds
+            d["bounds"] = {"x": x, "y": y, "width": w, "height": h}
+            d["center"] = {"x": x + w // 2, "y": y + h // 2}
+        return d
     
     return {
         "top_card": card_dict(result.top_card) if result.top_card else None,

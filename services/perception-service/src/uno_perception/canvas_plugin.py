@@ -167,8 +167,15 @@ class HeuristicCanvasUNOPlugin:
 
         raw_meta = {"image_size": [img_w, img_h], "zones_checked": len(zones)}
         if visual_state:
+            # Carry the FULL per-card hand list (color/value/bounds/center) — not
+            # just a count — so downstream execution can ground a chosen card to a
+            # real screen coordinate. recognition_detail is the dict form from
+            # recognition_to_dict(), which now includes absolute bounds + center.
+            rec = visual_state.recognition_detail or {}
             raw_meta["visual_extraction"] = {
-                "top_card": {"color": visual_state.top_card.color, "value": visual_state.top_card.value} if visual_state.top_card else None,
+                "top_card": rec.get("top_card"),
+                "hand_cards": rec.get("hand_cards", []),
+                "discard_card": rec.get("discard_card"),
                 "hand_count": len(visual_state.hand_cards),
                 "crops_generated": visual_state.crops_generated,
                 "extraction_errors": visual_state.extraction_errors,
