@@ -1,0 +1,217 @@
+[
+  {
+    "observation_id": "9285e641-0ab3-470c-882f-77ebb8793a17",
+    "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "9285e641-0ab3-470c-882f-77ebb8793a17",
+      "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+      "timestamp_ms": 1783180172969,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "dd8d7c59-aab9-4c68-a61a-e60273b7affc"
+  },
+  {
+    "observation_id": "b2188b75-570e-45a6-8c67-7ce7dfe04705",
+    "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "b2188b75-570e-45a6-8c67-7ce7dfe04705",
+      "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+      "timestamp_ms": 1783180185678,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "0ac7c620-910c-48b3-890a-127b82511ad9"
+  },
+  {
+    "observation_id": "f34f157f-aebe-4b7d-8ed8-bdc23cb06c13",
+    "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "f34f157f-aebe-4b7d-8ed8-bdc23cb06c13",
+      "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+      "timestamp_ms": 1783180197817,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "d5781ba7-c038-4b01-b31f-8dda01add145"
+  },
+  {
+    "observation_id": "4a54dde8-3834-4ee6-82c8-3413cfd8cce4",
+    "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "4a54dde8-3834-4ee6-82c8-3413cfd8cce4",
+      "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+      "timestamp_ms": 1783180206138,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "92086ee8-8868-41a4-a059-49112fb48ba6"
+  },
+  {
+    "observation_id": "b6252e04-0398-47ed-98d0-da6385e76a8b",
+    "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "b6252e04-0398-47ed-98d0-da6385e76a8b",
+      "session_id": "3e02338b-9835-4953-98b9-c15e76c1c836",
+      "timestamp_ms": 1783180210015,
+      "game_type": "uno_canvas",
+      "game_state": null,
+      "game_elements": [],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.0,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "2e675443-6357-4f2f-8d83-a2a2bcf6b8d4"
+  }
+]
