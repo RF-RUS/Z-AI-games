@@ -376,6 +376,29 @@ def recognize_cards_from_zones(
         w = zone.get("width", 0)
         h = zone.get("height", 0)
 
+        # Hand zone → segment into individual cards (per-slot bounds + colour)
+        # so each card gets its own click coordinate. Without this the whole hand
+        # collapses to one blob and no specific card can be played.
+        if zone_id == "hand" or zone_type == "hand":
+            from uno_perception.hand_segmentation import segment_hand_cards
+            slots = segment_hand_cards(
+                screenshot_path, {"x": x, "y": y, "width": w, "height": h},
+            )
+            for slot in slots:
+                result.hand_cards.append(CardRecognition(
+                    card_id=f"hand_{slot.slot_index}",
+                    color=slot.color,
+                    color_confidence=slot.color_confidence,
+                    value="unknown",
+                    value_confidence=0.0,
+                    overall_confidence=round(slot.color_confidence * 0.6, 3),
+                    location="hand",
+                    bounds=slot.bounds,
+                    uncertainty_reason="value not recognized (color+coordinate only)",
+                ))
+            if slots:
+                continue  # handled; skip the single-blob path below
+
         # Crop region. Recognition needs a crop file on disk; when no output_dir
         # is given (the production path), write to a temp file so recognition
         # STILL RUNS — previously it silently skipped every card without an

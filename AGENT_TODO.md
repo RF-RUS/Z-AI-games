@@ -7,15 +7,14 @@ _Updated: 2026-07-03_
 
 ## Blocked
 - [#9] **Real gameplay: CV → windows execution.** Direction decided = CV desktop (Electron). Breakdown:
-  - [9a] ✅ Coordinate plumbing — detected hand_cards carry absolute bounds+center to the observation;
-    recognition now runs in-memory. (done 2026-07-04)
-  - [9b] **Per-card hand segmentation** — detect individual cards in the hand strip. BLOCKED on a real
-    screenshot (BLOCKERS #B3).
-  - [9c] Execution grounding — new `visual_executor` path: click the chosen card's detected coordinate
-    (from observation) instead of static layout. Wire in `flow_controller._execute`.
-  - [9d] Legal actions / turn derived from the DETECTED state (hand + top card via uno-core rules),
-    not the simulated engine.
-  - [9e] Real-hardware validation (needs Windows host, #B1).
+  - [9a] ✅ Coordinate plumbing — detected hand_cards carry absolute bounds+center; recognition runs
+    in-memory. (2026-07-04)
+  - [9b] ✅ Per-card hand segmentation — `hand_segmentation.py`, calibrated + tested vs 3 real frames
+    (count ±1, per-slot bounds/center/colour). Integrated into perception. (2026-07-04)
+  - [9c] **NEXT** — Execution grounding: `visual_executor` clicks the chosen card's detected coordinate
+    (from observation.hand_cards) instead of static layout. Wire in `flow_controller._execute`.
+  - [9d] Legal actions / turn derived from the DETECTED state (hand + top card via uno-core rules).
+  - [9e] Value (number/action) recognition per card + real-hardware tuning (needs Windows host, #B1).
 - [#7] Real Windows validation — needs Windows host.
 
 ## Backlog

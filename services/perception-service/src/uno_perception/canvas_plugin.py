@@ -66,11 +66,14 @@ class HeuristicCanvasUNOPlugin:
     game_type = "uno"
 
     def __init__(self):
-        # Default zone definitions (can be overridden by profile)
+        # Default zone definitions (can be overridden by profile).
+        # Calibrated against real UNO desktop (Electron) screenshots @1296x759:
+        # the hand is a centered strip (NOT full-width — full-width would capture
+        # the bottom-left avatar glow and corrupt hand extent detection).
         self._default_zones = {
-            "hand": {"rel_x": 0.0, "rel_y": 0.7, "rel_w": 1.0, "rel_h": 0.3},
-            "play_area": {"rel_x": 0.2, "rel_y": 0.2, "rel_w": 0.6, "rel_h": 0.4},
-            "draw_pile": {"rel_x": 0.85, "rel_y": 0.35, "rel_w": 0.1, "rel_h": 0.15},
+            "hand": {"rel_x": 0.30, "rel_y": 0.75, "rel_w": 0.45, "rel_h": 0.22},
+            "play_area": {"rel_x": 0.43, "rel_y": 0.46, "rel_w": 0.14, "rel_h": 0.16},
+            "draw_pile": {"rel_x": 0.26, "rel_y": 0.20, "rel_w": 0.11, "rel_h": 0.14},
         }
 
     def infer_from_screenshot(

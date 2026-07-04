@@ -56,6 +56,25 @@ Append-only. Newest last.
   grounding (click the detected card coord) + legal actions derived from the detected state. Per-card
   segmentation needs a REAL screenshot of the game to calibrate.
 
+---
+
+### 2026-07-04 — Per-card hand segmentation calibrated on real frames (task #9b)
+- **Trigger:** User provided 3 real UNO desktop screenshots → saved as fixtures
+  (`tests/fixtures/uno_desktop/{hand7_a,hand7_b,hand8}.jpeg`, 1296x759).
+- **Did:** Built `services/perception-service/src/uno_perception/hand_segmentation.py`:
+  detect hand extent (bright card cols vs red table) → estimate count (width/~60px) → even slots →
+  per-slot bounds + click center + dominant colour (HSV buckets). Integrated into
+  `card_recognition.recognize_cards_from_zones` (hand zone → one card per slot). Calibrated
+  `canvas_plugin` default zones to the real centered layout (hand/discard/draw).
+- **Verified against REAL frames:** hand7_a → 7 cards [G,G,B,B,B,B,wild] exact; click centers land on
+  each card (452,513,574,635,696,757,819). Fixture tests assert count ±1, monotonic centers, colour
+  signal (green-first / blue-present / wild-last). `pytest tests/unit` 299 passed / 7 skipped (+3).
+- **Files:** `hand_segmentation.py` (NEW), `card_recognition.py`, `canvas_plugin.py`,
+  `tests/unit/test_hand_segmentation.py` (NEW), fixtures.
+- **Honest limits:** card VALUE not recognised yet (colour+coord only); count exact within ±1;
+  value recognition + exact count need live tuning on Windows (#B1). B3 resolved.
+- **Next:** [9c] execution grounding — click the chosen card's detected coordinate.
+
 ### 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent
 - **Did:** Mapped Windows agent architecture end-to-end (adapter-windows RPA layer, runtime capture,
   orchestrator autonomous loop, recovery). Ran baseline `start-orchestrator-session-windows.py --tick`.

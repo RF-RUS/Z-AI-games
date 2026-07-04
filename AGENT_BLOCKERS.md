@@ -33,18 +33,14 @@ Real blockers only. Move to Resolved when cleared.
 - **Workaround in place:** blind fixed-point clicking is now suppressed for `web_only` profiles, so the
   agent reports "uncertain" instead of hammering a wrong point; Pause/New fixed.
 
-### B3 — Per-card hand segmentation needs a real game screenshot
-- **What's missing:** The heuristic CV treats the whole hand strip as ONE region → one guessed card.
-  To play a specific card ("Blue 3"), it must segment the hand into individual card rectangles with
-  per-card bounds. Building/calibrating that segmentation blind (macOS, no game) would be guesswork.
-- **Already done:** coordinate plumbing works — once cards are segmented, their bounds+center already
-  flow to the observation and can be clicked (task #9 step 1).
-- **Question for human (1):** Please share ONE screenshot of the UNO.exe in-game screen (your hand +
-  discard pile visible). That lets me calibrate card segmentation + recognition to the real layout.
-- **Workaround:** none for real play; blind fixed-point clicking is already suppressed so the agent
-  reports "uncertain" instead of misclicking.
-
 ## Resolved
+
+### B3 — Per-card hand segmentation [RESOLVED 2026-07-04]
+- **Answer:** User provided 3 real game screenshots (`tests/fixtures/uno_desktop/`). Built
+  `hand_segmentation.py` calibrated + tested against them: detects hand extent, card count (±1),
+  per-slot bounds + click center + dominant colour. hand7_a matches exactly (G,G,B,B,B,B,wild).
+- **Remaining accuracy caveat:** card VALUE (number/action) not yet recognised — colour + coordinate
+  only. Value recognition + count-exactness need live tuning on the Windows host (#B1).
 
 ### B2 — Direction for real gameplay [RESOLVED 2026-07-04]
 - **Answer:** UNO.exe is a **native Electron app** that must recognize cards + coordinates from
