@@ -254,10 +254,36 @@ class FlowController:
       ui = UiEvidence.model_validate(bundle.ui_evidence)
       conf = float(ui.confidence)
 
-    # Extract screenshot from evidence bundle (works for both web and windows adapters)
-    if hasattr(bundle, 'screenshot') and bundle.screenshot:
-      from uno_schemas.perception import ScreenshotFrame
-      screenshot = ScreenshotFrame.model_validate(bundle.screenshot)
+    # Extract screenshot from evidence bundle.
+    # GenericEvidenceBundle has NO `screenshot` field — it exposes the raw adapter
+    # payload in `.extra` and the file path in `.screenshot_path`. The old code
+    # looked for a non-existent `bundle.screenshot`, so the screenshot NEVER
+    # reached perception on real windows/web sessions → the screenshot-CV path
+    # silently never ran → game_state stayed empty → the agent classified every
+    # frame as "not_in_game" and never played. Reconstruct it here.
+    from uno_schemas.perception import ScreenshotFrame
+    shot_data = bundle.extra.get("screenshot") if getattr(bundle, "extra", None) else None
+    if isinstance(shot_data, dict):
+      try:
+        screenshot = ScreenshotFrame.model_validate(shot_data)
+      except Exception:
+        screenshot = None
+    if screenshot is None and getattr(bundle, "screenshot_path", None):
+      w = h = 1
+      try:
+        from PIL import Image
+        with Image.open(bundle.screenshot_path) as _im:
+          w, h = _im.size
+      except Exception:
+        pass
+      screenshot = ScreenshotFrame(
+        frame_id=cid,
+        session_id=bundle.session_id or "unknown",
+        width=max(1, w),
+        height=max(1, h),
+        path=bundle.screenshot_path,
+        captured_at_ms=int(time.time() * 1000),
+      )
 
     return dom, ui, conf, screenshot
 
