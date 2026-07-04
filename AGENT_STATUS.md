@@ -23,6 +23,13 @@ real-Windows run (#7, blocked on host #B1).
   adaptive backoff self-heals; `kill -9` mid-run → resume continued without progress loss.
 - Real pywinauto path unchanged; still needs a Windows host (#B1) for the final DoD run.
 
+## Real gameplay (task #9) — direction: CV desktop (Electron), Windows adapter
+- **9a done:** CV recognition now actually runs in production (was silently skipped without an
+  output_dir) and detected hand cards carry absolute bounds+center to the observation.
+- **9b BLOCKED (#B3):** per-card hand segmentation — current CV sees the hand as ONE blob; needs a
+  REAL game screenshot to calibrate. **This is the gate to real play.**
+- **9c/9d pending:** execution grounding (click detected card coord) + legal actions from detected state.
+
 ## Real-run findings (2026-07-04)
 User ran real UNO.exe → agent captured screen but only looped clicking one fixed point, no play.
 - **Why no play:** perception→execution are decoupled — legal actions come from a simulated engine
