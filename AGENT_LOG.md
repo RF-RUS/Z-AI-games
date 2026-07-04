@@ -4,6 +4,36 @@ Append-only. Newest last.
 
 ---
 
+### 2026-07-04 — Real-run debugging: no gameplay + Stop/New bugs
+- **Trigger:** User ran real `UNO.exe` via Operator. Symptom: screen captured, mouse kept
+  returning to ONE fixed point, no card recognition / no play; Stop didn't stop; New didn't reset.
+- **Root causes found (verified in code):**
+  1. **No real gameplay is wired for desktop canvas games.** `flow_controller.run_cycle` gets
+     legal actions from a *simulated engine* (`game_id`), NOT from the screen; the windows executor
+     locates targets by `selector_key` via UIA→static layout and *ignores* screenshot-detected
+     coordinates. `HeuristicCanvasUNOPlugin.infer_from_screenshot` (perception) produces card coords
+     but nothing consumes them for clicks. → new task #9 + Decision D5.
+  2. **Fixed-point mouse:** canvas game = empty UIA → target cascade falls to Step 5 static
+     `layout_targets` (`real-uno-desktop.json` `play_button {0.56,0.34}`, conf 0.72 > gate) → same
+     absolute point every tick. Profile self-declares `match_automation:web_only`, "preview only,
+     use web adapter for match play."
+  3. **Pause never held:** `_run_loop` lumped PAUSED with ERROR and force-reset it to ACTIVE, so the
+     loop kept acting through Pause.
+  4. **New button dead:** `OperatorWorkspace` `onNewSession={() => {}}` — a no-op.
+- **Fixes applied (this session):**
+  - `orchestrator._run_loop`: PAUSED now HALTS the loop (resume() spawns a fresh loop); ERROR still
+    auto-recovers (unchanged, test-backed).
+  - `target_locator.locate_selector`: suppress static `layout_targets` fallback when
+    `match_automation=="web_only"` → no more blind fixed-point clicks; executor reports uncertain.
+  - `App.tsx`/`OperatorWorkspace.tsx`: `onNewSession` wired — stop session + return to setup + clear.
+- **Files changed:** `services/session-orchestrator/src/uno_orchestrator/orchestrator.py`,
+  `services/adapter-windows/src/uno_adapter_windows/rpa/perception/target_locator.py`,
+  `apps/control-center/src/App.tsx`, `apps/control-center/src/operator/OperatorWorkspace.tsx`,
+  `tests/unit/test_session_control_and_blind_click.py` (NEW).
+- **Verified:** ruff clean; `pytest tests/unit` 295 passed / 7 skipped (+3 new); vitest 34/34.
+  Real UNO.exe behavior change (no blind click; Pause holds) is unverified on hardware (macOS host).
+- **Next:** #9 CV→execution wiring epic (needs Windows host + direction decision — see BLOCKERS #B2).
+
 ### 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent
 - **Did:** Mapped Windows agent architecture end-to-end (adapter-windows RPA layer, runtime capture,
   orchestrator autonomous loop, recovery). Ran baseline `start-orchestrator-session-windows.py --tick`.

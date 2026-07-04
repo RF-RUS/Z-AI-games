@@ -255,7 +255,21 @@ export default function App() {
     <div className="app">
       {/* New operator workspace — replaces old layout when operator view is active */}
       {state.view === "operator" ? (
-        <OperatorWorkspace sessionId={state.sessionId} />
+        <OperatorWorkspace
+          sessionId={state.sessionId}
+          onNewSession={async () => {
+            // Stop the running session (best-effort) then return to setup.
+            if (state.sessionId) {
+              try {
+                const { stopSession } = await import("./unoApiClient");
+                await stopSession(state.sessionId);
+              } catch { /* ignore — still reset UI */ }
+            }
+            dispatch({ type: "SET_SESSION_ID", sessionId: null });
+            dispatch({ type: "SET_VIEW", view: "setup" });
+            dispatch({ type: "CLEAR_ALERTS" });
+          }}
+        />
       ) : (
         <>
           <StatusBar

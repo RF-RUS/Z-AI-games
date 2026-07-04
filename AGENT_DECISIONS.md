@@ -28,6 +28,23 @@ Durable game-learning already persists via the Postgres `zone_store`; the checkp
 source of truth" mandate. Postgres already owns learned zones — no duplication.
 **Consequence:** Resume restores progress + continues; learned zones reload from Postgres independently.
 
+### D5 (2026-07-04) — Real desktop gameplay is NOT wired; two possible paths
+**Finding:** For a canvas/desktop game (UNO.exe), the agent cannot play because
+(a) legal actions come from a simulated engine keyed by `game_id`, decoupled from the real
+screen, and (b) the windows executor clicks by `selector_key` through UIA→static layout and
+ignores the screenshot-detected card coordinates that perception already produces.
+**Decision (pending human input — see BLOCKERS #B2):** two mutually-exclusive directions:
+  - **Path A — CV-driven desktop execution:** derive turn/legal actions from the observation and
+    pass detected card coordinates into `visual_executor` so clicks hit real cards. Larger effort;
+    needs a Windows host to iterate; CV reliability unproven.
+  - **Path B — steer to the web adapter:** the `real-uno-desktop` profile itself says match play is
+    "web_only — use scuffed-uno-web". If UNO.exe is browser-based, the intended route is the web
+    adapter (Playwright canvas coords), which is the active sprint per ROADMAP.
+**Interim decision (done now):** stop the harmful blind-click (suppress static layout fallback for
+`web_only` profiles) and make Pause/New behave correctly — regardless of which path is chosen.
+**Why:** don't build the large CV wiring blind on macOS; fix the honest-behavior + control bugs first,
+then pick A/B with the user and validate on hardware.
+
 ### D4 (2026-07-03) — Recovery strategy: two tiers
 **Decision:** (1) In-loop recovery = existing `recovery.decide_recovery` (retry/backoff/fallback-mock/manual).
 (2) Process-level watchdog = restart the whole runner on hard crash (window died, pywinauto fault),

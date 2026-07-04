@@ -222,7 +222,17 @@ def locate_selector(
         trace.error = f"learned_lookup: {exc}"
       pass  # fall through to static layout
 
-  # Step 5: Static layout_targets (cold-start fallback)
+  # Step 5: Static layout_targets (cold-start fallback).
+  # Skipped for preview-only profiles (match_automation="web_only"): their
+  # layout_targets are placeholder ratios, so clicking them just fires a blind
+  # click at a fixed point every tick without ever hitting a real card. For
+  # such profiles we return no target so the executor reports "uncertain"
+  # instead of hammering the same spot. Real match play uses the web adapter.
+  if getattr(profile, "match_automation", None) == "web_only":
+    if trace:
+      trace.source = "none"
+      trace.error = "layout_fallback_suppressed_web_only"
+    return None
   if window_bounds:
     t = locate_layout_target(selector_key, profile, window_bounds, client_bounds)
     if t and trace:

@@ -23,6 +23,16 @@ real-Windows run (#7, blocked on host #B1).
   adaptive backoff self-heals; `kill -9` mid-run → resume continued without progress loss.
 - Real pywinauto path unchanged; still needs a Windows host (#B1) for the final DoD run.
 
+## Real-run findings (2026-07-04)
+User ran real UNO.exe → agent captured screen but only looped clicking one fixed point, no play.
+- **Why no play:** perception→execution are decoupled — legal actions come from a simulated engine
+  (not the screen); executor clicks by `selector_key` (UIA→static layout), ignoring screenshot-detected
+  card coords. Real desktop gameplay is **not wired** (task #9, BLOCKERS #B2). `real-uno-desktop`
+  profile is preview-only (`web_only`).
+- **Fixed now (cross-platform, tested):** Pause holds; New button resets; blind fixed-point click
+  suppressed for `web_only` profiles (agent now reports uncertain instead of hammering a wrong spot).
+- **Needs human:** pick real-play direction (CV desktop vs web adapter) — BLOCKERS #B2.
+
 ## DoD status
 Met on the cross-platform mock path: autonomous perceive→decide→act→verify→record, recovers from
 typical faults, survives long runs, resumes after break/crash. **Open:** real-hardware confirmation (#7/#B1).

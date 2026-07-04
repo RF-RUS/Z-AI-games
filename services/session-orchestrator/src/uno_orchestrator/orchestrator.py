@@ -798,8 +798,15 @@ class SessionOrchestrator:
   async def _run_loop(self, session: RuntimeSession) -> None:
     logger.info("autonomous_loop_running", session_id=session.detail.session_id)
     while session.detail.automatic:
+      if session.detail.flow_state == FlowState.PAUSED:
+        # Pause must HOLD: stop ticking and end the loop. resume() spawns a
+        # fresh loop task. (Previously PAUSED was force-reset to ACTIVE, so
+        # Pause appeared to do nothing — the agent kept acting.)
+        logger.info("autonomous_loop_paused", session_id=session.detail.session_id)
+        break
       if session.detail.flow_state not in (FlowState.ACTIVE, FlowState.IDLE):
-        if session.detail.flow_state in (FlowState.ERROR, FlowState.PAUSED):
+        if session.detail.flow_state == FlowState.ERROR:
+          # ERROR is recoverable — keep the agent alive by resuming.
           logger.warning(
             "autonomous_loop_flow_not_active",
             session_id=session.detail.session_id,

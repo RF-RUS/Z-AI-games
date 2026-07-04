@@ -24,9 +24,10 @@ function getRecoveryAction(error?: string | null, recovery?: { error_class?: str
 
 interface Props {
   sessionId: string | null;
+  onNewSession?: () => void;
 }
 
-export default function OperatorWorkspace({ sessionId }: Props) {
+export default function OperatorWorkspace({ sessionId, onNewSession }: Props) {
   const [controlMode, setControlMode] = useState<ControlMode>("auto");
   const [escalations, setEscalations] = useState<Array<{ id: string; message: string; status: string; severity: string }>>([]);
 
@@ -120,7 +121,7 @@ export default function OperatorWorkspace({ sessionId }: Props) {
         onPause={handlePause}
         onResume={handleResume}
         onStop={handleStop}
-        onNewSession={() => {}}
+        onNewSession={onNewSession ?? (() => {})}
         onModeChange={handleModeChange}
       />
 

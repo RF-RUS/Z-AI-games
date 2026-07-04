@@ -3,7 +3,12 @@
 _Updated: 2026-07-03_
 
 ## In Progress
-- [#8] Docs: runbook for autonomous run + resume + watchdog + constraints.
+- _(idle — awaiting direction on #9 / BLOCKERS #B2)_
+
+## Blocked
+- [#9] **Real gameplay: wire screenshot CV coords → windows execution.** Root cause of "agent
+  doesn't play". Blocked on direction (CV desktop vs web adapter) + Windows host — see BLOCKERS #B2.
+- [#7] Real Windows validation — needs Windows host.
 
 ## Backlog
 ### Phase B — Perception/decision/execution hardening (unblocked, but touches real-Windows paths)
@@ -24,3 +29,5 @@ _Updated: 2026-07-03_
 - [#3] Atomic per-tick checkpoint + `--resume` (validated: ticks 6→8 across restart).
 - [#4] `scripts/watchdog-windows-agent.py` process supervisor (auto-restart, backoff, giveup — validated).
 - [#5] Long-run (100 ticks, 0 crashes) + adaptive backoff self-heal + `kill -9`→resume fault injection.
+- Real-run bugfixes: Pause now holds (loop); New button wired (reset); blind fixed-point click
+  suppressed for `web_only` profiles. +3 regression tests. (2026-07-04)
