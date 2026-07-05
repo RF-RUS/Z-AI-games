@@ -75,7 +75,11 @@ class FlowController:
   def _classify_state_for_verification(self, observation, detail) -> str:
     """Classify state for before/after verification — same as strategy classifier."""
     has_adapter = any(b.attached for b in detail.adapter_bindings) if detail.adapter_bindings else False
-    if observation and getattr(observation, "game_state", None):
+    gs = getattr(observation, "game_state", None) if observation else None
+    # Real gameplay signal only — ignore diagnostic-only keys (cv_error/cv_status)
+    # so a failed screenshot decode isn't mistaken for being in-game.
+    gameplay_keys = {"screen_type", "hand_cards", "top_card", "regions", "actionable_targets"}
+    if gs and (gameplay_keys & set(gs.keys())):
       return "in_game"
     if observation and getattr(observation, "game_elements", None):
       return "in_game"
@@ -146,7 +150,9 @@ class FlowController:
       # BLACK capture (GPU/Electron window), which is a capture problem, not a
       # calibration problem.
       bright = ""
+      frame_path = ""
       if screenshot and hand_n == 0 and getattr(screenshot, "path", None):
+        frame_path = f" frame={screenshot.path}"
         try:
           from PIL import Image
           with Image.open(screenshot.path) as _im:
@@ -156,9 +162,15 @@ class FlowController:
           bright = f" avg_brightness={_mean:.0f}{'(BLACK)' if _mean < 8 else ''}"
         except Exception:
           bright = " avg_brightness=?"
+      cv_fail = ""
+      if gs.get("cv_error"):
+        cv_fail = f" cv_error={gs['cv_error']}"
+      elif gs.get("cv_status"):
+        cv_fail = f" cv_status={gs['cv_status']}"
       perception_note = (
-        f"[CVv2] screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
-        f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}{bright}"
+        f"[CVv3] screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
+        f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}"
+        f"{bright}{cv_fail}{frame_path}"
       )
       logger.info(
         "perception_diag", session_id=detail.session_id,

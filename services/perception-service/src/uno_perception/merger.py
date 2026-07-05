@@ -135,9 +135,22 @@ def build_observation(
           for r in inference.actionable_targets
         ]
         overall = max(overall, inference.confidence)
+      else:
+        # Screen judged invalid (unreadable / black). Surface WHY so the
+        # operator diagnostic can show it instead of a silent empty state.
+        game_state = (game_state or {})
+        game_state["cv_screen_valid"] = False
+        game_state["cv_status"] = inference.summary or "screen invalid"
     except Exception as exc:
       import logging
-      logging.getLogger(__name__).warning("screenshot_perception_failed error=%s", str(exc))
+      import traceback
+      tb = traceback.format_exc().strip().splitlines()[-1]
+      logging.getLogger(__name__).warning(
+        "screenshot_perception_failed error=%s", str(exc), exc_info=True,
+      )
+      # Surface the failure into the observation so it's visible in the UI.
+      game_state = (game_state or {})
+      game_state["cv_error"] = f"{type(exc).__name__}: {exc} @ {tb}"
 
   return Observation(
     observation_id=str(uuid4()),
