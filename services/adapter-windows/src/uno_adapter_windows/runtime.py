@@ -294,113 +294,115 @@ async def _find_with_backend(profile: WindowsAdapterProfile, backend: str, title
   return await asyncio.to_thread(_find)
 
 
-async def capture_window_screenshot(window, artifacts_dir: Path, label: str) -> str | None:
-  """Capture screenshot of a window. Tries multiple backends for compatibility.
+def is_mostly_black(img, threshold: float = 8.0) -> bool:
+  """True if the image is (near) uniformly black — the signature of a failed
+  capture of a GPU-accelerated (Electron/Chromium/DirectX) window."""
+  try:
+    small = img.convert("RGB").resize((32, 32))
+    px = list(small.getdata())
+    if not px:
+      return True
+    mean = sum(r + g + b for r, g, b in px) / (len(px) * 3)
+    return mean < threshold
+  except Exception:
+    return False
 
-  Priority order:
-  1. pywinauto capture_as_image (works for standard Win32 windows)
-  2. PIL ImageGrab (screen region capture)
-  3. Win32 PrintWindow (works for some protected windows)
-  4. Win32 BitBlt (works for Unity/DirectX/OpenGL games)
+
+def _capture_via_printwindow(hwnd, flag: int):
+  """Win32 PrintWindow → PIL Image. flag 0x2 = PW_RENDERFULLCONTENT (needed for
+  Chromium/Electron/DWM-composited windows)."""
+  import ctypes
+  import ctypes.wintypes
+  from ctypes import Structure, c_long, c_ulong, c_ushort
+
+  from PIL import Image
+
+  class BITMAPINFOHEADER(Structure):
+    _fields_ = [
+      ("biSize", c_ulong), ("biWidth", c_long), ("biHeight", c_long),
+      ("biPlanes", c_ushort), ("biBitCount", c_ushort), ("biCompression", c_ulong),
+      ("biSizeImage", c_ulong), ("biXPelsPerMeter", c_long),
+      ("biYPelsPerMeter", c_long), ("biClrUsed", c_ulong), ("biClrImportant", c_ulong),
+    ]
+
+  rect = ctypes.wintypes.RECT()
+  ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+  width, height = rect.right - rect.left, rect.bottom - rect.top
+  if width <= 0 or height <= 0:
+    return None
+  hdc_screen = ctypes.windll.user32.GetDC(0)
+  hdc_mem = ctypes.windll.gdi32.CreateCompatibleDC(hdc_screen)
+  hbmp = ctypes.windll.gdi32.CreateCompatibleBitmap(hdc_screen, width, height)
+  ctypes.windll.gdi32.SelectObject(hdc_mem, hbmp)
+  try:
+    if ctypes.windll.user32.PrintWindow(hwnd, hdc_mem, flag) == 0:
+      return None
+    hdr = BITMAPINFOHEADER()
+    hdr.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+    hdr.biWidth, hdr.biHeight = width, -height
+    hdr.biPlanes, hdr.biBitCount, hdr.biCompression = 1, 32, 0
+    buf = ctypes.create_string_buffer(width * height * 4)
+    ctypes.windll.gdi32.GetDIBits(hdc_mem, hbmp, 0, height, buf, ctypes.byref(hdr), 0)
+    return Image.frombuffer("RGBA", (width, height), buf, "raw", "BGRA", 0, 1).convert("RGB")
+  finally:
+    ctypes.windll.gdi32.DeleteObject(hbmp)
+    ctypes.windll.user32.DeleteDC(hdc_mem)
+    ctypes.windll.user32.ReleaseDC(0, hdc_screen)
+
+
+async def capture_window_screenshot(window, artifacts_dir: Path, label: str) -> str | None:
+  """Capture a window screenshot, returning the FIRST non-black result.
+
+  GPU-accelerated windows (Electron/Chromium, DirectX, Unity) return an all-black
+  image from naive captures (pywinauto capture_as_image / plain PrintWindow). We
+  therefore try several methods and skip any that come back black, preferring
+  PrintWindow(PW_RENDERFULLCONTENT) and a screen-region grab which do capture DWM
+  composited content. Falls back to the last available image if all look black.
   """
   def _shot() -> str | None:
     hwnd = int(window.handle)
 
-    # Method 1: pywinauto capture_as_image
-    try:
-      img = window.capture_as_image()
-      path = artifacts_dir / f"{label}-{int(time.time()*1000)}.png"
-      img.save(path)
-      return str(path)
-    except Exception:
-      pass
+    def m_capture_as_image():
+      return window.capture_as_image()
 
-    # Method 2: PIL ImageGrab (screen region)
-    try:
+    def m_printwindow_full():
+      return _capture_via_printwindow(hwnd, 0x00000002)  # PW_RENDERFULLCONTENT
+
+    def m_imagegrab():
       from PIL import ImageGrab
       rect = window.rectangle()
-      img = ImageGrab.grab(bbox=(rect.left, rect.top, rect.right, rect.bottom))
-      path = artifacts_dir / f"{label}-{int(time.time()*1000)}.png"
-      img.save(path)
-      return str(path)
-    except Exception:
-      pass
+      return ImageGrab.grab(bbox=(rect.left, rect.top, rect.right, rect.bottom))
 
-    # Method 3: Win32 PrintWindow (works for some protected windows)
-    try:
-      import ctypes
-      import ctypes.wintypes
-      from ctypes import Structure, c_long, c_ulong, c_ushort
+    def m_printwindow_plain():
+      return _capture_via_printwindow(hwnd, 0x00000000)
 
-      from PIL import Image
-
-      class BITMAPINFOHEADER(Structure):
-        _fields_ = [
-          ("biSize", c_ulong), ("biWidth", c_long), ("biHeight", c_long),
-          ("biPlanes", c_ushort), ("biBitCount", c_ushort), ("biCompression", c_ulong),
-          ("biSizeImage", c_ulong), ("biXPelsPerMeter", c_long),
-          ("biYPelsPerMeter", c_long), ("biClrUsed", c_ulong), ("biClrImportant", c_ulong),
-        ]
-
-      rect = ctypes.wintypes.RECT()
-      ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
-      width = rect.right - rect.left
-      height = rect.bottom - rect.top
-      if width <= 0 or height <= 0:
-        return None
-
-      hdc_screen = ctypes.windll.user32.GetDC(0)
-      hdc_mem = ctypes.windll.gdi32.CreateCompatibleDC(hdc_screen)
-      hBitmap = ctypes.windll.gdi32.CreateCompatibleBitmap(hdc_screen, width, height)
-      ctypes.windll.gdi32.SelectObject(hdc_mem, hBitmap)
-
-      # Try PrintWindow first
-      for flags in (0x00000002, 0x00000000):
-        result = ctypes.windll.user32.PrintWindow(hwnd, hdc_mem, flags)
-        if result != 0:
-          bmpinfo = BITMAPINFOHEADER()
-          bmpinfo.biSize = ctypes.sizeof(BITMAPINFOHEADER)
-          bmpinfo.biWidth = width
-          bmpinfo.biHeight = -height
-          bmpinfo.biPlanes = 1
-          bmpinfo.biBitCount = 32
-          bmpinfo.biCompression = 0
-          buf = ctypes.create_string_buffer(width * height * 4)
-          ctypes.windll.gdi32.GetDIBits(hdc_mem, hBitmap, 0, height, buf, ctypes.byref(bmpinfo), 0)
-          img = Image.frombuffer("RGBA", (width, height), buf, "raw", "BGRA", 0, 1).convert("RGB")
-          ctypes.windll.gdi32.DeleteObject(hBitmap)
-          ctypes.windll.user32.DeleteDC(hdc_mem)
-          ctypes.windll.user32.ReleaseDC(0, hdc_screen)
-          path = artifacts_dir / f"{label}-{int(time.time()*1000)}.png"
-          img.save(path)
-          return str(path)
-
-      # Method 4: BitBlt (works for Unity/DirectX/OpenGL games)
-      result = ctypes.windll.gdi32.BitBlt(hdc_mem, 0, 0, width, height, hdc_screen, rect.left, rect.top, 0x00CC0020)
-      if result:
-        bmpinfo = BITMAPINFOHEADER()
-        bmpinfo.biSize = ctypes.sizeof(BITMAPINFOHEADER)
-        bmpinfo.biWidth = width
-        bmpinfo.biHeight = -height
-        bmpinfo.biPlanes = 1
-        bmpinfo.biBitCount = 32
-        bmpinfo.biCompression = 0
-        buf = ctypes.create_string_buffer(width * height * 4)
-        ctypes.windll.gdi32.GetDIBits(hdc_mem, hBitmap, 0, height, buf, ctypes.byref(bmpinfo), 0)
-        img = Image.frombuffer("RGBA", (width, height), buf, "raw", "BGRA", 0, 1).convert("RGB")
-        ctypes.windll.gdi32.DeleteObject(hBitmap)
-        ctypes.windll.user32.DeleteDC(hdc_mem)
-        ctypes.windll.user32.ReleaseDC(0, hdc_screen)
+    # Order: content-preserving GPU-capable methods first.
+    methods = [
+      ("capture_as_image", m_capture_as_image),
+      ("printwindow_full", m_printwindow_full),
+      ("imagegrab", m_imagegrab),
+      ("printwindow_plain", m_printwindow_plain),
+    ]
+    fallback = None
+    for name, fn in methods:
+      try:
+        img = fn()
+      except Exception:
+        continue
+      if img is None:
+        continue
+      if fallback is None:
+        fallback = img
+      if not is_mostly_black(img):
         path = artifacts_dir / f"{label}-{int(time.time()*1000)}.png"
         img.save(path)
         return str(path)
 
-      ctypes.windll.gdi32.DeleteObject(hBitmap)
-      ctypes.windll.user32.DeleteDC(hdc_mem)
-      ctypes.windll.user32.ReleaseDC(0, hdc_screen)
-    except Exception:
-      pass
-
+    # Everything looked black — persist the last candidate anyway (diagnostic).
+    if fallback is not None:
+      path = artifacts_dir / f"{label}-{int(time.time()*1000)}.png"
+      fallback.save(path)
+      return str(path)
     return None
 
   return await asyncio.to_thread(_shot)

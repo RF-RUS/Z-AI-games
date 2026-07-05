@@ -119,6 +119,27 @@ Append-only. Newest last.
   `[CVv2]…`; if not, backend wasn't restarted. Send that line + the latest captured frame from
   `services/adapter-windows/artifacts/**/evidence-*.png`.
 
+---
+
+### 2026-07-05 — [CVv2] live → BLACK Electron capture; fixed capture fallthrough
+- **Diagnostic came back:** Operator NEXT ACTION now shows `[CVv2] screenshot=1296x759 screen_type=?
+  gs_conf=0.00 hand_cards=0` → **my code IS live**; screenshot reaches perception at the right size
+  but CV finds 0 cards. The "Agent evidence" preview is dark. → the capture of the GPU-accelerated
+  **Electron** window returns an all-BLACK frame (correct size, no pixels).
+- **Root cause:** `capture_window_screenshot` method 1 (`capture_as_image`) returns a black-but-valid
+  image for Electron/Chromium and short-circuits before the methods that DO capture DWM-composited
+  content (PrintWindow with PW_RENDERFULLCONTENT=0x2, screen-region grab).
+- **Fixed:** rewrote capture to try methods in order and return the FIRST NON-BLACK result
+  (`is_mostly_black` detector); reordered to prefer PrintWindow(PW_RENDERFULLCONTENT) + ImageGrab.
+  Added mean-brightness to the [CVv2] diagnostic (`avg_brightness=N(BLACK)`) to confirm.
+- **Files:** `runtime.py` (capture rewrite + `is_mostly_black`), `flow_controller.py` (brightness in
+  diag), `tests/unit/test_black_frame_detection.py` (NEW).
+- **Verified:** ruff clean; tests/unit 310 passed / 7 skipped (+3). Capture itself needs Windows to
+  confirm, but the black-detection + method order is the standard fix for Electron capture.
+- **Next for user:** pull, restart backend, rerun windows session. Expect the [CVv2] line to show a
+  real brightness and hand_cards>0. If avg_brightness still (BLACK), the window needs a different
+  capture path (Windows.Graphics.Capture) — will handle then.
+
 ### 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent
 - **Did:** Mapped Windows agent architecture end-to-end (adapter-windows RPA layer, runtime capture,
   orchestrator autonomous loop, recovery). Ran baseline `start-orchestrator-session-windows.py --tick`.

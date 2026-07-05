@@ -142,9 +142,23 @@ class FlowController:
       gs = observation.game_state or {}
       hand_n = len(gs.get("hand_cards", []) or [])
       shot_desc = f"{screenshot.width}x{screenshot.height}" if screenshot else "NONE"
+      # When no cards were found, read the frame's mean brightness: near-0 means a
+      # BLACK capture (GPU/Electron window), which is a capture problem, not a
+      # calibration problem.
+      bright = ""
+      if screenshot and hand_n == 0 and getattr(screenshot, "path", None):
+        try:
+          from PIL import Image
+          with Image.open(screenshot.path) as _im:
+            _s = _im.convert("RGB").resize((32, 32))
+            _px = list(_s.getdata())
+          _mean = sum(r + g + b for r, g, b in _px) / (len(_px) * 3) if _px else 0
+          bright = f" avg_brightness={_mean:.0f}{'(BLACK)' if _mean < 8 else ''}"
+        except Exception:
+          bright = " avg_brightness=?"
       perception_note = (
         f"[CVv2] screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
-        f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}"
+        f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}{bright}"
       )
       logger.info(
         "perception_diag", session_id=detail.session_id,
