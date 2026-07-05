@@ -8,7 +8,6 @@ import pytest
 
 pytest.importorskip("PIL")
 from PIL import Image  # noqa: E402
-
 from uno_adapter_windows.runtime import is_mostly_black  # noqa: E402
 
 
