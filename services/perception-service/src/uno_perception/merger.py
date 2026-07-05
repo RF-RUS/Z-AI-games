@@ -86,6 +86,11 @@ def build_observation(
 
   # Screenshot perception: supplement or replace UIA data when screenshot available
   if screenshot and screenshot.path:
+    # Build marker — if the operator's [CVv3] line does NOT show pcv=v3, the
+    # PERCEPTION service is running stale code (restart it), independent of the
+    # orchestrator which prints [CVv3].
+    game_state = (game_state or {})
+    game_state["cv_build"] = "v3"
     try:
       from uno_perception.canvas_plugin import HeuristicCanvasUNOPlugin
       screenshot_plugin = HeuristicCanvasUNOPlugin()

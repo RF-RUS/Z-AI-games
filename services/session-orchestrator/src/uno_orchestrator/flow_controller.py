@@ -167,8 +167,9 @@ class FlowController:
         cv_fail = f" cv_error={gs['cv_error']}"
       elif gs.get("cv_status"):
         cv_fail = f" cv_status={gs['cv_status']}"
+      pcv = gs.get("cv_build") or "MISSING(restart-perception-8103)"
       perception_note = (
-        f"[CVv3] screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
+        f"[CVv3] pcv={pcv} screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
         f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}"
         f"{bright}{cv_fail}{frame_path}"
       )
