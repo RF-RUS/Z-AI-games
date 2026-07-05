@@ -22,6 +22,23 @@ $services = @(
   @{Name="session-orchestrator"; Module="uno_orchestrator.api:app"; Port=8100}
 )
 
+# Clean restart: STOP any process already listening on a service port first.
+# uvicorn runs WITHOUT --reload, so old processes keep serving OLD code after a
+# git pull. Without this, re-running the script just spawns duplicates that fail
+# to bind while the stale code keeps answering (e.g. perception on :8103 showing
+# pcv=MISSING and the agent never recognising the game). This makes new code live.
+Write-Host "Stopping any existing backend services..."
+foreach ($svc in $services) {
+  try {
+    $conns = Get-NetTCPConnection -LocalPort $svc.Port -State Listen -ErrorAction SilentlyContinue
+    foreach ($c in $conns) {
+      Stop-Process -Id $c.OwningProcess -Force -ErrorAction SilentlyContinue
+      Write-Host "  Stopped stale $($svc.Name) (pid $($c.OwningProcess)) on :$($svc.Port)"
+    }
+  } catch {}
+}
+Start-Sleep -Milliseconds 700
+
 Write-Host "Starting UNO Operator backend services..."
 foreach ($svc in $services) {
   $env:PYTHONPATH = "$root/packages/schemas/src;$root/packages/shared-utils/src;$root/services/$($svc.Name -replace '-service','')/src"
