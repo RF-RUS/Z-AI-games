@@ -136,17 +136,40 @@ class FlowController:
       if observation.confidence.overall < detail.config.min_confidence:
         raise LowConfidenceError(f"confidence {observation.confidence.overall} < {detail.config.min_confidence}")
 
-      if observation.confidence.game_state == 0.0 and dom is None and ui is not None:
+      # Perception diagnostic — surfaced in the Operator (NEXT ACTION) and logs.
+      # The [CVv2] marker confirms THIS build is running: if the operator does not
+      # show it, the backend Python services were not restarted with the new code.
+      gs = observation.game_state or {}
+      hand_n = len(gs.get("hand_cards", []) or [])
+      shot_desc = f"{screenshot.width}x{screenshot.height}" if screenshot else "NONE"
+      perception_note = (
+        f"[CVv2] screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
+        f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}"
+      )
+      logger.info(
+        "perception_diag", session_id=detail.session_id,
+        screenshot=shot_desc, screen_type=gs.get("screen_type"),
+        hand_cards=hand_n, game_state_confidence=observation.confidence.game_state,
+      )
+
+      if observation.confidence.game_state == 0.0 and not gs.get("hand_cards"):
         detail.metrics.policy_blocks += 1
-        detail.error = (
-          "Game state not extractable from UI automation tree. "
-          "Continuing with heuristic fallback."
-        )
+        if screenshot is None:
+          detail.error = (
+            f"No screenshot reached perception — screenshot CV cannot run. {perception_note}. "
+            "Restart the backend services (dev-backend.ps1) so this build is active."
+          )
+        else:
+          detail.error = (
+            f"Screenshot received but no cards recognized. {perception_note}. "
+            "Likely the captured window / zone calibration doesn't match this game."
+          )
         logger.warning(
           "extraction_low_confidence_continuing",
           session_id=detail.session_id,
           adapter_type=detail.config.adapter_type,
           game_state_confidence=observation.confidence.game_state,
+          screenshot=shot_desc,
         )
 
       failed_at = FlowStepName.LEGAL_ACTIONS

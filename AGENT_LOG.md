@@ -99,6 +99,26 @@ Append-only. Newest last.
 - **Needs Windows host (#B1):** validate the screenshot→screen coordinate transform (DPI scaling)
   and end-to-end real clicks; tune value recognition + exact card count.
 
+---
+
+### 2026-07-05 — Real run still not_in_game → diagnostic marker [CVv2]
+- **Trigger:** User reran on Windows. Operator STILL shows the OLD message "Game state not extractable
+  from UI automation tree" + GAME STATE Unknown + not_in_game, though confidence rose 55%→80% and
+  action became play_card ("number card" — from the SIMULATED engine, not the screen).
+- **Diagnosis:** that message only fires when `observation.confidence.game_state == 0.0`, i.e. the
+  screenshot-CV branch did NOT run. My whole real path is correct in code (ServiceClients.perceive
+  forwards the screenshot L91-92; perception /perceive → build_observation → merger → canvas_plugin).
+  So the running BACKEND is almost certainly OLD code (services not restarted after pull), or the
+  screenshot isn't reaching perception. The old message still appearing = my code isn't live.
+- **Did:** Replaced the vague error with a precise, UI-visible, version-marked diagnostic in
+  `flow_controller` perceive step: `[CVv2] screenshot=WxH screen_type=.. gs_conf=.. hand_cards=N`,
+  and distinct messages for screenshot=NONE (restart backend) vs received-but-no-cards (calibration).
+- **Files:** `services/session-orchestrator/src/uno_orchestrator/flow_controller.py`.
+- **Verified:** ruff clean; tests/unit 307 passed / 7 skipped (extraction_guard still green).
+- **Action for user:** pull, **restart backend (dev-backend.ps1)**, rerun. NEXT ACTION must show
+  `[CVv2]…`; if not, backend wasn't restarted. Send that line + the latest captured frame from
+  `services/adapter-windows/artifacts/**/evidence-*.png`.
+
 ### 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent
 - **Did:** Mapped Windows agent architecture end-to-end (adapter-windows RPA layer, runtime capture,
   orchestrator autonomous loop, recovery). Ran baseline `start-orchestrator-session-windows.py --tick`.
