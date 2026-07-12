@@ -4,17 +4,19 @@ Real blockers only. Move to Resolved when cleared.
 
 ## Open
 
-### B4 — Perception service running stale code on the user's Windows host (2026-07-12)
-- **What's missing:** confirmation that perception (:8103) is running current code. The 2026-07-12 run
-  shows `pcv=MISSING(restart-perception-8103)` while the screenshot reaches the orchestrator fine
-  (1296x759, avg_brightness=101). `cv_build="v3"` is set in the perception service (`merger.py:93`), so
-  MISSING = that process wasn't restarted after pull.
-- **Already checked (code):** capture is fine (07-05 black-frame fix holds); the orchestrator prints
-  `[CVv3]`; the marker gap is purely the perception process being stale.
-- **Action for user (not a code blocker):** run `scripts/stop-backend.ps1` then `scripts/dev-backend.ps1`
-  (the 07-05 fix kills stale port listeners), rerun ONE session, report the `[CVv3]` line. Expect
-  `pcv=v3`. If it appears but `hand_cards=0` on the fanned hand → the heuristic can't read real UNO,
-  which greenlights #10 (VLM perception, D6).
+### B4 — perception ran stale code: dev-backend.ps1 PYTHONPATH bug [FIX APPLIED 2026-07-12, awaiting host confirm]
+- **Was:** real UNO run showed `pcv=MISSING` even after restarting the backend.
+- **ROOT CAUSE FOUND:** `dev-backend.ps1` built each service src path as
+  `services/$(Name -replace '-service','')/src`, but the dirs keep the suffix
+  (`services/perception-service/src`). For all 8 `*-service` services the path didn't exist → uvicorn
+  imported the **stale globally-installed package** → new CV code never loaded regardless of restarts.
+  (Also overwrote `$env:PYTHONPATH` each loop iteration.) Tests missed it: `run-tests.ps1` globs real
+  dirs (`services/*/src`), so tests imported repo code while the live backend didn't.
+- **Fix applied:** `dev-backend.ps1` uses `$svc.Name` verbatim + warns on missing src dir + logs each
+  resolved `src:` path. See AGENT_LOG 2026-07-12 (b).
+- **To close:** user re-pulls, runs FIXED `dev-backend.ps1`, confirms startup prints real `src:` paths
+  and the operator finally shows `pcv=v3`. Only THEN is a `hand_cards=0` result a real perception
+  (heuristic) failure → proceed to #10.
 
 ### B1 — Real-Windows validation host unavailable
 - **What's missing:** A Windows machine with pywinauto/UIA and a real UNO target (e.g. `real-uno-desktop`

@@ -257,3 +257,36 @@ Append-only. Newest last.
   can't read real UNO → proceed with D6 (VLM perception).
 - **Next (proposed):** [#10] VLM perception producer feeding the existing `vlm` slot; make the
   game-specific heuristic a fallback, not the primary path. Then [9d] legal actions from detected state.
+
+---
+
+### 2026-07-12 (b) — ROOT CAUSE of pcv=MISSING: dev-backend.ps1 built a wrong PYTHONPATH
+- **Trigger:** User ran the FIXED `stop-backend.ps1`+`dev-backend.ps1` and STILL got
+  `pcv=MISSING(restart-perception-8103) … avg_brightness=103 hand_cards=0`. So "stale service" was
+  NOT the real cause — a restart couldn't fix it. Stopped telling the user to restart; read the code.
+- **ROOT CAUSE (real this time):** `dev-backend.ps1` L44 built each service's source path as
+  `services/$($svc.Name -replace '-service','')/src`. The folders on disk keep the suffix
+  (`services/perception-service/src`), so for EVERY `*-service` the `-replace` produced a
+  NON-EXISTENT dir (`services/perception/src`). `uvicorn` then imported the **stale globally-installed
+  `uno_perception`** instead of this repo → the new CV code (`cv_build="v3"`, screenshot branch) never
+  loaded, so `pcv` was MISSING no matter how many times the backend was restarted. Verified: real
+  dirs are `perception-service`, `config-service`, `decision-service`, `model-runtime-service`,
+  `chat-*-service`, `model-registry-service`, `observability-service`, `state-replay-service` — 8 of
+  14 services were importing stale installed packages. (adapter-web/-windows, uno-core,
+  session-orchestrator have no `-service` suffix so they happened to work — which is why the
+  orchestrator's `[CVv3]` marker WAS live while perception was not.)
+- **Second, latent bug:** L44 also **overwrote** `$env:PYTHONPATH` each loop iteration instead of
+  scoping it per-process, so services leaked each other's paths. Fixed alongside.
+- **Why tests never caught it:** `scripts/run-tests.ps1` builds PYTHONPATH via
+  `Get-ChildItem services/*/src` (globs real dirs) → tests always imported repo code and passed, while
+  the live backend imported stale packages. Classic green-tests / stale-prod split.
+- **Fixed:** `dev-backend.ps1` now uses `$svc.Name` verbatim for the source dir, warns if a source dir
+  is missing, and logs the resolved `src:` per service so this can never silently regress.
+- **Files:** `scripts/dev-backend.ps1`.
+- **Verified (macOS):** the `-replace` simulation shows 8/14 services previously pointed at missing
+  dirs; with `$svc.Name` verbatim all 14 resolve to real `src` dirs. Live confirmation needs the user's
+  Windows host (no backend here).
+- **Next for user:** re-pull, run `stop-backend.ps1` then the FIXED `dev-backend.ps1`. Watch the startup
+  lines — each must print a real `src:` path and NO "source dir not found" warning. Rerun one session.
+  Expect `[CVv3] pcv=v3` at last. If `pcv=v3` but `hand_cards=0` on the fanned hand → that is the REAL
+  (D6) heuristic-can't-read-real-UNO result, and we proceed to #10 VLM perception.

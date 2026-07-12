@@ -41,8 +41,19 @@ Start-Sleep -Milliseconds 700
 
 Write-Host "Starting UNO Operator backend services..."
 foreach ($svc in $services) {
-  $env:PYTHONPATH = "$root/packages/schemas/src;$root/packages/shared-utils/src;$root/services/$($svc.Name -replace '-service','')/src"
+  # Service SOURCE dir = the service Name verbatim (e.g. "perception-service"),
+  # NOT the name with "-service" stripped. The folders on disk are
+  # services/perception-service/src, services/config-service/src, etc. The old
+  # `-replace '-service',''` pointed PYTHONPATH at services/perception/src which
+  # does NOT exist, so uvicorn silently imported the STALE globally-installed
+  # `uno_perception` package instead of this repo — the new CV code (cv_build=v3)
+  # never loaded and every restart still showed pcv=MISSING. Use $svc.Name as-is.
+  $srcDir = "$root/services/$($svc.Name)/src"
+  if (-not (Test-Path $srcDir)) {
+    Write-Host "  WARNING: source dir not found for $($svc.Name): $srcDir" -ForegroundColor Yellow
+  }
+  $env:PYTHONPATH = "$root/packages/schemas/src;$root/packages/shared-utils/src;$srcDir"
   Start-Process -NoNewWindow python -ArgumentList "-m","uvicorn",$svc.Module,"--host","127.0.0.1","--port",$svc.Port
-  Write-Host "  Started $($svc.Name) on :$($svc.Port)"
+  Write-Host "  Started $($svc.Name) on :$($svc.Port)  (src: $srcDir)"
 }
 Write-Host "All services started."
