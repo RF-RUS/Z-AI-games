@@ -1,18 +1,31 @@
 # AGENT_STATUS
 
-_Updated: 2026-07-03 · Agent: Claude (senior autonomous coding agent)_
+_Updated: 2026-07-12 · Agent: Claude (senior autonomous coding agent)_
 
 ## Goal
-Screenshot-driven Windows game agent that perceives → decides → acts → recovers
-**fully autonomously**, survives long runs, and **resumes after a session break** — with
-minimal token spend and no lost progress between sessions.
+A **universal card-game agent**: perceive → decide → act → recover **fully autonomously** on ANY
+card game (starting with real UNO.exe), surviving long runs and resuming after a session break, with
+minimal token spend. "Universal" is the load-bearing word — perception must NOT be hardcoded per game.
 
 ## Current phase
-Phases A + C **DONE & mock-validated**: autonomous runner, checkpoint/resume, watchdog,
-adaptive backoff, long-run + fault-injection. Remaining: docs (#8), verification hardening (#6, backlog),
-real-Windows run (#7, blocked on host #B1).
+**Blocked on real-game perception.** Autonomy harness (runner/checkpoint/resume/watchdog) is done and
+mock-validated. The CV→click pipeline is wired and fixture-tested. But on the real Ubisoft UNO.exe the
+agent still does not play: the heuristic CV can't read the real (3D, fanned, rotated) layout, and the
+perception service is running stale code (`pcv=MISSING`). Next real move = **VLM perception (D6)**,
+which is also the correct architecture for the "any game" goal.
 
-## Autonomous harness (built 2026-07-03)
+## Latest real run (2026-07-12) — why it still doesn't play
+- Error: `Screenshot received but no cards recognized. [CVv3] pcv=MISSING(restart-perception-8103)
+  screenshot=1296x759 … hand_cards=0 avg_brightness=101`.
+- **Capture is fine** (brightness 101 = real content) — the 07-05 black-frame fix holds.
+- **Two blockers:** (1) perception :8103 stale → restart backend (`stop-backend.ps1` + `dev-backend.ps1`);
+  (2) even fresh, the UNO-specific heuristic (`canvas_plugin` fixed zones + `hand_segmentation` width/60
+  + HSV) is calibrated on flat fixtures and can't read the real fanned/rotated hand. → pivot to VLM.
+- **Unlock:** the perception contract ALREADY has a `vlm: VisionInference` slot (`api.py:27`) that the
+  merger already consumes (`merger.py:195/239`) — it's just never produced. Wiring a VLM producer fixes
+  this game AND generalizes to any game. See AGENT_DECISIONS **D6**.
+
+## Autonomous harness (built 2026-07-03) — DONE, mock-validated
 - `scripts/run-windows-agent.py` — continuous tick loop; atomic per-tick checkpoint
   (`artifacts/agent-runs/<run_id>/checkpoint.json`); `--resume`; `--max-ticks`/`--max-duration`;
   adaptive error backoff (`--error-backoff-max`); graceful SIGINT/SIGTERM; JSONL run log.
@@ -34,6 +47,16 @@ real-Windows run (#7, blocked on host #B1).
   schema→`visual_executor._execute_grounded_click`), not a static point.
 - **9d NEXT:** legal actions + whose-turn from the DETECTED state (not the simulated engine).
 - **9e pending:** card VALUE recognition; real-hardware tuning of the coord transform / clicks (#B1).
+- **9-BLOCKED (2026-07-12):** on real UNO.exe the heuristic reads 0 cards from the fanned/rotated hand.
+  Zone+HSV heuristic doesn't generalize → superseded by **#10 VLM perception (D6)** as the primary path;
+  heuristic demoted to fallback. 9d/9e resume once perception returns a real hand.
+
+## Next 3 priorities (revised 2026-07-12)
+1. **User:** restart backend (`stop-backend.ps1` → `dev-backend.ps1`), rerun once, confirm `pcv=v3`.
+   Expected: heuristic still fails the fanned hand → confirms the pivot.
+2. **[#10] VLM perception producer** feeding the existing `vlm: VisionInference` slot: screenshot →
+   structured `{screen_type, whose_turn, top_card, hand_cards[]}`. Game-agnostic; heuristic = fallback.
+3. **[9d]** legal actions / whose-turn from the detected state (uno-core rules on the VLM hand).
 
 ## Real-run findings (2026-07-04)
 User ran real UNO.exe → agent captured screen but only looped clicking one fixed point, no play.
@@ -69,16 +92,11 @@ typical faults, survives long runs, resumes after break/crash. **Open:** real-ha
 - **Learned zones** are the only durable state; **session/run progress is in-memory only**.
 
 ## Broken / not confirmed
-- **No autonomous entrypoint for long runs.** `scripts/start-orchestrator-session-windows.py`
-  does a single `--tick` then exits; never sets `automatic=True`, never runs `_run_loop`.
-- **No cross-session resume / checkpoint.** Process crash loses all session state.
-- **No process-level watchdog / auto-restart.**
+- **Real-game perception (2026-07-12):** heuristic CV reads 0 cards from real UNO.exe (fanned/rotated
+  hand). Blocks actual play. → #10 VLM perception.
 - **Cannot run real pywinauto here** — host is macOS. Mock path is cross-platform and IS validatable.
-
-## Next 3 priorities
-1. [#1] In-process windows adapter registry helper (mock runs without HTTP services).
-2. [#2] `scripts/run-windows-agent.py` — continuous autonomous loop with limits + logging.
-3. [#3] Checkpoint persistence + `--resume`.
+- _(Resolved 07-03: autonomous entrypoint, cross-session resume/checkpoint, and process watchdog were
+  the original "broken" items — all built & mock-validated. See harness section above.)_
 
 ## Known blocker
 Real-Windows/pywinauto validation (DoD "confirmed on real run") needs a Windows host — see `AGENT_BLOCKERS.md`.

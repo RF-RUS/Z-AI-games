@@ -50,3 +50,24 @@ then pick A/B with the user and validate on hardware.
 (2) Process-level watchdog = restart the whole runner on hard crash (window died, pywinauto fault),
 with exponential backoff + max-restarts, resuming from checkpoint.
 **Why:** In-loop recovery cannot survive a process death; a supervisor closes that gap for long runs.
+
+### D6 (2026-07-12) — Pivot to VLM perception; heuristic CV becomes a fallback
+**Finding:** On real Ubisoft UNO.exe the heuristic pipeline (`canvas_plugin` fixed relative zones +
+`hand_segmentation` `width/~60px` + HSV colour buckets) reads **0 cards** from a 3D, fanned, rotated
+hand — the exact `hand3.jpeg` failure mode. It was calibrated on flat `scuffed-uno` fixtures and does
+not generalize. The project goal is a **universal agent for ANY card game**, so per-game zone/colour
+calibration is the wrong abstraction: every new game/skin would need new fixtures.
+**Decision:** Make a **general-purpose VLM the primary perception path**. Feed the screenshot to a
+vision-language model that returns structured state `{screen_type, whose_turn, top_card, hand_cards[]
+with bounds+center}`. The perception contract **already supports this** — `api.py` has a
+`vlm: VisionInference` field and `merger.py` already consumes `vlm.structured`; the only missing piece
+is a producer. The heuristic `canvas_plugin` stays as a **cheap fallback** (offline / no-VLM / cost gate).
+**Why:** One vision path works across games with no per-game calibration; it directly fixes the current
+real-UNO failure; and it reuses existing contract plumbing (small, low-risk wiring, not a rewrite).
+Card VALUE recognition (the open 9e gap) also comes "for free" from a VLM vs the colour-only heuristic.
+**Consequence:** New task **#10** (VLM producer → `vlm` slot). Model choice via `model-runtime-service`
+(a capable multimodal model — default to a current Claude vision model unless a local VLM is required by
+cost/offline constraints). Grounding (click the returned coordinate) reuses the existing 9c path.
+Supersedes the heuristic-first assumption in D5 Path A; Path A's coordinate-grounding wiring is kept.
+**Open:** confirm on a Windows host after backend restart that `pcv=v3` (rules out the stale-service
+red herring) before investing in the VLM producer.

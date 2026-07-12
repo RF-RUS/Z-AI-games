@@ -222,3 +222,38 @@ Append-only. Newest last.
 - **Files:** `scripts/dev-backend.ps1`, `scripts/stop-backend.ps1` (NEW), fixture `hand3.jpeg`.
 - **Next for user:** pull, run FIXED `dev-backend.ps1` (or `stop-backend.ps1` then `dev-backend.ps1`),
   rerun → expect `pcv=v3`, `screen_type=in_game`, `hand_cards>0`, GAME STATE ≠ Unknown.
+
+---
+
+### 2026-07-12 — Real UNO run: pcv still MISSING + heuristic CV is a dead end for "any game"
+- **Trigger:** User ran real **Ubisoft UNO.exe** on Windows. Operator error:
+  `Screenshot received but no cards recognized. [CVv3] pcv=MISSING(restart-perception-8103)
+  screenshot=1296x759 screen_type=? gs_conf=0.00 hand_cards=0 avg_brightness=101
+  frame=…\bc71664f-…\evidence-1783247622720.png`. Agent still not playing. User re-anchored the
+  goal: this must be a **universal agent that can play ANY card game**, not a UNO-specific script.
+- **Two stacked problems, diagnosed against code:**
+  1. **Infra (still open): perception :8103 runs stale code.** `cv_build="v3"` is set in
+     `merger.py:93` only inside the perception service; the marker arrives as `pcv=MISSING`, so the
+     screenshot reaches the *orchestrator* (1296x759, brightness 101 = real content, NOT black — the
+     07-05 capture fix works) but the **perception process was not restarted** with current code.
+     `dev-backend.ps1` fix from 07-05 not yet applied on the user's host, or services not killed.
+  2. **Architecture (the real one): the heuristic CV cannot read this game and never will.**
+     `canvas_plugin.HeuristicCanvasUNOPlugin` uses fixed relative zones (hand `rel_x=0.30,rel_y=0.75`)
+     + `hand_segmentation` `width/~60px` card model + HSV colour buckets, all calibrated on the flat
+     `scuffed-uno-web` fixtures. The real screenshot is Ubisoft UNO: **3D radial table, 3 cards fanned,
+     overlapping and rotated** (red 6 / green reverse / yellow reverse for player "Goldberg"), glossy
+     reflections. This is exactly the known `hand3.jpeg` failure mode (sparse fanned hand → over/under
+     count, angled cards break axis-aligned slots). Per-game zone calibration does NOT scale to
+     "any card game" — it is the wrong abstraction for the stated goal.
+- **Key finding (unblocks the pivot):** the perception contract **already has a VLM slot** —
+  `api.py:27 vlm: VisionInference|None`, and `merger.py:195/239` already consume `vlm.structured`
+  (`top_card`, `hand_cards`). **But nothing ever produces it** — the observe→perceive path passes only
+  `dom/ui/screenshot`, so `vlm` is always `None` and we fall back to the UNO heuristic. Wiring a real
+  VLM producer (screenshot → structured game state) is both the fix for THIS game and the correct
+  architecture for a universal agent. See Decision **D6 (proposed)**.
+- **No code changed this session** — diagnosis + status refresh only (user asked to update status).
+- **Immediate action for user:** run `stop-backend.ps1` then `dev-backend.ps1`, rerun once. If `pcv`
+  finally shows `v3` and `hand_cards` is still 0/wrong on this fanned hand, that CONFIRMS the heuristic
+  can't read real UNO → proceed with D6 (VLM perception).
+- **Next (proposed):** [#10] VLM perception producer feeding the existing `vlm` slot; make the
+  game-specific heuristic a fallback, not the primary path. Then [9d] legal actions from detected state.

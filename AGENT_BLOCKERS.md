@@ -4,6 +4,18 @@ Real blockers only. Move to Resolved when cleared.
 
 ## Open
 
+### B4 — Perception service running stale code on the user's Windows host (2026-07-12)
+- **What's missing:** confirmation that perception (:8103) is running current code. The 2026-07-12 run
+  shows `pcv=MISSING(restart-perception-8103)` while the screenshot reaches the orchestrator fine
+  (1296x759, avg_brightness=101). `cv_build="v3"` is set in the perception service (`merger.py:93`), so
+  MISSING = that process wasn't restarted after pull.
+- **Already checked (code):** capture is fine (07-05 black-frame fix holds); the orchestrator prints
+  `[CVv3]`; the marker gap is purely the perception process being stale.
+- **Action for user (not a code blocker):** run `scripts/stop-backend.ps1` then `scripts/dev-backend.ps1`
+  (the 07-05 fix kills stale port listeners), rerun ONE session, report the `[CVv3]` line. Expect
+  `pcv=v3`. If it appears but `hand_cards=0` on the fanned hand → the heuristic can't read real UNO,
+  which greenlights #10 (VLM perception, D6).
+
 ### B1 — Real-Windows validation host unavailable
 - **What's missing:** A Windows machine with pywinauto/UIA and a real UNO target (e.g. `real-uno-desktop`
   profile or a running `UNO.exe`) to confirm the DoD "autonomous cycle on a real run".
@@ -16,22 +28,6 @@ Real blockers only. Move to Resolved when cleared.
   3. Any constraint on driving real mouse/keyboard input on that host (e.g. it's also your daily machine)?
 - **Workaround in place:** Validate the full autonomous loop + checkpoint/resume + watchdog on the
   cross-platform mock adapter now; keep the real-Windows run as a final gated step (task #7).
-
-### B2 — Direction for real gameplay: CV desktop vs web adapter
-- **What's missing:** A decision on HOW UNO should actually be played, before building the large
-  perception→execution wiring (task #9). See Decision D5.
-- **Already checked:** `real-uno-desktop.json` declares `match_automation:"web_only"` and
-  "match play must use web adapter scuffed-uno-web". Perception already detects cards from
-  screenshots but nothing consumes the coords for clicks; legal actions come from a simulated engine.
-- **Questions for human (max 3):**
-  1. Is `UNO.exe` a native desktop app, or a browser/Electron wrapper around the web UNO? (Decides
-     whether we do CV-on-desktop or use the existing web adapter.)
-  2. Target for real play: keep pushing the **desktop windows adapter** (CV card detection → click
-     coords), or switch to the **web adapter** (`scuffed-uno-web`, the active sprint)?
-  3. If desktop: can you share one screenshot of the UNO.exe game screen (hand + discard pile) so the
-     CV heuristic can be calibrated to real layout?
-- **Workaround in place:** blind fixed-point clicking is now suppressed for `web_only` profiles, so the
-  agent reports "uncertain" instead of hammering a wrong point; Pause/New fixed.
 
 ## Resolved
 

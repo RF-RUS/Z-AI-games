@@ -1,9 +1,23 @@
 # AGENT_TODO
 
-_Updated: 2026-07-03_
+_Updated: 2026-07-12_
 
 ## In Progress
-- _(idle — awaiting direction on #9 / BLOCKERS #B2)_
+- _(idle — awaiting user backend-restart confirmation, then #10 VLM perception)_
+
+## Next
+- [#10] **VLM perception producer (D6) — primary path to "any card game".** Feed the observation
+  screenshot to a multimodal model; return structured `{screen_type, whose_turn, top_card,
+  hand_cards[] with bounds+center}` into the EXISTING `vlm: VisionInference` slot (`api.py:27`, already
+  consumed by `merger.py:195/239`). Demote `canvas_plugin` heuristic to a fallback (no-VLM/offline/cost).
+  Breakdown:
+  - [10a] VLM client in `model-runtime-service` (multimodal call; screenshot in → JSON out).
+  - [10b] Producer in perception observe→perceive path that fills `req.vlm` (currently always None).
+  - [10c] Map VLM `hand_cards` → same dict shape the 9c grounding path already clicks (bounds+center).
+  - [10d] Fixture test on the real frames (`tests/fixtures/uno_desktop/*`, + the 2026-07-12 Ubisoft
+    frame) asserting a fanned hand yields the right count + per-card coords where the heuristic fails.
+- [#0] **User action:** `stop-backend.ps1` then `dev-backend.ps1`, rerun once. Confirm `pcv=v3`
+  (proves perception is live) before investing in #10. If heuristic still reads 0 cards → confirms D6.
 
 ## Blocked
 - [#9] **Real gameplay: CV → windows execution.** Direction decided = CV desktop (Electron). Breakdown:
@@ -19,6 +33,9 @@ _Updated: 2026-07-03_
     rules) instead of the simulated engine. Also detect whose_turn (self-avatar glow).
   - [9e] Card VALUE (number/action) recognition per card + real-hardware tuning: coordinate transform
     (DPI), exact count, real clicks (needs Windows host, #B1).
+  - [9-BLOCKED 2026-07-12] Heuristic CV reads 0 cards from real Ubisoft UNO (fanned/rotated hand).
+    Superseded by #10 (VLM). 9d/9e resume once perception returns a real hand. 9e VALUE recognition
+    largely subsumed by the VLM producer.
 - [#7] Real Windows validation — needs Windows host.
 
 ## Backlog
