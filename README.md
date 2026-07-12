@@ -130,6 +130,7 @@ python scripts/watchdog-windows-agent.py --run-id nightly --pywinauto --max-dura
 | [Usage Guide](docs/USAGE.md) | Operator workflows, runbooks, model usage |
 | [Operator Debug Checkpoint](docs/runbooks/operator-debug-checkpoint.md) | Debug session notes, resume instructions |
 | [Autonomous Windows Agent](docs/runbooks/autonomous-windows-agent.md) | Long unattended runs, checkpoint/resume, watchdog |
+| [VLM Perception with Ollama](docs/runbooks/vlm-ollama-setup.md) | Enable local vision-model perception (reads card values, any game) |
 
 ## Repository Layout
 

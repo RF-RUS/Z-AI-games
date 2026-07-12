@@ -33,7 +33,7 @@ from uno_schemas.orchestrator import (
 )
 from uno_schemas.perception import DomEvidence, Observation, ScreenshotFrame, UiEvidence
 from uno_schemas.session import AdapterType, SessionPhase
-from uno_shared.adapter_registry import get_adapter_registry
+from uno_shared.adapter_registry import find_draw_target, get_adapter_registry
 from uno_shared.game_registry import _ensure_default_plugins, get_game_plugin
 from uno_shared.logging import get_logger
 
@@ -471,6 +471,13 @@ class FlowController:
       hc = observation.game_state.get("hand_cards")
       if isinstance(hc, list) and hc:
         hand_cards = hc
+      # Ground a draw_card action to the perceived deck coordinate so it doesn't
+      # stall on canvas/Electron (empty UIA). Thread it through the payload;
+      # _map_action_windows reads extra["draw_target"].
+      if action_type_str in ("draw_card", "draw"):
+        draw_target = find_draw_target(observation.game_state)
+        if draw_target is not None:
+          payload = {**(payload or {}), "draw_target": list(draw_target)}
 
     action_req = client.map_action(
       action_type=action_type_str,

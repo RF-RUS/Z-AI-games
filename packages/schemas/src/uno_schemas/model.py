@@ -26,6 +26,7 @@ class ModelProviderType(StrEnum):
   MOCK = "mock"
   LLAMA_CPP_OPENAI = "llama_cpp_openai"
   VLLM_OPENAI = "vllm_openai"
+  OLLAMA_OPENAI = "ollama_openai"
 
 
 class ModelUseCase(StrEnum):

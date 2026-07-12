@@ -199,4 +199,5 @@ def get_provider(provider_type: ModelProviderType) -> ModelProvider:
     ModelProviderType.MOCK: MockProvider(),
     ModelProviderType.LLAMA_CPP_OPENAI: OpenAICompatibleProvider(ModelProviderType.LLAMA_CPP_OPENAI),
     ModelProviderType.VLLM_OPENAI: OpenAICompatibleProvider(ModelProviderType.VLLM_OPENAI),
+    ModelProviderType.OLLAMA_OPENAI: OpenAICompatibleProvider(ModelProviderType.OLLAMA_OPENAI),
   }[provider_type]

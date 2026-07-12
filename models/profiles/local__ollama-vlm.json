@@ -1,0 +1,19 @@
+{
+  "profile_id": "local/ollama-vlm",
+  "display_name": "Local Ollama vision model (VLM perception)",
+  "provider": "ollama_openai",
+  "base_url": "http://127.0.0.1:11434/v1",
+  "model_name": "llama3.2-vision",
+  "api_key_env": "OLLAMA_API_KEY",
+  "enabled": false,
+  "capabilities": ["vision_understanding", "text_generation"],
+  "use_cases": ["perception_board"],
+  "priority": 40,
+  "max_tokens_default": 512,
+  "temperature_default": 0.1,
+  "timeout_seconds": 60.0,
+  "supports_json_mode": true,
+  "supports_multimodal": true,
+  "safety_limits": {"max_tokens": "512"},
+  "metadata": {"setup": "ollama pull llama3.2-vision  (or qwen2.5vl); Ollama serves an OpenAI-compatible API at :11434/v1"}
+}

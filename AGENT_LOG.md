@@ -378,3 +378,40 @@ Append-only. Newest last.
 - **Still open:** value recognition quality depends on the recognizer — heuristic gives colour-only (9d
   then defers to the engine), so the leftmost-card fix fully lands only once VLM (or a value-capable CV)
   is on. Real-hardware tuning of coordinate transform stays #B1.
+
+---
+
+### 2026-07-12 (e) — Draw stall fixed + Ollama VLM runbook; opponent-aware strategy scoped
+- **Trigger:** Real run — play improved (agent plays matching cards) but STALLS when it must draw
+  (no matching card): panel shows `NEXT ACTION draw_card`, `Outcome Unknown`, `coarse state unchanged`.
+  User also asked (a) whether strategy accounts for opponents' hand counts / discards, and (b) for an
+  Ollama VLM enablement guide saved to docs.
+- **Draw stall — root cause (code):** `_map_action_windows` grounded ONLY `play_card` to a CV
+  coordinate; `draw_card` shipped just `selector_key="draw"`. On canvas/Electron UIA is empty → "draw"
+  resolves to nothing → the grounded-click path (executor needs target_x/y) never fires → stall. The
+  deck IS on screen and perception already emits a `draw_pile` region with coords — it just wasn't
+  threaded to the action.
+- **Fix:** new pure `find_draw_target(game_state)` (deck center from `regions`/`actionable_targets`);
+  `flow_controller._execute` threads it via `payload["draw_target"]` for draw actions;
+  `_map_action_windows` now grounds `draw_card` to that coordinate (same mechanism as card clicks).
+  No perceived deck → no coordinate → unchanged selector fallback (safe).
+- **Files:** `packages/shared-utils/src/uno_shared/adapter_registry.py` (`find_draw_target` +
+  draw grounding), `services/session-orchestrator/src/uno_orchestrator/flow_controller.py`,
+  `tests/unit/test_draw_grounding.py` (NEW, 5).
+- **Strategy / opponents (answer + scope, NO code yet):** `decision-service` IS its own microservice
+  (structure is fine), but `_score_action` (`policy.py`) scores ONLY the agent's own card — it never
+  sees opponents' hand counts or discards because **perception doesn't extract opponent state at all**
+  (neither heuristic nor VLM emit it). So there is no winning strategy today, by data-gap not by
+  architecture. Logged as new tasks #11 (perceive opponents: per-seat hand_count + last discard) and
+  #12 (opponent-aware scoring: target the low-card player, hoard wilds, colour management). Deferred to
+  a focused follow-up — not blind-added mid-session.
+- **Ollama VLM enablement:** added `ModelProviderType.OLLAMA_OPENAI` (routes through the existing
+  `OpenAICompatibleProvider` — Ollama is OpenAI-compatible, vision via image_url works with no code
+  change), a ready profile `models/profiles/local__ollama-vlm.json` (disabled by default), the runbook
+  `docs/runbooks/vlm-ollama-setup.md`, and a README index entry.
+- **Verified:** ruff clean; all 4 model profiles validate; `pytest tests/unit` 329 passed / 7 skipped
+  (+5); provider routes to OpenAI-compatible; VLM still off by default. Draw grounding + Ollama path
+  need the Windows host + a running Ollama for live confirmation.
+- **Next:** user enables Ollama per runbook and reruns; then #11/#12 for real strategy. Draw stall
+  should be gone once perception emits a draw_pile region (heuristic already does; VLM board does not
+  yet emit deck coords — see #11).

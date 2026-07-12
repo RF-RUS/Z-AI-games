@@ -297,6 +297,15 @@ class GenericAdapterClient:
             if center is not None:
                 base_extra["target_x"], base_extra["target_y"] = int(center[0]), int(center[1])
                 base_extra["grounded_by"] = "cv_detection"
+        elif action_type == "draw_card":
+            # Ground the draw click to the perceived deck coordinate. Without this,
+            # a canvas/Electron game (empty UIA) has no way to resolve "draw" and
+            # the agent stalls when it needs a card. draw_target is threaded from
+            # the observation's draw_pile region by the flow controller.
+            draw_target = base_extra.get("draw_target")
+            if isinstance(draw_target, (list, tuple)) and len(draw_target) == 2:
+                base_extra["target_x"], base_extra["target_y"] = int(draw_target[0]), int(draw_target[1])
+                base_extra["grounded_by"] = "cv_detection"
         return GenericActionRequest(
             action_type="click_input",
             selector_key=selector_key,
@@ -558,6 +567,28 @@ def _find_card_center(
             return center
     return None
 
+
+def find_draw_target(game_state: dict | None) -> tuple[int, int] | None:
+    """Absolute click center of the draw pile / deck from perceived regions.
+
+    Canvas/Electron games have empty UIA, so a `draw_card` action has no selector
+    to resolve — without a coordinate the click never lands and the agent stalls
+    when it must draw. Perception already emits a `draw_pile` region (x/y/w/h);
+    return its center so the windows executor can ground the draw click.
+    Prefers a region literally named draw/deck; falls back to `actionable_targets`.
+    """
+    if not isinstance(game_state, dict):
+        return None
+    for r in game_state.get("regions", []) or []:
+        rid = str(r.get("id", "")).lower()
+        if ("draw" in rid or "deck" in rid) and "x" in r and "y" in r:
+            w, h = int(r.get("width", 0)), int(r.get("height", 0))
+            return int(r["x"]) + w // 2, int(r["y"]) + h // 2
+    for t in game_state.get("actionable_targets", []) or []:
+        tid = str(t.get("id", "")).lower()
+        if ("draw" in tid or "deck" in tid) and "x" in t and "y" in t:
+            return int(t["x"]), int(t["y"])
+    return None
 
 class AdapterRegistry:
     """Registry of adapter implementations by adapter type.

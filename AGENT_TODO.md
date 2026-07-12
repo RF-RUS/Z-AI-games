@@ -19,7 +19,15 @@ _Updated: 2026-07-12_
 
 ## Next
 - [#10-real] User: register a vision profile + `VLM_PERCEPTION=1`/`VLM_PROFILE_ID`, point at a local
-  vLLM (Qwen2-VL). Verify `[CVv3] pcv=v3`, panel shows the hand, agent plays a matching card.
+  vLLM (Qwen2-VL) or **Ollama** (see `docs/runbooks/vlm-ollama-setup.md`). Verify `[CVv3] pcv=v3`, panel
+  shows the hand, agent plays a matching card.
+- [#11] **Perceive opponents.** Neither heuristic nor VLM emit opponent state today. Extract per-seat
+  `hand_count` + last discard (VLM prompt already sees the table — add fields to the board schema +
+  `_normalize_board`). ALSO have the VLM board emit a `draw_pile`/deck coordinate so the draw-grounding
+  fix works on the VLM path too (heuristic already emits it; VLM board currently does not).
+- [#12] **Opponent-aware strategy.** `_score_action` only scores the agent's own card. Once #11 lands,
+  score with opponent context: pressure the low-card player (skip/reverse/+2 when next player is near
+  UNO), hoard wilds, manage colour. This is where a real winning strategy lives.
 - [9e] value-recognition quality (heuristic is colour-only → 9d defers to engine there); real-hardware
   coordinate-transform tuning (#B1).
 

@@ -1290,8 +1290,8 @@
     "semantic_hash": "339d4f5bbd23fd8336b6baaaf58647e7"
   },
   "services/model-runtime-service/src/uno_model_runtime/providers.py": {
-    "mtime": 1783876863.2544553,
-    "ast_hash": "a21adfada9f3da0d930dad7f76000d1c",
+    "mtime": 1783884022.4512851,
+    "ast_hash": "ecdcaf753d61e184e754f585c696d02c",
     "semantic_hash": ""
   },
   "services/observability-service/pyproject.toml": {
@@ -1405,8 +1405,8 @@
     "semantic_hash": "2ed1dbc08841510d2b9cc151687b3f2c"
   },
   "services/session-orchestrator/src/uno_orchestrator/flow_controller.py": {
-    "mtime": 1783878793.9918458,
-    "ast_hash": "871bcaa8361e88a82eadf392b19d7fa1",
+    "mtime": 1783883788.9620054,
+    "ast_hash": "366c1755dbfa2a9f00a9428acb693d4a",
     "semantic_hash": ""
   },
   "services/session-orchestrator/src/uno_orchestrator/in_process_clients.py": {
@@ -4990,8 +4990,8 @@
     "semantic_hash": ""
   },
   "packages/schemas/src/uno_schemas/model.py": {
-    "mtime": 1783876764.3016262,
-    "ast_hash": "39c0be4e78bb341638380ef144227603",
+    "mtime": 1783883998.4208863,
+    "ast_hash": "640b0d4f89ec6f7e92fb93348e8d503e",
     "semantic_hash": ""
   },
   "packages/schemas/src/uno_schemas/operator_evaluation.py": {
@@ -5035,8 +5035,8 @@
     "semantic_hash": ""
   },
   "packages/shared-utils/src/uno_shared/adapter_registry.py": {
-    "mtime": 1783194758.8140948,
-    "ast_hash": "7261fd1b91dc738bcde115a999148aaf",
+    "mtime": 1783883788.9597313,
+    "ast_hash": "a94ce37dfbe2d0e7fca9b27aa6ee786e",
     "semantic_hash": ""
   },
   "packages/shared-utils/src/uno_shared/chat_policy.py": {
@@ -5705,8 +5705,8 @@
     "semantic_hash": ""
   },
   "AGENT_LOG.md": {
-    "mtime": 1783874509.4760592,
-    "ast_hash": "7e4d23149e612369f31dc6066c607b09",
+    "mtime": 1783882148.8832908,
+    "ast_hash": "5598113a5c8989c01d18006a4ed94092",
     "semantic_hash": ""
   },
   "AGENT_STATUS.md": {
@@ -5715,8 +5715,8 @@
     "semantic_hash": ""
   },
   "AGENT_TODO.md": {
-    "mtime": 1783870164.3577816,
-    "ast_hash": "7ca9fbb2bb16bb84ac9ff7ef9e492793",
+    "mtime": 1783882192.32051,
+    "ast_hash": "ae1c48e0c73ea13de1b60f8e25be754e",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -5730,8 +5730,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1783087492.2828522,
-    "ast_hash": "8e85246056f2c0af260f5a5b53d107b5",
+    "mtime": 1783884316.943327,
+    "ast_hash": "652e82f4de7bb1f3e2ed00a0c3bf9eac",
     "semantic_hash": ""
   },
   "ai-context/LOAD_RULES.md": {
@@ -6592,6 +6592,46 @@
   "tests/fixtures/uno_desktop/ubisoft_hand3.jpeg": {
     "mtime": 1783877508.254706,
     "ast_hash": "4715db958c88617af14f2012794d9126",
+    "semantic_hash": ""
+  },
+  "data/replays/artifacts/replay-1ab3873a_observations.json": {
+    "mtime": 1783882985.5585458,
+    "ast_hash": "c2661caa1aaacfaf2e69325625c8f81c",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/1dcc8d04-9215-419d-ad96-4eb72f41a2af.json": {
+    "mtime": 1783883894.0932176,
+    "ast_hash": "9b82b18e2801a12613b6dc82bfe63ee1",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/4d1b32ff-289c-4542-887c-7b4a4c2a1ff7.json": {
+    "mtime": 1783883894.0474026,
+    "ast_hash": "1f5882e21403de202e271d60b40819d4",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/7879df63-d2c9-44db-b104-e6df5b861504.json": {
+    "mtime": 1783884347.1137078,
+    "ast_hash": "310b3610428f3d0e43df652c0dae5994",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/aec45caa-2b39-4054-8cb5-63190370e408.json": {
+    "mtime": 1783884347.1579103,
+    "ast_hash": "f82ded82e643ae3ef1f886fef994b932",
+    "semantic_hash": ""
+  },
+  "models/profiles/local__ollama-vlm.json": {
+    "mtime": 1783884059.9490516,
+    "ast_hash": "3f2b58135f4de480593da19da9b97b15",
+    "semantic_hash": ""
+  },
+  "tests/unit/test_draw_grounding.py": {
+    "mtime": 1783883824.536313,
+    "ast_hash": "d7eef3f731beac304ee34af9c6cb821c",
+    "semantic_hash": ""
+  },
+  "docs/runbooks/vlm-ollama-setup.md": {
+    "mtime": 1783884170.901557,
+    "ast_hash": "1e9e26441e02fa7d77c58f7b6075e22c",
     "semantic_hash": ""
   }
 }

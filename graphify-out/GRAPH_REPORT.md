@@ -1,16 +1,16 @@
 # Graph Report - Z-AI-games  (2026-07-12)
 
 ## Corpus Check
-- 1127 files · ~1,223,385 words
+- 1135 files · ~1,249,211 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5268 nodes · 10768 edges · 394 communities (245 shown, 149 thin omitted)
-- Extraction: 78% EXTRACTED · 22% INFERRED · 0% AMBIGUOUS · INFERRED: 2325 edges (avg confidence: 0.65)
+- 5289 nodes · 10795 edges · 396 communities (249 shown, 147 thin omitted)
+- Extraction: 78% EXTRACTED · 22% INFERRED · 0% AMBIGUOUS · INFERRED: 2331 edges (avg confidence: 0.66)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6f675f76`
+- Built from commit: `0593f002`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -159,6 +159,7 @@
 - Community 141
 - Community 142
 - Community 143
+- GameAction
 - Community 145
 - Community 146
 - Community 147
@@ -225,6 +226,7 @@
 - Starting a Session
 - post_json
 - adapter-web
+- rules.py
 - test_verification_loop.py
 - graphify reference: query, path, explain
 - Benchmark Pipeline
@@ -396,16 +398,16 @@
 10. `DomainEvent` - 53 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `test_profile_health_report_schema()` --calls--> `ProfileHealthReport`  [INFERRED]
-  tests/unit/test_profile_health.py → packages/schemas/src/uno_schemas/adapter_web.py
+- `test_attach_api_serializes_failed_response()` --calls--> `WebStartupDiagnostics`  [INFERRED]
+  services/adapter-web/tests/test_registry_attach.py → packages/schemas/src/uno_schemas/adapter_web.py
 - `test_attach_adapter_502_includes_session_with_diagnostics()` --calls--> `WebStartupDiagnostics`  [INFERRED]
   tests/unit/test_attach_adapter_api.py → packages/schemas/src/uno_schemas/adapter_web.py
-- `test_mock_web_uno_round()` --calls--> `AttachWebAdapterRequest`  [INFERRED]
-  tests/e2e/test_web_playwright.py → packages/schemas/src/uno_schemas/adapter_web.py
-- `test_playwright_full_pipeline()` --calls--> `AttachWebAdapterRequest`  [INFERRED]
-  tests/e2e/test_web_playwright.py → packages/schemas/src/uno_schemas/adapter_web.py
-- `test_playwright_local_target()` --calls--> `AttachWebAdapterRequest`  [INFERRED]
-  tests/e2e/test_web_playwright.py → packages/schemas/src/uno_schemas/adapter_web.py
+- `adapter_client()` --calls--> `AttachWindowsAdapterRequest`  [INFERRED]
+  tests/integration/test_verification_loop.py → packages/schemas/src/uno_schemas/adapter_windows.py
+- `test_map_action_windows_grounds_play_to_coordinate()` --calls--> `GenericAdapterClient`  [INFERRED]
+  tests/unit/test_windows_grounded_click.py → packages/shared-utils/src/uno_shared/adapter_registry.py
+- `test_map_action_windows_no_handcards_no_target()` --calls--> `GenericAdapterClient`  [INFERRED]
+  tests/unit/test_windows_grounded_click.py → packages/shared-utils/src/uno_shared/adapter_registry.py
 
 ## Import Cycles
 - None detected.
@@ -425,11 +427,11 @@
 - **e2e-pw Playwright observe run session (UNO frames)** — services_artifacts_e2e_pw_001_observe_frame, services_artifacts_e2e_pw_screenshot_1782284211002, services_artifacts_e2e_pw_screenshot_1782284260221, services_artifacts_e2e_pw_screenshot_1782284453959 [INFERRED 0.75]
 - **smoke-selectors agent run: sequence of Pizzuno board observations** — services_artifacts_smoke_selectors_001_observe_frame, services_artifacts_smoke_selectors_screenshot_1782284334730, services_artifacts_smoke_selectors_screenshot_1782284526566, services_artifacts_smoke_selectors_screenshot_1782285832270, services_artifacts_smoke_selectors_screenshot_1782804024540 [INFERRED 0.75]
 
-## Communities (394 total, 149 thin omitted)
+## Communities (396 total, 147 thin omitted)
 
 ### Community 0 - "Electron Bundle: Lodash Utils"
 Cohesion: 0.01
-Nodes (162): addSensitiveFieldPattern(), addUpdaterMenu(), appendPath(), arrayLikeKeys(), arrayPush(), arraySome(), assocIndexOf(), baseGetAllKeys() (+154 more)
+Nodes (158): addSensitiveFieldPattern(), addUpdaterMenu(), appendPath(), arrayLikeKeys(), arrayPush(), assocIndexOf(), baseGetAllKeys(), baseGetTag() (+150 more)
 
 ### Community 1 - "Web Profile Calibration"
 Cohesion: 0.05
@@ -444,8 +446,8 @@ Cohesion: 0.05
 Nodes (57): BrowserTabPicker(), filterTabs(), isTabCompatible(), Props, filterCandidates(), GameWindowPicker(), Props, sortCandidates() (+49 more)
 
 ### Community 4 - "Profile Health Monitoring"
-Cohesion: 0.09
-Nodes (47): ProfileHealthReport, SelectorCheckResult, main(), main(), main(), load_ctx(), main(), profile_health_history() (+39 more)
+Cohesion: 0.07
+Nodes (60): ProfileHealthConfig, ProfileHealthReport, Required/optional selector keys for drift health checks., SelectorCheckResult, main(), main(), main(), load_ctx() (+52 more)
 
 ### Community 5 - "Svintus Game Plugin Core"
 Cohesion: 0.11
@@ -464,12 +466,12 @@ Cohesion: 0.10
 Nodes (42): explainError(), FLOW_STATE_CLASS, getRecoveryHint(), mergeSession(), OperatorPanel(), PanelState, Props, RecoveryInfo (+34 more)
 
 ### Community 9 - "Perception Service"
-Cohesion: 0.04
-Nodes (75): Confidence, main(), Standalone perception merger example., Python client SDK for UNO Operator services., Service API contracts and health models., Re-export all public schemas., Card, CardColor (+67 more)
+Cohesion: 0.13
+Nodes (26): main(), Standalone perception merger example., OcrEvidence, BaseModel, VisionInference, build_observation(), _compute_game_elements_confidence(), _compute_game_state_confidence() (+18 more)
 
 ### Community 10 - "Windows Adapter: Control Selectors"
-Cohesion: 0.05
-Nodes (59): UiNodeSnapshot, _center(), locate_chat_input(), locate_layout_target(), locate_selector(), locate_targets(), parse_color_buttons(), Target acquisition cascade: UIA -> learned memory -> layout_targets.  Priority: (+51 more)
+Cohesion: 0.06
+Nodes (51): UiNodeSnapshot, build_window_snapshot(), _extract_hand_cards(), find_matching_nodes(), match_node(), _parse_card_from_text(), Profile-driven UIA evidence extraction — not canonical game truth., Extract individual cards from the hand area.    Strategy:   1. Find the hand_are (+43 more)
 
 ### Community 11 - "Control Center: Event Log"
 Cohesion: 0.07
@@ -484,24 +486,24 @@ Cohesion: 0.06
 Nodes (38): CenterPanel(), Props, buildTraceSrc(), HeroFrame(), Props, HeroImage(), Props, Props (+30 more)
 
 ### Community 14 - "State Replay Service"
-Cohesion: 0.26
-Nodes (3): FileEventStore, Path, ReplayDetail
+Cohesion: 0.22
+Nodes (4): FileEventStore, Path, ReplayDetail, Append-only event store with artifacts — Postgres planned, file-based for local
 
 ### Community 15 - "Windows Adapter: Action Execution"
 Cohesion: 0.04
-Nodes (44): AttachWindowsAdapterRequest, attach(), capture_fixture(), get_calibration(), get_evidence(), get_learned_zones(), get_preview(), get_screenshot() (+36 more)
+Nodes (44): AttachWindowsAdapterRequest, capture(), main(), Path, attach(), capture_fixture(), get_calibration(), get_evidence() (+36 more)
 
 ### Community 16 - "Session Orchestrator: DTOs"
 Cohesion: 0.10
-Nodes (14): get_adapter_registry(), list_configs(), List all registered game model configs., Resolve the best model profile for a game+task combination.          Returns pro, resolve_model_profile(), FlowController, SessionDetail, Extract confidence score for before/after comparison. (+6 more)
+Nodes (30): ActionType, EventType, PendingEffect, StrEnum, FlowState, SessionDetail, binding_for(), RuntimeSession (+22 more)
 
 ### Community 17 - "Electron Bundle: fs-extra Copy"
 Cohesion: 0.05
 Nodes (58): areIdentical$2(), checkParentDir(), checkParentPaths(), checkParentPathsSync(), checkPaths(), checkPathsSync(), copy$2(), copyDir() (+50 more)
 
 ### Community 18 - "Model Registry Service"
-Cohesion: 0.14
-Nodes (16): ModelRegistryClient, ModelInstallRequest, ModelManifest, ModelRouteSelection, activate(), disable_profile(), get_model(), get_profile() (+8 more)
+Cohesion: 0.17
+Nodes (12): ModelProfile, ModelRouteSelection, Extended registry profile with routing and provider config., disable_profile(), get_profile(), list_profiles(), BaseModel, route_model() (+4 more)
 
 ### Community 19 - "Control Center: Alerts & Escalation"
 Cohesion: 0.10
@@ -516,12 +518,12 @@ Cohesion: 0.10
 Nodes (29): checkForCrashOnStartup(), checkForUpdates(), createFileSync$1(), createWindow(), ensureLogDir(), getCrashInfo(), getSettingsPath(), getStateDir() (+21 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.08
-Nodes (31): TargetAcquisitionMethod, UITarget, VisualActionRequest, VisualActionResult, WindowsActionType, PreviewFrameKind, humanized_move_and_click(), press_keys() (+23 more)
+Cohesion: 0.10
+Nodes (24): UITarget, VisualActionRequest, VisualActionResult, humanized_move_and_click(), press_keys(), Humanized mouse/keyboard input within window bounds., type_text(), ensure_focus() (+16 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.05
-Nodes (46): WebAdapterProfile, get_profile(), get_profiles(), playwright_check(), profile_health_alerts(), action_requires_canvas_click(), build_coordinate_click_payload(), click_point_from_canvas() (+38 more)
+Nodes (41): WebAdapterProfile, get_profile(), load_profile(), Load and validate web adapter profiles., Post-attach validation: verify the page matches profile domain., browser_launch_mode(), browser_launch_options(), format_startup_error() (+33 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.13
@@ -536,20 +538,20 @@ Cohesion: 0.08
 Nodes (31): blockHeader(), chooseScalarStyle(), codePointAt(), DEPRECATED_BOOLEANS_SYNTAX, detectType(), dropEndingNewline(), dump(), encodeHex() (+23 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.06
-Nodes (32): capture(), main(), Path, capture_fixture(), check_cdp_port(), execute_action(), get_evidence(), get_profile_compatibility() (+24 more)
+Cohesion: 0.04
+Nodes (57): AttachWebAdapterRequest, AttachWebAdapterResponse, capture(), main(), Path, attach(), capture_fixture(), check_cdp_port() (+49 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.10
-Nodes (30): DecisionClient, UnoCoreClient, HealthResponse, BaseModel, ServiceInfo, DecisionCandidate, DecisionRequest, DecisionResult (+22 more)
+Cohesion: 0.19
+Nodes (20): DecisionExplanation, decide(), decide_heuristic(), decide_model(), decide_random(), _format_actions_for_prompt(), _format_state_for_prompt(), _get_action_type() (+12 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.07
-Nodes (21): main(), derive_goal(), SessionDetail, Derive goal from decision or pre-game state., Build semantic strategy snapshot from real observation/decision data., Build action-aware coarse verification — delegates to pure function., SessionOrchestrator, classify_attach_error() (+13 more)
+Cohesion: 0.13
+Nodes (11): can_transition(), InvalidTransition, Exception, Explicit flow state transitions., transition(), Orchestrator state machine and recovery unit tests., test_classify_transient_timeout(), test_idle_to_active() (+3 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.12
-Nodes (47): WebStartupDiagnostics, ActionType, EventType, PendingEffect, StrEnum, AdapterBinding, DetectedCard, ErrorClass (+39 more)
+Cohesion: 0.10
+Nodes (39): WebStartupDiagnostics, ChatMessage, AdapterBinding, DetectedCard, ErrorClass, FlowStep, FlowStepName, OrchestratorMetrics (+31 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.26
@@ -561,7 +563,7 @@ Nodes (11): create_adapter(), _make_mock_page(), _make_request(), _patch_playwri
 
 ### Community 33 - "Community 33"
 Cohesion: 0.07
-Nodes (33): callback(), Diagnose exactly why UNO is dropped in _list_win32 callback., browser_candidate_warning(), is_browser_host(), Browser host attach ambiguity detection., Return (warning, detail) when selected title and active document diverge., title_core(), tree_text_blob() (+25 more)
+Nodes (34): callback(), Diagnose exactly why UNO is dropped in _list_win32 callback., browser_candidate_warning(), is_browser_host(), Browser host attach ambiguity detection., Return (warning, detail) when selected title and active document diverge., title_core(), tree_text_blob() (+26 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.13
@@ -572,12 +574,12 @@ Cohesion: 0.12
 Nodes (20): FlowControlResponse, attach_adapter(), create_session(), detach_adapter(), get_session(), list_sessions(), pause_session(), SessionDetail (+12 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.14
-Nodes (26): attrib(), beginWhiteSpace(), charAt(), checkBufferLength(), closeTag(), closeText(), constructYamlBinary(), emitNode() (+18 more)
+Cohesion: 0.13
+Nodes (28): attrib(), beginWhiteSpace(), charAt(), checkBufferLength(), closeTag(), closeText(), constructYamlBinary(), emitNode() (+20 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.08
-Nodes (57): DecisionExplanation, AttachAdapterBody, SessionSpec, SessionConfig, GenericActionResult, GenericAttachResponse, Adapter-agnostic attach response., Adapter-agnostic action execution result. (+49 more)
+Cohesion: 0.07
+Nodes (56): AttachAdapterBody, SessionSpec, SessionConfig, GenericAttachResponse, Adapter-agnostic attach response., main(), _attach_and_start(), main() (+48 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.15
@@ -588,52 +590,52 @@ Cohesion: 0.07
 Nodes (26): Props, MODE_LABELS, Props, FLOW_COLORS, FLOW_LABELS, FlowStateBadge(), Props, Props (+18 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.05
-Nodes (33): DomNodeEvidence, build_extracted_snapshot(), dom_snapshot_to_evidence(), _find_node(), normalize_playwright_nodes(), _parse_card_from_element(), Profile-driven DOM extraction — generic, not canonical game truth., MockWebAdapter (+25 more)
+Cohesion: 0.11
+Nodes (16): DomNodeEvidence, build_extracted_snapshot(), dom_snapshot_to_evidence(), _find_node(), normalize_playwright_nodes(), _parse_card_from_element(), Profile-driven DOM extraction — generic, not canonical game truth., PlaywrightSession (+8 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.08
-Nodes (48): ActionExecutionRequest, ActionExecutionResult, AdapterEvidenceBundle, AdapterMode, AttachWebAdapterRequest, AttachWebAdapterResponse, DomSnapshot, NavigationResponseRecord (+40 more)
+Nodes (37): ActionExecutionRequest, ActionExecutionResult, AdapterEvidenceBundle, AdapterMode, DomSnapshot, NavigationResponseRecord, NetworkReachabilityCheck, ObservationArtifactBundle (+29 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.13
 Nodes (16): NetworkReachabilityCheck, main(), Check whether a target URL is reachable outside Playwright., network_check(), _as_int(), _as_str(), check_url_reachability(), NavigationDiagnosticsCollector (+8 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.13
-Nodes (23): HealthStatus, StrEnum, ReplayEnvelope, Any, Bootstrap helper for UNO Operator microservices., ServiceApp, apply_game_action(), ApplyActionRequest (+15 more)
+Cohesion: 0.17
+Nodes (20): ReplayEnvelope, get_replay(), import_replay(), apply_game_action(), ApplyActionRequest, ApplyActionResponse, create_game(), export_replay() (+12 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.16
-Nodes (16): legal_actions_from_perception(), Any, Card, Legal actions derived from the PERCEIVED board (9d).  When perception (VLM or he, Map a detected {color,value} dict → Card, or None if unmappable.      A card wit, Legal UNO actions from the perceived hand + top card.      Returns None when the, _to_card(), Tests for perceived legal actions (9d) — play the RIGHT card, not the leftmost. (+8 more)
+Nodes (16): CardColor, legal_actions_from_perception(), Any, Card, Map a detected {color,value} dict → Card, or None if unmappable.      A card wit, Legal UNO actions from the perceived hand + top card.      Returns None when the, _to_card(), Tests for perceived legal actions (9d) — play the RIGHT card, not the leftmost. (+8 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.08
-Nodes (13): assign(), assignKey(), baseUnary(), deepAssign(), ElectronAppAdapter, isObject$1(), isValidKey(), Lazy (+5 more)
+Cohesion: 0.05
+Nodes (25): arraySome(), assign(), assignKey(), baseIsEqualDeep(), baseUnary(), buildBlockFileMap(), buildChecksumMap(), cacheHas() (+17 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.10
-Nodes (21): ChatPolicyResult, ChatPolicyResult, PolicyViolation, guard_chat(), guard_decision(), GuardDecisionRequest, GuardDecisionResponse, BaseModel (+13 more)
+Nodes (26): DecisionClient, ModelRegistryClient, Python client SDK for UNO Operator services., UnoCoreClient, ChatPolicyResult, DecisionRequest, DecisionResult, PolicyViolation (+18 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.06
-Nodes (39): Popen, Mock Windows adapter — deterministic CI default., Load Windows adapter profiles., Pywinauto-backed visual attended RPA adapter., _capture_via_printwindow(), capture_window_screenshot(), _connect_handle(), connect_window_by_handle() (+31 more)
+Cohesion: 0.07
+Nodes (38): Popen, pywinauto_check(), _capture_via_printwindow(), capture_window_screenshot(), _connect_handle(), connect_window_by_handle(), find_window(), _find_with_backend() (+30 more)
 
 ### Community 48 - "Community 48"
 Cohesion: 0.19
 Nodes (19): Visual RPA execution pipeline: locate -> act -> verify., analyze_uia_tree(), browser_match_card_message(), _control_type(), _document_depth(), is_actionable_node(), missing_target_message(), page_nodes() (+11 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.15
-Nodes (12): CardValue, GameAction, Game-agnostic legal action — opaque to core platform.      Each game plugin defi, _game_action_to_legal_action(), _legal_action_to_game_action(), Any, GameState, UNO game plugin — first GamePlugin implementation.  Wraps the existing uno-core (+4 more)
+Cohesion: 0.13
+Nodes (13): CardValue, GameSnapshot, Game-agnostic state snapshot — opaque to core platform.      Each game plugin po, Any, _game_action_to_legal_action(), _legal_action_to_game_action(), Any, GameState (+5 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.10
-Nodes (19): GameEvent, GamePlugin, GameSnapshot, Any, Protocol, Create initial game state., Generate legal actions for current game state., Validate if an action is legal. Returns (is_valid, reason). (+11 more)
+Cohesion: 0.14
+Nodes (10): GamePlugin, Any, Protocol, Create initial game state., Generate legal actions for current game state., Validate if an action is legal. Returns (is_valid, reason)., Parse raw adapter evidence into game state.         This is where game-specific, Convert game snapshot to observation-compatible dict.         Used by perception (+2 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.08
-Nodes (31): GameModelConfig, BaseModel, Per-game model preferences — which models to use for each task.          Each ga, get_game_config(), Game model configuration registry.  Maps game_type → GameModelConfig. Games regi, Register a game model configuration., Get model config for a game type. Returns default if not registered., register_game_config() (+23 more)
+Cohesion: 0.09
+Nodes (35): GameModelConfig, BaseModel, Per-game model preferences — which models to use for each task.          Each ga, get_game_config(), list_configs(), Game model configuration registry.  Maps game_type → GameModelConfig. Games regi, Register a game model configuration., Get model config for a game type. Returns default if not registered. (+27 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.15
@@ -653,47 +655,47 @@ Nodes (20): analyze_crop_colors(), CardRecognitionResult, _classify_pixel_color_
 
 ### Community 56 - "Community 56"
 Cohesion: 0.05
-Nodes (33): addSensitiveRedirectHeader(), CancellationToken, checkIsRangesSupported(), checkSha2(), configurePipes(), configureRequestOptions(), configureRequestOptionsFromUrl(), configureRequestUrl() (+25 more)
+Nodes (32): addSensitiveRedirectHeader(), CancellationToken, checkIsRangesSupported(), checkSha2(), close(), configurePipes(), configureRequestOptions(), configureRequestOptionsFromUrl() (+24 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.15
-Nodes (12): WindowsAdapterProfile, get_profile(), get_profiles(), list_profiles(), load_profile(), Windows profile unit tests., test_profile_roundtrip(), _desktop_profile() (+4 more)
+Cohesion: 0.07
+Nodes (30): WindowsAdapterProfile, get_profile(), get_profiles(), list_profiles(), load_profile(), Lightweight diagnostics for each target resolution attempt., ResolutionTrace, Runtime validation: learned memory improves target resolution end-to-end.  Prove (+22 more)
 
 ### Community 58 - "Community 58"
 Cohesion: 0.16
 Nodes (11): classify_action_category(), Classify action type into a verification category.    Categories determine how v, test_category_call_uno(), test_category_click_prefix(), test_category_draw_card(), test_category_in_game(), test_category_navigation(), test_category_none() (+3 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (43): ReplayArtifactRef, AttachWindowsAdapterResponse, ControlEvidence, ControlSelector, OperatorPreviewState, PreviewFrameKind, BaseModel, StrEnum (+35 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.13
-Nodes (12): AdapterRetryPolicy, GenericEvidenceBundle, BaseModel, Unified evidence bundle returned by all adapters.      Contains optional dom_evi, Retry/recovery policy for an adapter type.      This model replaces hardcoded ad, Return the retry/recovery policy for this adapter type.          This replaces h, InProcessAdapterClient, In-process adapter client using ASGI transport. (+4 more)
+Cohesion: 0.20
+Nodes (6): AdapterRetryPolicy, GenericEvidenceBundle, BaseModel, Unified evidence bundle returned by all adapters.      Contains optional dom_evi, Retry/recovery policy for an adapter type.      This model replaces hardcoded ad, Return the retry/recovery policy for this adapter type.          This replaces h
 
 ### Community 61 - "Community 61"
 Cohesion: 0.06
-Nodes (28): buildBlockFileMap(), buildChecksumMap(), compare(), compare$b(), compareBuild(), compareBuild$3(), compareMain(), comparePre() (+20 more)
+Nodes (25): compare(), compare$b(), compareBuild(), compareBuild$3(), compareMain(), comparePre(), copyData(), createTempUpdateFile() (+17 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.11
 Nodes (17): Connection, _action_label_fragments(), PgLearnedZoneStore, Blend verified + provisional signals into a single confidence score.    Verified, Postgres-backed learned zone store with provisional/verified separation., Record a provisional observation — click was dispatched but not yet verified., Record a verified outcome (after before/after screenshot comparison).      This, Legacy upsert — delegates to record_provisional + record_verified_outcome. (+9 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.20
-Nodes (7): classify_error(), format_exception_message(), Exception, test_format_exception_message_timeout_is_not_empty(), test_classify_transient_timeout(), Verify connection-related errors are TRANSIENT, not PERMANENT., TestConnectionErrorClassification
+Cohesion: 0.22
+Nodes (6): classify_error(), format_exception_message(), Exception, test_format_exception_message_timeout_is_not_empty(), Verify connection-related errors are TRANSIENT, not PERMANENT., TestConnectionErrorClassification
 
 ### Community 64 - "Community 64"
-Cohesion: 0.20
-Nodes (13): _build_orchestrator(), main(), _metrics_snapshot(), _now_ms(), parse_args(), Namespace, Path, Construct an orchestrator wired for in-process or networked adapters. (+5 more)
+Cohesion: 0.12
+Nodes (18): _build_orchestrator(), main(), _metrics_snapshot(), _now_ms(), parse_args(), Namespace, Path, Construct an orchestrator wired for in-process or networked adapters. (+10 more)
 
 ### Community 65 - "Community 65"
-Cohesion: 0.27
-Nodes (11): build_window_snapshot(), _extract_hand_cards(), find_matching_nodes(), match_node(), _parse_card_from_text(), Profile-driven UIA evidence extraction — not canonical game truth., Extract individual cards from the hand area.    Strategy:   1. Find the hand_are, Windows UIA extraction unit tests. (+3 more)
+Cohesion: 0.08
+Nodes (14): Mock Windows adapter — deterministic CI default., Load Windows adapter profiles., OperatorPreviewState, PywinautoWindowsAdapter, Pywinauto-backed visual attended RPA adapter., extract_ui_tree(), Registry attach error contract tests., Attach stores selected HWND and expected title. (+6 more)
 
 ### Community 66 - "Community 66"
-Cohesion: 0.16
-Nodes (16): detect(), IntentRequest, BaseModel, detect_intent(), detect_intent_model(), detect_intent_rules(), detect_intent_sync(), parse_chat_messages() (+8 more)
+Cohesion: 0.23
+Nodes (15): ChatIntent, detect(), detect_intent(), detect_intent_model(), detect_intent_rules(), detect_intent_sync(), parse_chat_messages(), ChatMessage (+7 more)
 
 ### Community 67 - "Community 67"
 Cohesion: 0.16
@@ -704,28 +706,28 @@ Cohesion: 0.06
 Nodes (63): electron, fs, path, checkForCrashOnStartup(), CrashInfo, getCrashInfo(), setupCrashReporting(), ensureLogDir() (+55 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.09
-Nodes (29): ChatContext, ChatIntent, ChatMessage, ChatReply, ChatReplyRequest, BaseModel, StrEnum, ChatPolicy (+21 more)
+Cohesion: 0.12
+Nodes (18): ChatPolicyResult, ChatContext, ChatReply, BaseModel, StrEnum, ChatPolicy, ChatPolicyConfig, ChatPolicyResult (+10 more)
 
 ### Community 71 - "Community 71"
-Cohesion: 0.07
-Nodes (36): Decision domain models — game-agnostic.  DecisionRequest and DecisionResult acce, Orchestrator flow control and session lifecycle DTOs., Session orchestration and adapter contracts., Protocol for GUI adapter implementations.  Defines the unified interface that al, Adapter registry — dynamic lookup of adapter implementations by type.  The orche, main(), run_e2e_trace(), trace_step() (+28 more)
+Cohesion: 0.05
+Nodes (49): Service API contracts and health models., Decision domain models — game-agnostic.  DecisionRequest and DecisionResult acce, Re-export all public schemas., Canonical UNO game domain models., Strongly typed identifier primitives., Orchestrator flow control and session lifecycle DTOs., Session orchestration and adapter contracts., Protocol for GUI adapter implementations.  Defines the unified interface that al (+41 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.04
-Nodes (20): AppImageUpdater, AppUpdater, BaseUpdater, clearBuffers(), DebUpdater, determineBufferEncoding(), emit(), FileWithEmbeddedBlockMapDifferentialDownloader (+12 more)
+Cohesion: 0.05
+Nodes (15): AppImageUpdater, AppUpdater, BaseUpdater, determineBufferEncoding(), emit(), FileWithEmbeddedBlockMapDifferentialDownloader, hasPrereleaseComponents(), KeygenProvider (+7 more)
 
 ### Community 73 - "Community 73"
 Cohesion: 0.07
 Nodes (26): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+18 more)
 
 ### Community 74 - "Community 74"
-Cohesion: 0.17
-Nodes (22): ModelInvocationRequest, ModelInvocationResponse, ModelProfile, ModelProviderHealth, ModelProviderType, Extended registry profile with routing and provider config., StructuredModelOutput, main() (+14 more)
+Cohesion: 0.18
+Nodes (15): ModelInvocationResponse, ModelProviderHealth, ModelProviderType, StructuredModelOutput, main(), provider_health(), invoke_with_fallback(), get_provider() (+7 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.11
-Nodes (12): main(), Standalone model registry example., ModelRegistry, Path, Extended model profile registry with routing., Model manifest validation tests., Model registry routing tests., test_disable_profile() (+4 more)
+Cohesion: 0.09
+Nodes (18): main(), Standalone model registry example., ModelInstallRequest, ModelManifest, activate(), get_model(), install(), list_models() (+10 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.18
@@ -736,16 +738,16 @@ Cohesion: 0.29
 Nodes (13): InferenceRequest, InferenceResponse, RuntimeAdapter, get_runtime(), LlamaCppRuntime, MockRuntime, ABC, Unified inference interface with pluggable runtime adapters. (+5 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.15
-Nodes (8): AppConfig, FeatureFlags, get_config(), get_features(), load_config(), BaseModel, Path, Smoke tests — services boot and health.
+Cohesion: 0.11
+Nodes (17): ChatMode, PolicyViolationType, StrEnum, StrategyId, AttachAdapterRequest, AttachAdapterResponse, BaseModel, SessionState (+9 more)
 
 ### Community 79 - "Community 79"
 Cohesion: 0.13
 Nodes (15): LearnedZone, LearnedZoneMap, All learned zones for a game at a given resolution., A single learned interactive zone, persisted across sessions.    Identification:, LearnedZoneStore, Path, File-backed store of learned zones, keyed by game_id., Load the full map for a game. Returns an empty map if absent. (+7 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.11
-Nodes (19): RecoveryConfig, decide_recovery(), Decide recovery action — retries aggressively, only stops after exhausting retri, test_decide_recovery_includes_message(), test_recovery_policy_block_retries(), test_recovery_retries_transient(), Verification tests for runtime stability / frame pipeline recovery., Verify the frontend stale detection logic. (+11 more)
+Cohesion: 0.16
+Nodes (12): RecoveryConfig, decide_recovery(), Decide recovery action — retries aggressively, only stops after exhausting retri, test_decide_recovery_includes_message(), test_recovery_policy_block_retries(), test_recovery_retries_transient(), Verification tests for runtime stability / frame pipeline recovery., Verify the frontend stale detection logic. (+4 more)
 
 ### Community 81 - "Community 81"
 Cohesion: 0.13
@@ -756,24 +758,24 @@ Cohesion: 0.13
 Nodes (14): author, dependencies, electron-updater, react, react-dom, description, license, main (+6 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.11
-Nodes (12): Bounded Context Map, Historical Content, Compare configs, Create scenarios, Dataset format, Full-Operator Evaluation, Metrics, Run (+4 more)
+Cohesion: 0.17
+Nodes (6): Bounded Context Map, Historical Content, Flow states, Invariants, Reuse, Session Orchestrator
 
 ### Community 84 - "Community 84"
-Cohesion: 0.15
-Nodes (15): _find_card_slot_by_identity(), Find the slot index for a specific card by color + number identity.      hand_ca, Test adapter action mapping for scuffed-uno-web profile — with card identity., test_find_card_slot_by_color_only(), test_find_card_slot_by_identity_exact_match(), test_find_card_slot_empty_hand(), test_find_card_slot_no_match(), test_local_mock_still_uses_dom_click() (+7 more)
+Cohesion: 0.12
+Nodes (22): AsyncBaseTransport, _find_card_slot_by_identity(), GenericAdapterClient, HTTP client that implements AdapterProtocol for any adapter service.      Transl, Find the slot index for a specific card by color + number identity.      hand_ca, Windows action mapping now sets allow_coordinate_fallback=True., test_action_mapping_enables_coordinate_fallback(), Test adapter action mapping for scuffed-uno-web profile — with card identity. (+14 more)
 
 ### Community 85 - "Community 85"
 Cohesion: 0.17
 Nodes (12): derive_expected_outcome_profile(), Derive expected outcome profile for a given action type.    Returns a profile th, test_profile_in_game_draw(), test_profile_in_game_effect(), test_profile_none_action(), test_profile_observability(), test_profile_observability_focus(), test_profile_state_advance() (+4 more)
 
 ### Community 86 - "Community 86"
-Cohesion: 0.12
-Nodes (16): PromptProfile, PromptResolution, BaseModel, Prompt registry and versioning., get_prompts(), status(), Invocation orchestration with safe fallback to mock., _extract_vars() (+8 more)
+Cohesion: 0.13
+Nodes (18): PromptProfile, PromptResolution, BaseModel, Prompt registry and versioning., get_prompts(), invoke(), _load_profile(), _resolve_profile() (+10 more)
 
 ### Community 87 - "Community 87"
-Cohesion: 0.09
-Nodes (32): main(), Standalone uno-core example., LegalAction, build_standard_deck(), Card, Deck construction and shuffling., shuffle_deck(), apply_action() (+24 more)
+Cohesion: 0.10
+Nodes (20): main(), Standalone uno-core example., PlayerRef, build_standard_deck(), Card, Deck construction and shuffling., shuffle_deck(), load_replay() (+12 more)
 
 ### Community 88 - "Community 88"
 Cohesion: 0.12
@@ -787,9 +789,13 @@ Nodes (22): adapter-web (port 8104), adapter-windows (port 8105), AdapterProtoco
 Cohesion: 0.15
 Nodes (13): build, appId, directories, files, productName, publish, output, owner (+5 more)
 
+### Community 91 - "Community 91"
+Cohesion: 0.13
+Nodes (16): Confidence, Card, Command, HandView, PrivatePlayerState, PublicTableState, BaseModel, EvidenceSource (+8 more)
+
 ### Community 92 - "Community 92"
-Cohesion: 0.06
-Nodes (33): ProfileHealthConfig, ProfileSelector, Required/optional selector keys for drift health checks., classify_health(), PageLike, probe_selector(), Any, Protocol (+25 more)
+Cohesion: 0.08
+Nodes (20): ProfileSelector, PageLike, probe_selector(), Any, Protocol, Explicit selector chain resolution with observability., Sync resolution for extracted DomNodeEvidence list (extraction path)., Return (match_count, latency_ms). (+12 more)
 
 ### Community 93 - "Community 93"
 Cohesion: 0.28
@@ -800,11 +806,11 @@ Cohesion: 0.09
 Nodes (21): Architecture, Canonical Pipeline (per tick), Communication, Environment, Game Agent Platform — Project Overview, Glossary, Goals, Key Files (+13 more)
 
 ### Community 95 - "Community 95"
-Cohesion: 0.12
-Nodes (16): AsyncBaseTransport, GenericActionRequest, Adapter-agnostic action execution request., _card_color_to_slot(), GenericAdapterClient, Any, AsyncClient, Map a domain action to an adapter-specific GenericActionRequest.          This i (+8 more)
+Cohesion: 0.11
+Nodes (14): GenericActionRequest, GenericActionResult, Execute an action on the GUI., Adapter-agnostic action execution request., Adapter-agnostic action execution result., _card_color_to_slot(), Any, AsyncClient (+6 more)
 
 ### Community 96 - "Community 96"
-Cohesion: 0.05
+Cohesion: 0.06
 Nodes (12): BaseGitHubProvider, BitbucketProvider, computeReleaseNotes(), GenericProvider, getNoteValue(), GitHubProvider, GitLabProvider, isNameEquals() (+4 more)
 
 ### Community 97 - "Community 97"
@@ -828,8 +834,8 @@ Cohesion: 0.29
 Nodes (12): Player Card Hand, Discard Pile, Agent Run Failure State, UNO (PIZZUN) Game Board, UNO (PIZZUN) board observe frame 001 - purple 2 discard, hand 9/Reverse/0/7/8/9, UNO (PIZZUN) board observe frame 002 - purple 2 discard, hand 9/Reverse/0/7/8/9, UNO (PIZZUN) failure screenshot - board with purple 2 discard, hand 9/Reverse/0/7/8/9, UNO (PIZZUN) run screenshot 303324 - board with purple 2 discard, hand 9/Reverse/0/7/8/9 (+4 more)
 
 ### Community 102 - "Community 102"
-Cohesion: 0.24
-Nodes (5): Live E2E proof for scuffed-uno-web.  Connects to Chrome CDP, captures screenshot, run_proof(), Validate that a click target is within reasonable bounds.    Returns (is_valid,, validate_click_target(), TestValidateClickTarget
+Cohesion: 0.31
+Nodes (3): Validate that a click target is within reasonable bounds.    Returns (is_valid,, validate_click_target(), TestValidateClickTarget
 
 ### Community 103 - "Community 103"
 Cohesion: 0.14
@@ -864,48 +870,48 @@ Cohesion: 0.12
 Nodes (16): 1. `services/adapter-windows/profiles/real-uno-desktop.json`, 2. `packages/shared-utils/src/uno_shared/adapter_registry.py:267`, 3. `tests/integration/test_windows_draw_card_loop.py` (new), Code Changes Made, Design Note: Future Action Memory Layer, How Memory Feeds Back into Target Location, How Memory Updates, Manual QA Steps (+8 more)
 
 ### Community 111 - "Community 111"
-Cohesion: 0.16
-Nodes (4): GenericAttachRequest, Adapter-agnostic attach request. Adapters interpret fields as needed., Normalize raw attach intent into adapter-specific GenericAttachRequest., TestEndToEndChain
+Cohesion: 0.10
+Nodes (8): GenericAttachRequest, Adapter-agnostic attach request. Adapters interpret fields as needed., Normalize raw attach intent into adapter-specific GenericAttachRequest., InProcessAdapterClient, In-process adapter client using ASGI transport., TestEndToEndChain, Both adapter clients satisfy the required controller contract., test_adapter_client_contract()
 
 ### Community 112 - "Community 112"
 Cohesion: 0.11
-Nodes (28): BenchmarkCase, BenchmarkCaseResult, BenchmarkResult, BenchmarkRun, BenchmarkRunRequest, ModelCapability, ModelInvocationContext, ModelModality (+20 more)
+Nodes (30): BenchmarkCase, BenchmarkCaseResult, BenchmarkResult, BenchmarkRun, BenchmarkRunRequest, ModelCapability, ModelInvocationContext, ModelInvocationRequest (+22 more)
 
 ### Community 113 - "Community 113"
 Cohesion: 0.29
 Nodes (6): Env, Health check, llama.cpp server, Mock (default), Model Provider Setup, vLLM
 
 ### Community 114 - "Community 114"
-Cohesion: 0.20
-Nodes (13): OperatorEvaluationRun, OperatorScenario, OperatorScenarioResult, BaseModel, End-to-end operator evaluation schemas., main(), load_operator_dataset(), Full-operator evaluation runner. (+5 more)
+Cohesion: 0.31
+Nodes (8): OperatorEvaluationRun, OperatorScenario, OperatorScenarioResult, BaseModel, End-to-end operator evaluation schemas., load_operator_dataset(), _score_scenario(), test_load_full_operator_dataset()
 
 ### Community 115 - "Community 115"
-Cohesion: 0.16
-Nodes (9): AdapterRegistry, Registry of adapter implementations by adapter type.      Usage:         registr, Return the retry/recovery policy for an adapter type., _service_url(), set_adapter_registry(), Register in-process adapter clients for testing., Register the adapter-windows service as an in-process (ASGI) client.      Routes, setup_in_process_adapter_registry() (+1 more)
+Cohesion: 0.12
+Nodes (13): AdapterRegistry, find_draw_target(), Absolute click center of the draw pile / deck from perceived regions.      Canva, Registry of adapter implementations by adapter type.      Usage:         registr, Return the retry/recovery policy for an adapter type., _service_url(), Tests for grounding a draw_card click to the perceived deck (draw stall fix).  O, No perceived deck → no coordinate (falls back to selector, unchanged). (+5 more)
 
 ### Community 116 - "Community 116"
-Cohesion: 0.12
-Nodes (14): Game plugin contract — domain-only interface for game implementations.  Each gam, _ensure_default_plugins(), has_game_plugin(), list_game_plugins(), Game plugin registry — dynamic lookup of game implementations.  The orchestrator, Register a game plugin implementation., Check if a game plugin is registered., List all registered game types. (+6 more)
+Cohesion: 0.11
+Nodes (16): Game plugin contract — domain-only interface for game implementations.  Each gam, _ensure_default_plugins(), get_game_plugin(), has_game_plugin(), list_game_plugins(), Game plugin registry — dynamic lookup of game implementations.  The orchestrator, Register a game plugin implementation., Get a registered game plugin by game type.      Raises KeyError if no plugin reg (+8 more)
 
 ### Community 117 - "Community 117"
 Cohesion: 0.29
 Nodes (10): E2E-PW: UNO Mock Test Target page, UNO Mock Test Target minimal HTML harness, Smoke: Pizzuno board, discard red 1 (JOHNCENNA321), Discard pile top card, Pizzuno multiplayer UNO game board UI, Player hand of playable cards, Smoke: Pizzuno board, discard red 6 (RICARDOFIORANI hand), Smoke: Pizzuno board, discard yellow Skip (AI3000 hand) (+2 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.33
-Nodes (9): ChatMode, PolicyViolationType, StrEnum, StrategyId, AttachAdapterRequest, AttachAdapterResponse, BaseModel, SessionState (+1 more)
+Cohesion: 0.18
+Nodes (15): action_requires_canvas_click(), build_coordinate_click_payload(), click_point_from_canvas(), diagnose_page(), is_canvas_profile(), Canvas-relative coordinate clicks for WebGL browser games., resolve_layout_target_key(), Canvas coordinate click payload and bounds handling. (+7 more)
 
 ### Community 119 - "Community 119"
 Cohesion: 0.12
-Nodes (15): 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent, 2026-07-03 16:55 MSK — Autonomous runner + checkpoint/resume (tasks #1,#2,#3), 2026-07-03 17:05 MSK — Watchdog + adaptive backoff + long-run/fault validation (#4,#5), 2026-07-03 17:12 MSK — Docs + regression check (#8), 2026-07-04 — Direction decided + CV coordinate plumbing (task #9, step 1), 2026-07-04 — Per-card hand segmentation calibrated on real frames (task #9b), 2026-07-04 — Real-run debugging: no gameplay + Stop/New bugs, 2026-07-04 — Real Windows run diagnosed + CRITICAL screenshot fix + 9c grounding (+7 more)
+Nodes (16): 2026-07-03 16:48 MSK — Audit of screenshot-driven Windows agent, 2026-07-03 16:55 MSK — Autonomous runner + checkpoint/resume (tasks #1,#2,#3), 2026-07-03 17:05 MSK — Watchdog + adaptive backoff + long-run/fault validation (#4,#5), 2026-07-03 17:12 MSK — Docs + regression check (#8), 2026-07-04 — Direction decided + CV coordinate plumbing (task #9, step 1), 2026-07-04 — Per-card hand segmentation calibrated on real frames (task #9b), 2026-07-04 — Real-run debugging: no gameplay + Stop/New bugs, 2026-07-04 — Real Windows run diagnosed + CRITICAL screenshot fix + 9c grounding (+8 more)
 
 ### Community 120 - "Community 120"
-Cohesion: 0.13
-Nodes (10): AdapterProtocol, Any, Protocol, Unified interface for all GUI adapters.      Each adapter service (adapter-web,, Attach to a GUI target., Detach from a GUI target., Capture current GUI state as evidence., Execute an action on the GUI. (+2 more)
+Cohesion: 0.15
+Nodes (9): AdapterProtocol, Any, Protocol, Unified interface for all GUI adapters.      Each adapter service (adapter-web,, Attach to a GUI target., Detach from a GUI target., Capture current GUI state as evidence., List available profiles for this adapter type. (+1 more)
 
 ### Community 121 - "Community 121"
-Cohesion: 0.19
-Nodes (6): _dict_to_game_action(), _game_action_to_dict(), Any, Svintus game plugin — second GamePlugin implementation.  Demonstrates that the G, Svintus game plugin implementing the GamePlugin protocol.      Key differences f, SvintusGamePlugin
+Cohesion: 0.23
+Nodes (5): _dict_to_game_action(), _game_action_to_dict(), Svintus game plugin — second GamePlugin implementation.  Demonstrates that the G, Svintus game plugin implementing the GamePlugin protocol.      Key differences f, SvintusGamePlugin
 
 ### Community 122 - "Community 122"
 Cohesion: 0.31
@@ -916,8 +922,8 @@ Cohesion: 0.15
 Nodes (11): Get zone definitions from profile or defaults., Infer game state from screenshot using heuristics., Protocol, Screenshot perception plugin protocol.  Generic interface for plugins that extra, A detected rectangular region in the screenshot., Result of screenshot-based perception., Protocol for screenshot-based perception plugins., Infer game state from a screenshot file.          Args:             screenshot_p (+3 more)
 
 ### Community 124 - "Community 124"
-Cohesion: 0.25
-Nodes (3): PlayerRef, GameState, Card
+Cohesion: 0.15
+Nodes (13): merge(), perceive(), PerceptionRequest, BaseModel, merge_confidence(), _board_prompt(), infer_vision(), VLM perception provider — screenshot → structured board state.  Primary percepti (+5 more)
 
 ### Community 125 - "Community 125"
 Cohesion: 0.13
@@ -936,8 +942,8 @@ Cohesion: 0.39
 Nodes (7): capture_screenshot(), get_calibration(), get_current_ratios(), main(), Path, Assisted calibration for real-uno-desktop layout_targets.  Screenshot is client-, update_profile()
 
 ### Community 129 - "Community 129"
-Cohesion: 0.11
-Nodes (12): FastAPI, export_json_schema(), BaseModel, FastAPI service factory for consistent service bootstrap., get_logs(), ingest_log(), LogEntry, metrics() (+4 more)
+Cohesion: 0.07
+Nodes (18): FastAPI, HealthResponse, HealthStatus, BaseModel, StrEnum, ServiceInfo, export_json_schema(), Any (+10 more)
 
 ### Community 130 - "Community 130"
 Cohesion: 0.24
@@ -960,7 +966,7 @@ Cohesion: 0.38
 Nodes (3): main(), MockUnoApp, Deterministic tkinter test target for adapter-windows real-mode tests.  Draw but
 
 ### Community 136 - "Community 136"
-Cohesion: 0.18
+Cohesion: 0.16
 Nodes (7): EventHandler, BusEvent, get_event_bus(), InMemoryEventBus, BaseModel, In-process and pluggable event bus abstraction., Append-only in-process event bus for local dev and tests.
 
 ### Community 137 - "Community 137"
@@ -968,12 +974,12 @@ Cohesion: 0.22
 Nodes (9): derive_observability_improvement(), Derive observability-improvement signals from before/after evidence quality., test_obs_improvement_confidence_jump(), test_obs_improvement_error_cleared(), test_obs_improvement_multiple_signals(), test_obs_improvement_no_change(), test_obs_improvement_no_confidence_data(), test_obs_improvement_tiny_confidence_below_threshold() (+1 more)
 
 ### Community 138 - "Community 138"
-Cohesion: 0.14
-Nodes (14): classify_screen_state(), MVP screen-state classifier — rule-based, not VLM-based.    Honest classificatio, Observation with game_state → in_game., Observation with game_elements but no game_state → in_game., Adapter attached, observation present, but no game_state → not_in_game., No adapter attached → unknown., No observation at all → unknown., Classifier must NOT produce launcher/menu/lobby states. (+6 more)
+Cohesion: 0.05
+Nodes (56): classify_screen_state(), derive_goal(), derive_next_action(), Any, DetectedCard, Derive goal from decision or pre-game state., Derive next action from decision or pre-game navigation., Map a perception card dict → DetectedCard for the operator snapshot.    Accepts (+48 more)
 
 ### Community 140 - "Community 140"
-Cohesion: 0.83
-Nodes (3): capture(), main(), Path
+Cohesion: 0.22
+Nodes (11): ChatReplyRequest, reply(), _check_safety(), generate_reply(), generate_reply_model(), generate_reply_template(), Chat response generation — template-first with model fallback., Main entry point — routes to template or model-based generation. (+3 more)
 
 ### Community 141 - "Community 141"
 Cohesion: 0.15
@@ -982,6 +988,10 @@ Nodes (13): Adjust selectors, Alerting, Debug failures, Escalation, Fixtures, Ni
 ### Community 142 - "Community 142"
 Cohesion: 0.26
 Nodes (12): capture_screenshot(), compute_diff(), get_bounds(), get_calibration(), get_window_title(), main(), Path, Hardened real-UNO validation script.  Reads actual window bounds from the adapte (+4 more)
+
+### Community 144 - "GameAction"
+Cohesion: 0.25
+Nodes (7): GameAction, GameEvent, Apply action, return new state + events., Game-agnostic legal action — opaque to core platform.      Each game plugin defi, Game-agnostic domain event — opaque to core platform., GameServiceClient, Unified client for game operations via GamePlugin.      Provides the same interf
 
 ### Community 145 - "Community 145"
 Cohesion: 0.50
@@ -994,10 +1004,6 @@ Nodes (10): list_trace_steps(), List all trace steps for a session with metadata
 ### Community 149 - "Community 149"
 Cohesion: 0.23
 Nodes (6): parse_card_from_text(), Any, UNO-specific perception adapter — first game plugin implementation.  Extracts UN, Parse a card description from text into {color, value} dict., UNO game perception adapter.      Implements the GamePerceptionAdapter protocol, UnuPerceptionAdapter
-
-### Community 150 - "Community 150"
-Cohesion: 0.15
-Nodes (13): derive_next_action(), Derive next action from decision or pre-game navigation., When decision exists, use chosen_action., not_in_game without decision → Inspect screen., in_game without decision → Awaiting decision., When state is unknown, goal and next_action must not claim specific knowledge., not_in_game must not produce in-game actions., test_next_action_from_decision() (+5 more)
 
 ### Community 151 - "Community 151"
 Cohesion: 0.17
@@ -1020,8 +1026,12 @@ Cohesion: 0.67
 Nodes (3): main(), parse_args(), Namespace
 
 ### Community 159 - "Community 159"
-Cohesion: 0.17
-Nodes (11): Unit tests for screen-state classifier, goal derivation, and next-action derivat, in_game without decision → Play the game., not_in_game → Reach game state., No steps → Initialize session., Has steps but no decision → Pipeline active., When decision exists, use explanation.summary., test_goal_from_decision(), test_goal_in_game_no_decision() (+3 more)
+Cohesion: 0.26
+Nodes (11): _normalize_board(), Any, Normalize a VLM board dict into the canonical game_state shape.      Output keys, Tests for the VLM perception path (#10, D6).  Covers the two things that are ver, A real screenshot is attached too — the heuristic must NOT clobber VLM cards., test_merger_uses_vlm_board_as_primary(), test_merger_vlm_board_survives_screenshot_present(), test_normalize_board_colour_only_ok() (+3 more)
+
+### Community 160 - "Community 160"
+Cohesion: 0.22
+Nodes (8): 1. Install Ollama and pull a vision model, 2. Enable the bundled Ollama profile, 3. Turn on the VLM perception path (env vars), 4. Verify it's live, Enabling VLM perception with Ollama, How it fits together, Related, Tuning notes
 
 ### Community 161 - "Community 161"
 Cohesion: 0.18
@@ -1048,8 +1058,8 @@ Cohesion: 0.29
 Nodes (9): Before/after UI change detection., verify_screenshot_transition(), Path, Unit tests for Windows RPA screenshot verification., test_verify_detects_visible_change(), test_verify_missing_frame(), test_verify_rejects_identical_frames(), _write_png() (+1 more)
 
 ### Community 186 - "Community 186"
-Cohesion: 0.15
-Nodes (8): append_artifact(), append_event(), append_observation(), get_replay(), get_replay_detail(), import_replay(), ReplayDetail, Append-only event store with artifacts — Postgres planned, file-based for local
+Cohesion: 0.39
+Nodes (6): apply_action(), _apply_card_effect(), GameState, Apply actions and emit domain events., _reshuffle_draw_pile(), _skip_steps_for()
 
 ### Community 187 - "Community 187"
 Cohesion: 0.20
@@ -1084,16 +1094,16 @@ Cohesion: 0.20
 Nodes (9): name, private, scripts, build:desktop, dev:desktop, version, workspaces, apps/control-center (+1 more)
 
 ### Community 195 - "Community 195"
-Cohesion: 0.20
-Nodes (10): Any, DetectedCard, Map a perception card dict → DetectedCard for the operator snapshot.    Accepts, _to_detected_card(), recognition_to_dict card shape → DetectedCard with center preserved., Colour-only CV (empty value) still yields a card — value is just blank., Missing / empty input filters out cleanly (None), not a blank card., test_detected_card_colour_only_ok() (+2 more)
+Cohesion: 0.22
+Nodes (3): IntentRequest, BaseModel, E2E simulation tests with mock adapters.
 
 ### Community 196 - "Community 196"
 Cohesion: 0.20
 Nodes (6): Verify the frontend path normalization logic (unit test)., Windows path with backslashes should extract directory name., Unix path with forward slashes should extract directory name., Path with mixed separators should still work., Just a directory name (no path) should work., TestFrontendPathNormalization
 
 ### Community 197 - "Community 197"
-Cohesion: 0.22
-Nodes (8): AGENT_TODO, Backlog, Blocked, Blocked, Done, In Progress, Next, Phase B — Perception/decision/execution hardening (unblocked, but touches real-Windows paths)
+Cohesion: 0.20
+Nodes (9): AGENT_TODO, Backlog, Blocked, Blocked, Done, Done (2026-07-12, Plans A + B), In Progress, Next (+1 more)
 
 ### Community 211 - "Community 211"
 Cohesion: 0.22
@@ -1190,6 +1200,10 @@ Nodes (6): get_json(), post_json(), AsyncClient, BaseModel, HTTP client helpers 
 ### Community 234 - "adapter-web"
 Cohesion: 0.29
 Nodes (7): adapter-web, API Summary, Config, Integration, Local Dev, Modes, Tests
+
+### Community 235 - "rules.py"
+Cohesion: 0.42
+Nodes (8): _can_play_on_top(), generate_legal_actions(), is_action_legal(), _match_action(), Card, GameState, Legal action generation and validation., validate_action()
 
 ### Community 236 - "test_verification_loop.py"
 Cohesion: 0.29
@@ -1299,20 +1313,24 @@ Nodes (3): Path, Synthetic mock preview frame tests., test_build_mock_synthetic_
 Cohesion: 0.67
 Nodes (3): Fix, Known bug fix (2026-06-22), Root cause
 
+### Community 288 - "test_grace_period_maintains_in_game"
+Cohesion: 0.29
+Nodes (6): Compare configs, Create scenarios, Dataset format, Full-Operator Evaluation, Metrics, Run
+
 ## Knowledge Gaps
-- **923 isolated node(s):** `@mimo-ai/plugin`, `require$$1`, `path$n`, `fs$j`, `require$$0` (+918 more)
+- **932 isolated node(s):** `@mimo-ai/plugin`, `require$$1`, `path$n`, `fs$j`, `require$$0` (+927 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **149 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **147 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ScreenshotFrame` connect `Community 41` to `Profile Health Monitoring`, `Community 40`, `Perception Service`, `Windows Adapter: Control Selectors`, `Windows Adapter: Action Execution`, `Community 47`, `Session Orchestrator: DTOs`, `Community 22`, `Community 23`, `Community 57`, `Community 59`, `Community 92`, `Community 30`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+- **Why does `ScreenshotFrame` connect `Community 59` to `Profile Health Monitoring`, `Perception Service`, `Windows Adapter: Control Selectors`, `Windows Adapter: Action Execution`, `Session Orchestrator: DTOs`, `Community 22`, `Community 23`, `Community 27`, `Community 30`, `Community 159`, `Community 40`, `Community 41`, `Community 44`, `Community 47`, `Community 57`, `Community 65`, `Community 91`, `Community 92`, `Community 124`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
 - **Why does `load()` connect `Electron Bundle: Anchor/Parser Utils` to `Electron Bundle: Lodash Utils`, `Control Center: Tab/Window Pickers`?**
   _High betweenness centrality (0.029) - this node is a cross-community bridge._
-- **Why does `WindowsRpaPanel()` connect `Control Center: Tab/Window Pickers` to `Control Center: Operator Panel`, `Electron Bundle: Anchor/Parser Utils`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+- **Why does `build_observation()` connect `Perception Service` to `Community 41`, `Community 59`, `Community 107`, `Community 91`, `Community 124`, `Community 159`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
 - **Are the 55 inferred relationships involving `SessionOrchestrator` (e.g. with `run_e2e_trace()` and `main()`) actually correct?**
   _`SessionOrchestrator` has 55 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 75 inferred relationships involving `ScreenshotFrame` (e.g. with `ActionExecutionRequest` and `ActionExecutionResult`) actually correct?**
