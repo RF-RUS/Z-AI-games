@@ -84,8 +84,25 @@ def build_observation(
     # Fallback: extract chat from evidence without game-specific parsing
     visible_chat = _extract_chat(dom, ui, ocr)
 
+  # VLM board (D6): when the vision model produced a normalized board
+  # (source=="vlm"), it is the PRIMARY perception. Fold its keys straight into
+  # game_state and skip the per-game heuristic below so it can't overwrite them.
+  vlm_board = vlm.structured if (vlm and isinstance(vlm.structured, dict)) else None
+  vlm_has_cards = bool(vlm_board and vlm_board.get("source") == "vlm"
+                       and (vlm_board.get("hand_cards") or vlm_board.get("top_card")))
+  if vlm_has_cards:
+    game_state = game_state or {}
+    game_state["cv_build"] = "v3"
+    for k in ("screen_type", "whose_turn", "top_card", "hand_cards", "hand_count"):
+      if vlm_board.get(k) is not None:
+        game_state[k] = vlm_board[k]
+    game_state["recognition_method"] = "vlm"
+    if vlm_board.get("hand_cards"):
+      game_elements = [{"type": "card", **c} for c in vlm_board["hand_cards"]]
+    overall = max(overall, float(vlm_board.get("confidence", 0.0) or 0.0))
+
   # Screenshot perception: supplement or replace UIA data when screenshot available
-  if screenshot and screenshot.path:
+  if screenshot and screenshot.path and not vlm_has_cards:
     # Build marker — if the operator's [CVv3] line does NOT show pcv=v3, the
     # PERCEPTION service is running stale code (restart it), independent of the
     # orchestrator which prints [CVv3].

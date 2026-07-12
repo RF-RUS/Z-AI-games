@@ -61,13 +61,28 @@ function extractGameState(snapshot: OrchestratorStatusResponse["strategy_snapsho
     return { topCard: null, handCount: null, handCards: null, direction: null, isYourTurn: null, screenState: "unknown", confidence: null };
   }
   const detected = snapshot.detected_state ?? "unknown";
+  // The perceived hand/top card now flow through the snapshot (from
+  // observation.game_state). Map them into the operator GameState so the
+  // GameStateCard renders what the agent actually SEES. Null/empty until
+  // perception detects cards. A card with an empty value (colour-only CV) still
+  // renders — value falls back to "?" in the card component.
+  const topCard = snapshot.top_card
+    ? { color: snapshot.top_card.color, value: snapshot.top_card.value }
+    : null;
+  const handCards = snapshot.hand_cards && snapshot.hand_cards.length > 0
+    ? snapshot.hand_cards.map((c) => ({ color: c.color, value: c.value }))
+    : null;
+  const handCount = snapshot.hand_count ?? (handCards ? handCards.length : null);
+  const screenState = (snapshot.screen_type ?? detected) as GameState["screenState"];
+  const whoseTurn = snapshot.whose_turn;
+  const isYourTurn = whoseTurn == null ? null : whoseTurn === "self" || whoseTurn === "you";
   return {
-    topCard: null,
-    handCount: null,
-    handCards: null,
+    topCard,
+    handCount,
+    handCards,
     direction: null,
-    isYourTurn: null,
-    screenState: (detected as GameState["screenState"]),
+    isYourTurn,
+    screenState,
     confidence: snapshot.confidence ?? null,
   };
 }

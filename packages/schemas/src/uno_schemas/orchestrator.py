@@ -112,6 +112,22 @@ class OrchestratorMetrics(BaseModel):
   avg_step_latency_ms: float = 0.0
 
 
+class DetectedCard(BaseModel):
+  """A single card as perceived from the screen (CV/VLM).
+
+  Mirrors the per-card dict produced by perception `recognition_to_dict`
+  (color/value + optional confidences and absolute click center). Carried in the
+  StrategySnapshot so the operator can SEE what the agent perceives — the hand,
+  the top card — instead of a text-only summary. `value` may be empty when the
+  current recognizer reads colour but not the number.
+  """
+  color: str = ""
+  value: str = ""
+  color_confidence: float | None = None
+  value_confidence: float | None = None
+  center: dict[str, int] | None = None  # {"x": .., "y": ..} absolute screenshot px
+
+
 class StrategySnapshot(BaseModel):
   """Semantic strategy snapshot for operator visibility.
 
@@ -127,6 +143,13 @@ class StrategySnapshot(BaseModel):
   blocked_reason: str | None = None
   last_executed: str | None = None
   game_type: str | None = None
+  # Perceived game state (screenshot CV / VLM) — surfaced so the operator UI can
+  # render the detected hand + top card. None/empty until perception detects them.
+  screen_type: str | None = None
+  whose_turn: str | None = None
+  top_card: DetectedCard | None = None
+  hand_cards: list[DetectedCard] = Field(default_factory=list)
+  hand_count: int | None = None
   verification: VerificationResult | None = None
 
 

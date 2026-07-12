@@ -32,6 +32,7 @@ class ModelUseCase(StrEnum):
   CHAT_INTENT = "chat_intent"
   CHAT_REPLY = "chat_reply"
   PERCEPTION_DISPUTE = "perception_dispute"
+  PERCEPTION_BOARD = "perception_board"
   EXPLANATION = "explanation"
   POLICY_ADVICE = "policy_advice"
   BENCHMARK_ONLY = "benchmark_only"
@@ -116,6 +117,10 @@ class ModelInvocationRequest(BaseModel):
   prompt_version: str | None = None
   variables: dict[str, str] = Field(default_factory=dict)
   prompt: str | None = None
+  # Optional screenshot for multimodal (VLM) inference. Base64-encoded image
+  # bytes WITHOUT a data: prefix. Providers that support vision attach it to the
+  # message; text-only providers ignore it.
+  image_base64: str | None = None
   max_tokens: int = 256
   temperature: float = 0.2
   expect_json: bool = False

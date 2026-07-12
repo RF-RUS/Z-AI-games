@@ -18,6 +18,7 @@ from uno_orchestrator.web_attach_trace import log_attach_diagnostics_checkpoint
 from uno_schemas.orchestrator import (
   AdapterBinding,
   AttachAdapterBody,
+  DetectedCard,
   ErrorClass,
   FlowControlResponse,
   FlowState,
@@ -40,6 +41,28 @@ logger = get_logger("orchestrator")
 # --- Testable pure functions for classifier / planner ---
 # These are extracted as module-level functions so they can be unit-tested
 # without instantiating the full orchestrator.
+
+def _to_detected_card(card: Any) -> DetectedCard | None:
+  """Map a perception card dict → DetectedCard for the operator snapshot.
+
+  Accepts the `recognition_to_dict` shape ({color, value, *_confidence, center}).
+  Returns None for missing/empty input so callers can filter cleanly.
+  """
+  if not isinstance(card, dict):
+    return None
+  color = str(card.get("color") or "")
+  value = str(card.get("value") or "")
+  if not color and not value and not card.get("center"):
+    return None
+  center = card.get("center") if isinstance(card.get("center"), dict) else None
+  return DetectedCard(
+    color=color,
+    value=value,
+    color_confidence=card.get("color_confidence"),
+    value_confidence=card.get("value_confidence"),
+    center={"x": int(center["x"]), "y": int(center["y"])}
+    if center and "x" in center and "y" in center else None,
+  )
 
 def classify_screen_state(
   observation: Any,
@@ -573,6 +596,13 @@ class SessionOrchestrator:
 
     verification = self._build_verification(session, detected_state, observation, decision)
 
+    # Surface the perceived game state (hand/top card) so the operator UI can
+    # render what the agent actually SEES, not just a text summary. Empty until
+    # perception detects cards. Read straight off the game_state dict.
+    gs = getattr(observation, "game_state", None) or {}
+    top_card = _to_detected_card(gs.get("top_card"))
+    hand_cards = [c for c in (_to_detected_card(h) for h in (gs.get("hand_cards") or [])) if c]
+
     return StrategySnapshot(
       goal=goal,
       detected_state=detected_state,
@@ -584,6 +614,11 @@ class SessionOrchestrator:
       last_executed=last_execute,
       game_type=detail.config.adapter_type,
       verification=verification,
+      screen_type=gs.get("screen_type"),
+      whose_turn=gs.get("whose_turn"),
+      top_card=top_card,
+      hand_cards=hand_cards,
+      hand_count=(len(hand_cards) if hand_cards else gs.get("hand_count")),
     )
 
   def _classify_state(self, observation, detail) -> str:

@@ -168,6 +168,14 @@ export interface SessionDetail {
   metrics: SessionMetrics;
 }
 
+export interface DetectedCard {
+  color: string;
+  value: string;
+  color_confidence?: number | null;
+  value_confidence?: number | null;
+  center?: { x: number; y: number } | null;
+}
+
 export interface OrchestratorStatusResponse {
   session_id: string;
   flow_state: string;
@@ -191,6 +199,12 @@ export interface OrchestratorStatusResponse {
     blocked_reason?: string;
     last_executed?: string;
     game_type?: string;
+    // Perceived game state (screenshot CV / VLM) — the detected hand + top card.
+    screen_type?: string;
+    whose_turn?: string;
+    top_card?: DetectedCard | null;
+    hand_cards?: DetectedCard[];
+    hand_count?: number;
     verification?: {
       delivery_status?: string;
       outcome_status?: string;

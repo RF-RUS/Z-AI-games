@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from uno_perception.merger import build_observation, merge_confidence, register_game_adapter
 from uno_perception.uno_adapter import UnuPerceptionAdapter
+from uno_perception.vlm_provider import infer_vision, vlm_enabled
 from uno_schemas.perception import (
   DomEvidence,
   Observation,
@@ -31,8 +32,21 @@ class PerceptionRequest(BaseModel):
 
 @app.post("/perceive", response_model=Observation, tags=["perception"])
 async def perceive(req: PerceptionRequest) -> Observation:
+  # VLM perception (D6, env-gated via VLM_PERCEPTION): when enabled and a
+  # screenshot is present, run the vision model and feed its structured board
+  # into the merger's existing `vlm` slot. This is the game-agnostic primary
+  # path; the heuristic canvas_plugin remains the fallback (VLM off / no image /
+  # inference failed → vlm stays None and nothing changes).
+  vlm = req.vlm
+  if vlm is None and req.screenshot is not None and vlm_enabled():
+    shot_path = getattr(req.screenshot, "path", None)
+    if shot_path:
+      try:
+        vlm = await infer_vision(shot_path, game_type=req.game_type or "uno")
+      except Exception:  # noqa: BLE001 — never let VLM break perception
+        vlm = None
   return build_observation(
-    req.session_id, dom=req.dom, ui=req.ui, ocr=req.ocr, vlm=req.vlm,
+    req.session_id, dom=req.dom, ui=req.ui, ocr=req.ocr, vlm=vlm,
     screenshot=req.screenshot, game_type=req.game_type,
   )
 

@@ -290,3 +290,91 @@ Append-only. Newest last.
   lines — each must print a real `src:` path and NO "source dir not found" warning. Rerun one session.
   Expect `[CVv3] pcv=v3` at last. If `pcv=v3` but `hand_cards=0` on the fanned hand → that is the REAL
   (D6) heuristic-can't-read-real-UNO result, and we proceed to #10 VLM perception.
+
+---
+
+### 2026-07-12 (c) — Plan A: perceived game state now flows to the operator panel
+- **Trigger:** Real run — pcv=v3 live, agent clicks cards but ALWAYS the leftmost regardless of the
+  table, and the operator has no panel showing the perceived hand/top card. Two symptoms, same root:
+  perception detects cards but that state never reaches (a) the decision or (b) the UI.
+- **Diagnosed (code):**
+  1. `flow_controller._get_game_snapshot()` hardcodes `return None` ("will be wired properly") → legal
+     actions come from the SIMULATED engine (`clients.legal_actions(game_id)`), blind to the screen.
+  2. `_find_card_center()` (`adapter_registry.py:528`) falls to branch 3 "first card with a center" =
+     leftmost, because heuristic CV gives colour+coord but rarely `value` → no color+value match.
+  3. UI: `OrchestratorStatus` carries only `strategy_snapshot` (text). `extractGameState()`
+     (`useOperatorPolling.ts`) HARDCODED `topCard/handCards/handCount = null`. The `GameStateCard`
+     panel EXISTS but was never fed → always empty.
+- **Plan A (this session — UI visibility + state plumbing, no Windows host needed to verify logic):**
+  - Schema: added `DetectedCard` + `screen_type/whose_turn/top_card/hand_cards/hand_count` to
+    `StrategySnapshot` (`packages/schemas/.../orchestrator.py`).
+  - Orchestrator: `_build_strategy_snapshot` now maps `observation.game_state` → those fields via a new
+    pure helper `_to_detected_card` (accepts the `recognition_to_dict` shape; None-safe).
+  - UI: `unoApiClient.ts` typed the new snapshot fields (+`DetectedCard`); `useOperatorPolling.ts`
+    `extractGameState` now reads real `top_card/hand_cards/hand_count/screen_type/whose_turn` instead of
+    nulls. `GameStateCard`/`HandCards`/`TopCard` already render them (colour-only cards show blank value).
+- **Files:** `packages/schemas/src/uno_schemas/orchestrator.py`,
+  `services/session-orchestrator/src/uno_orchestrator/orchestrator.py`,
+  `apps/control-center/src/unoApiClient.ts`,
+  `apps/control-center/src/operator/hooks/useOperatorPolling.ts`,
+  `tests/unit/test_strategy_classifier.py` (+3 `_to_detected_card` tests).
+- **Verified:** ruff clean; `pytest tests/unit` 313 passed / 7 skipped (+3 new); snapshot serializes
+  end-to-end with real perception card shape (centers preserved, colour-only ok); tsc shows only the 5
+  PRE-EXISTING errors (confirmed by stashing my 2 UI files — count unchanged). No new type errors.
+- **Effect:** the operator will now SEE the detected hand + top card — which is also the best live
+  diagnostic for symptom #1 (is it detecting cards at all, and with what values?).
+- **Next:** Plan B = [#10] VLM perception producer (values, not just colour) → then [9d] wire
+  `_get_game_snapshot` to the detected state so legal actions + `_find_card_center` match the RIGHT card.
+
+---
+
+### 2026-07-12 (d) — Plan B: VLM perception (#10) + perceived legal actions (9d)
+- **Context:** After A, symptom #1 ("always plays leftmost card") root-caused to two decoupled gaps:
+  legal actions came from the SIMULATED engine (blind to the screen), and colour-only heuristic CV gave
+  no value → `_find_card_center` fell to "first card" = leftmost. User chose a **local VLM** for #10 and
+  "verify on my Windows run" for validation.
+- **#10 — VLM perception (env-gated, D6). Found the scaffold already existed but unwired with 3 holes;
+  finished + connected it rather than building fresh:**
+  1. Image never sent: `ModelInvocationRequest` had no image field, and the old `vlm_provider` passed a
+     PLACEHOLDER string. Added `image_base64` to the request; `OpenAICompatibleProvider` now attaches
+     OpenAI vision content-parts (text + `image_url` data URI) — vLLM/llama.cpp with a VL model accept
+     this. Text-only requests unchanged.
+  2. Wrong shape: rewrote `vlm_provider.infer_vision()` to read the real screenshot bytes → base64, call
+     model-runtime `use_case=perception_board`, and NORMALIZE to the canonical
+     `{screen_type, whose_turn, top_card, hand_cards, hand_count}` the UNO adapter's `parse_vlm` + the
+     operator panel already consume. Returns a `VisionInference` (or None → clean fallback).
+  3. Nobody produced it: `api.perceive` (async) now calls `infer_vision` when `VLM_PERCEPTION=1` and a
+     screenshot is present, feeding the existing `vlm` slot. **Off by default** → zero regression.
+  - Merger: a VLM board (`source=="vlm"`) is now PRIMARY — its cards fold into `game_state` and the
+     per-game heuristic is SKIPPED so it can't overwrite them (sets `cv_build=v3`,
+     `recognition_method=vlm`, non-zero game_state confidence so flow won't re-classify not_in_game).
+  - `MockProvider` gained a `perception_board` branch returning a canned board → the whole path is
+     testable with no real model/GPU. A local Qwen2-VL (vLLM) drops in via `VLM_PROFILE_ID` + a vision
+     profile, no code change.
+- **9d — legal actions from the PERCEIVED board (the direct "leftmost card" fix):**
+  - New pure module `perceived_actions.legal_actions_from_perception(hand, top)` — maps detected cards
+    to UNO legal moves via the schema's `Card.matches` (colour/value/wild). A chosen action now carries
+    the detected card's colour+value → `_find_card_center` grounds to the RIGHT card. Returns None when
+    the board isn't readable (no top card / colour-only hand) → falls back to the engine (unchanged).
+  - `flow_controller._legal_actions` now takes `observation` and PREFERS perceived actions; simulated
+    engine stays as fallback. `_get_game_snapshot` hardcoded-None is now bypassed on the happy path.
+- **Files:** `packages/schemas/src/uno_schemas/model.py` (image_base64, PERCEPTION_BOARD use case),
+  `services/model-runtime-service/src/uno_model_runtime/providers.py` (vision content + mock board),
+  `services/perception-service/src/uno_perception/vlm_provider.py` (rewritten),
+  `services/perception-service/src/uno_perception/api.py` (VLM producer wire),
+  `services/perception-service/src/uno_perception/merger.py` (VLM primary, heuristic gated),
+  `services/session-orchestrator/src/uno_orchestrator/perceived_actions.py` (NEW),
+  `services/session-orchestrator/src/uno_orchestrator/flow_controller.py` (`_legal_actions` prefers CV),
+  `tests/unit/test_vlm_perception.py` (NEW, 5), `tests/unit/test_perceived_actions.py` (NEW, 6),
+  fixture `tests/fixtures/uno_desktop/ubisoft_hand3.jpeg` (user's real frame).
+- **Verified (macOS, no host needed):** ruff clean; `pytest tests/unit` 324 passed / 7 skipped (+11);
+  VLM off by default (heuristic path & its 27 tests unchanged); merger keeps VLM's 3 cards even with a
+  screenshot attached; 9d matches the user's real board (top yellow-reverse → plays green+yellow
+  reverse, NOT red 6, NOT leftmost).
+- **Next for user (Windows):** to try the VLM path, register a vision profile and set `VLM_PERCEPTION=1`
+  + `VLM_PROFILE_ID` before `dev-backend.ps1`. Even WITHOUT VLM, 9d + Plan A already improve real play:
+  once perception returns a readable hand+top (colour+value), the agent plays the matching card and the
+  operator panel shows the detected hand. Send the next `[CVv3]` line + a panel screenshot.
+- **Still open:** value recognition quality depends on the recognizer — heuristic gives colour-only (9d
+  then defers to the engine), so the leftmost-card fix fully lands only once VLM (or a value-capable CV)
+  is on. Real-hardware tuning of coordinate transform stays #B1.

@@ -8,7 +8,12 @@ These tests protect against regressions that would:
 
 from unittest.mock import MagicMock
 
-from uno_orchestrator.orchestrator import classify_screen_state, derive_goal, derive_next_action
+from uno_orchestrator.orchestrator import (
+    _to_detected_card,
+    classify_screen_state,
+    derive_goal,
+    derive_next_action,
+)
 
 # --- classify_screen_state tests ---
 
@@ -159,3 +164,30 @@ def test_not_in_game_does_not_claim_in_game_actions():
     assert "Play the game" not in goal
     assert "play_card" not in (next_action or "")
     assert next_action == "Inspect screen"
+
+
+# --- _to_detected_card tests (operator game-state panel wiring) ---
+
+def test_detected_card_maps_perception_shape():
+    """recognition_to_dict card shape → DetectedCard with center preserved."""
+    card = _to_detected_card({
+        "color": "red", "value": "6",
+        "color_confidence": 0.9, "value_confidence": 0.4,
+        "center": {"x": 560, "y": 600},
+    })
+    assert card is not None
+    assert card.color == "red" and card.value == "6"
+    assert card.center == {"x": 560, "y": 600}
+
+
+def test_detected_card_colour_only_ok():
+    """Colour-only CV (empty value) still yields a card — value is just blank."""
+    card = _to_detected_card({"color": "yellow", "value": "", "center": {"x": 720, "y": 600}})
+    assert card is not None and card.color == "yellow" and card.value == ""
+
+
+def test_detected_card_none_and_empty():
+    """Missing / empty input filters out cleanly (None), not a blank card."""
+    assert _to_detected_card(None) is None
+    assert _to_detected_card({}) is None
+    assert _to_detected_card("not a dict") is None

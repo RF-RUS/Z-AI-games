@@ -3,21 +3,25 @@
 _Updated: 2026-07-12_
 
 ## In Progress
-- _(idle — awaiting user backend-restart confirmation, then #10 VLM perception)_
+- _(idle — awaiting user's next Windows run + optional local-VLM enablement)_
+
+## Done (2026-07-12, Plans A + B)
+- [A] Perceived game state → operator panel: `DetectedCard` + hand/top-card fields on `StrategySnapshot`;
+  orchestrator fills them from `observation.game_state`; UI `extractGameState` renders real cards.
+- [#10] VLM perception (env-gated `VLM_PERCEPTION`, D6): `image_base64` through model-runtime,
+  `OpenAICompatibleProvider` vision content-parts, `vlm_provider.infer_vision` normalizes to the
+  canonical board shape, merger treats VLM as primary + heuristic fallback. Mock board branch makes it
+  fixture-testable; local Qwen2-VL drops in via `VLM_PROFILE_ID`.
+- [9d] `perceived_actions.legal_actions_from_perception` — legal moves from the detected hand+top via
+  `Card.matches`; `_legal_actions` prefers them → agent plays the RIGHT card, not the leftmost. Engine
+  stays fallback.
+- 11 new unit tests; suite 324 passed / 7 skipped; ruff clean; VLM off by default (no regression).
 
 ## Next
-- [#10] **VLM perception producer (D6) — primary path to "any card game".** Feed the observation
-  screenshot to a multimodal model; return structured `{screen_type, whose_turn, top_card,
-  hand_cards[] with bounds+center}` into the EXISTING `vlm: VisionInference` slot (`api.py:27`, already
-  consumed by `merger.py:195/239`). Demote `canvas_plugin` heuristic to a fallback (no-VLM/offline/cost).
-  Breakdown:
-  - [10a] VLM client in `model-runtime-service` (multimodal call; screenshot in → JSON out).
-  - [10b] Producer in perception observe→perceive path that fills `req.vlm` (currently always None).
-  - [10c] Map VLM `hand_cards` → same dict shape the 9c grounding path already clicks (bounds+center).
-  - [10d] Fixture test on the real frames (`tests/fixtures/uno_desktop/*`, + the 2026-07-12 Ubisoft
-    frame) asserting a fanned hand yields the right count + per-card coords where the heuristic fails.
-- [#0] **User action:** `stop-backend.ps1` then `dev-backend.ps1`, rerun once. Confirm `pcv=v3`
-  (proves perception is live) before investing in #10. If heuristic still reads 0 cards → confirms D6.
+- [#10-real] User: register a vision profile + `VLM_PERCEPTION=1`/`VLM_PROFILE_ID`, point at a local
+  vLLM (Qwen2-VL). Verify `[CVv3] pcv=v3`, panel shows the hand, agent plays a matching card.
+- [9e] value-recognition quality (heuristic is colour-only → 9d defers to engine there); real-hardware
+  coordinate-transform tuning (#B1).
 
 ## Blocked
 - [#9] **Real gameplay: CV → windows execution.** Direction decided = CV desktop (Electron). Breakdown:

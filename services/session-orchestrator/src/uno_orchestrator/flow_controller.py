@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from uno_orchestrator.clients import ServiceClients
+from uno_orchestrator.perceived_actions import legal_actions_from_perception
 from uno_orchestrator.recovery import (
   classify_error,
   decide_attach_recovery,
@@ -201,7 +202,7 @@ class FlowController:
 
       failed_at = FlowStepName.LEGAL_ACTIONS
       await self._run_step(session, cid, FlowStepName.LEGAL_ACTIONS, SessionPhase.DECIDE)
-      legal_actions = await self._legal_actions(detail.game_id)
+      legal_actions = await self._legal_actions(detail.game_id, observation)
 
       if detail.config.model_assist_enabled:
         failed_at = FlowStepName.MODEL_ADVISORY
@@ -337,7 +338,21 @@ class FlowController:
 
     return dom, ui, conf, screenshot
 
-  async def _legal_actions(self, game_id: str | None) -> list[LegalAction]:
+  async def _legal_actions(self, game_id: str | None, observation: Observation | None = None) -> list[LegalAction]:
+    # 9d — PREFER legal actions derived from the PERCEIVED board (real hand + top
+    # card from VLM/CV). This is what makes the agent play the RIGHT card instead
+    # of the leftmost: the returned action carries the detected card's
+    # colour+value, which the windows executor grounds to the correct coordinate.
+    # Returns None when the board isn't readable enough → fall through to the
+    # simulated engine (unchanged legacy path).
+    if observation is not None and getattr(observation, "game_state", None):
+      gs = observation.game_state
+      perceived = legal_actions_from_perception(
+        gs.get("hand_cards"), gs.get("top_card")
+      )
+      if perceived:
+        return perceived
+
     if not game_id:
       return [LegalAction(action_type=ActionType.DRAW_CARD, player_id="bot", action_id="fallback")]
     # Try game plugin first, fall back to direct HTTP call

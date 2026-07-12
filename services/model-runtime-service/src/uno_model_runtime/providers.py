@@ -98,6 +98,22 @@ class MockProvider(ModelProvider):
       if a.strip().lower() == b.strip().lower():
         return json.dumps({"resolution_class": "agree", "confidence": 0.95})
       return json.dumps({"resolution_class": "insufficient_confidence", "confidence": 0.4})
+    if use_case == "perception_board":
+      # Deterministic canned board so the VLM producer + downstream mapping are
+      # testable with no real model. Shape mirrors what a VL model must return:
+      # screen_state, whose_turn, top_card, and a hand with color+value.
+      has_image = bool(req.image_base64)
+      return json.dumps({
+        "screen_state": "in_game" if has_image else "unknown",
+        "whose_turn": "self",
+        "top_card": {"color": "red", "value": "6"},
+        "hand_cards": [
+          {"color": "red", "value": "6"},
+          {"color": "green", "value": "reverse"},
+          {"color": "yellow", "value": "reverse"},
+        ],
+        "confidence": 0.8 if has_image else 0.0,
+      })
     if use_case == "chat_reply":
       return json.dumps({"best_index": 0, "confidence": 0.7})
     return json.dumps({"text": f"[mock] {prompt[:120]}"})
@@ -114,9 +130,20 @@ class OpenAICompatibleProvider(ModelProvider):
     start = time.perf_counter()
     base = (profile.base_url or "").rstrip("/")
     api_key = os.getenv(profile.api_key_env, "not-needed")
+    # Multimodal: when a screenshot is attached, send OpenAI vision content parts
+    # (text + image_url data URI). vLLM/llama.cpp with a VL model accept this.
+    # Text-only requests keep the plain string content (unchanged behavior).
+    if req.image_base64:
+      content: object = [
+        {"type": "text", "text": prompt},
+        {"type": "image_url",
+         "image_url": {"url": f"data:image/png;base64,{req.image_base64}"}},
+      ]
+    else:
+      content = prompt
     body: dict = {
       "model": profile.model_name or profile.profile_id,
-      "messages": [{"role": "user", "content": prompt}],
+      "messages": [{"role": "user", "content": content}],
       "max_tokens": req.max_tokens,
       "temperature": req.temperature,
       "stream": False,
