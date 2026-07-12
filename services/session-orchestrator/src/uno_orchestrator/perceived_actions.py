@@ -84,3 +84,39 @@ def legal_actions_from_perception(
     if not mapped_any:
         return None  # colour-only / unreadable hand → let the engine decide
     return [*plays, draw]
+
+
+# --- On-screen prompt handling (Play/Keep, colour picker, Continue) ---------
+
+# Preference when the game blocks on a modal button. The agent should progress
+# the game: prefer Play (use the drawn card / confirm) over Keep, dismiss info
+# dialogs. Colour choice is handled separately (needs the chosen colour).
+_PROMPT_PRIORITY = ("play", "yes", "continue", "ok", "confirm", "uno", "keep", "draw")
+
+
+def choose_prompt(prompts: list[dict] | None, prefer_color: str | None = None) -> dict | None:
+    """Pick which on-screen button to click, or None if there's nothing to act on.
+
+    prompts come from perception (VLM) as [{label, center:{x,y}}]. When the game
+    shows a modal (e.g. Play/Keep after drawing, a colour picker after a wild),
+    the agent must click a button before it can continue — this decides which.
+    Only returns a prompt that has a click coordinate.
+    """
+    usable = [p for p in (prompts or []) if isinstance(p, dict) and p.get("center")]
+    if not usable:
+        return None
+
+    # Colour picker: match the button whose label names the colour we want.
+    if prefer_color:
+        for p in usable:
+            if prefer_color.lower() in str(p.get("label", "")).lower():
+                return p
+
+    def rank(p: dict) -> int:
+        label = str(p.get("label", "")).lower()
+        for i, key in enumerate(_PROMPT_PRIORITY):
+            if key in label:
+                return i
+        return len(_PROMPT_PRIORITY)
+
+    return min(usable, key=rank)

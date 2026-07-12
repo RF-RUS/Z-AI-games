@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from uno_orchestrator.perceived_actions import (
     _to_card,
+    choose_prompt,
     legal_actions_from_perception,
 )
 from uno_schemas.game import ActionType, CardColor, CardValue
@@ -78,3 +79,30 @@ def test_no_playable_still_offers_draw():
     actions = legal_actions_from_perception(hand, top)
     assert actions is not None
     assert [a.action_type for a in actions] == [ActionType.DRAW_CARD]
+
+
+# --- choose_prompt (Play/Keep, colour picker, Continue) ---------------------
+
+
+def test_choose_prompt_prefers_play_over_keep():
+    prompts = [
+        {"label": "Keep", "center": {"x": 1070, "y": 630}},
+        {"label": "Play", "center": {"x": 768, "y": 630}},
+    ]
+    p = choose_prompt(prompts)
+    assert p["label"] == "Play"
+
+
+def test_choose_prompt_colour_picker():
+    prompts = [
+        {"label": "Red", "center": {"x": 1, "y": 1}},
+        {"label": "Green", "center": {"x": 2, "y": 2}},
+        {"label": "Blue", "center": {"x": 3, "y": 3}},
+    ]
+    assert choose_prompt(prompts, prefer_color="green")["label"] == "Green"
+
+
+def test_choose_prompt_none_without_coords_or_prompts():
+    assert choose_prompt(None) is None
+    assert choose_prompt([]) is None
+    assert choose_prompt([{"label": "Play"}]) is None  # no center → not clickable

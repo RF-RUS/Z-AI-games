@@ -453,3 +453,38 @@ Append-only. Newest last.
 - **Next for user:** re-pull, ensure Ollama running (`ollama serve`, `ollama list` shows the model),
   set `VLM_PERCEPTION=1` + `VLM_PROFILE_ID=local/ollama-vlm`, restart backend, rerun. Read the `[CVv3]`
   line: want `rec=vlm`. If `rec=heuristic vlm=<reason>`, the reason is the exact fix (runbook §4).
+
+---
+
+### 2026-07-12 (g) — Session-crash 400 fixed + on-screen prompts (Play/Keep/colour) + panel
+- **Trigger:** Two real frames + a crash. (1) Agent draws when a playable card (matching colour) IS in
+  hand; hand mis-shown in panel. (2) On-screen modal buttons (Play/Keep after drawing, colour picker,
+  Continue) — agent doesn't see them and stalls; user explicitly wants the AI to READ and CLICK them.
+  (3) On game-over → next game: `Client error '400 Bad Request' … /games/<id>/actions … Failed at: execute`.
+- **Crash (400) — root cause + fix:** `_execute` applies every action to the SIMULATED uno-core game
+  (`apply_action`, `raise_for_status()`). On a real screen the simulator runs a parallel, desynced model;
+  a perceived move it considers illegal → 400 → the whole execute step crashes the session. Fixed:
+  simulator apply is now **advisory for real adapters** (windows/web) — log + continue on rejection;
+  still fatal for `mock` (where the simulator IS the game). The real click is the ground truth.
+- **On-screen prompts (new capability, D6-aligned):** VLM board prompt now also returns `prompts`
+  (buttons the player must click, with coords). `_normalize_board` carries them; merger folds them into
+  game_state; a new pure `choose_prompt()` picks which button (prefer Play/Continue/… over Keep; colour
+  picker matches the wanted colour); `flow_controller.run_cycle` handles a prompt FIRST — clicks it via
+  `_click_prompt` (grounded to the button coordinate) and ends the cycle. This gets the agent past the
+  "draw → Play/Keep → stuck" dead-end. Needs the VLM (Ollama) on to emit prompts.
+- **Panel:** hand now shows up to 20 cards (was 7 + "+N") so a big hand is readable.
+- **Why draw-instead-of-play persists (answer):** it's the SAME root as before — heuristic can't read
+  card VALUES, so `legal_actions_from_perception` gets colour-only → returns None → falls back to the
+  simulated engine, which plays/draws wrong. This only truly resolves once `rec=vlm` (Ollama) is live.
+  The green-+2-on-blue-+2 case needs value reading; the `+2`/`draw_two` aliases are already in 9d.
+- **Files:** `services/session-orchestrator/src/uno_orchestrator/flow_controller.py` (advisory sim apply,
+  prompt handling, `_click_prompt`), `services/session-orchestrator/src/uno_orchestrator/perceived_actions.py`
+  (`choose_prompt`), `services/perception-service/src/uno_perception/vlm_provider.py` (prompts in board),
+  `services/perception-service/src/uno_perception/merger.py` (carry prompts),
+  `apps/control-center/src/operator/left/HandCards.tsx` (maxVisible 20),
+  `tests/unit/test_perceived_actions.py` (+3 choose_prompt tests).
+- **Verified:** ruff clean; `pytest tests/unit` 334 passed / 7 skipped (+3); tsc = 5 pre-existing errors
+  only (no new). Crash path + prompt clicks need the Windows host + Ollama for live confirmation.
+- **Still gated on Ollama:** value recognition + prompt detection both come from the VLM. Until
+  `rec=vlm`, the agent runs on colour-only heuristic and will still misplay. The 400 crash fix, however,
+  helps regardless (sessions survive game-over transitions).

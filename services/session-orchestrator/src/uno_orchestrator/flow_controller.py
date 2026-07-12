@@ -9,7 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from uno_orchestrator.clients import ServiceClients
-from uno_orchestrator.perceived_actions import legal_actions_from_perception
+from uno_orchestrator.perceived_actions import choose_prompt, legal_actions_from_perception
 from uno_orchestrator.recovery import (
   classify_error,
   decide_attach_recovery,
@@ -209,6 +209,18 @@ class FlowController:
 
       failed_at = FlowStepName.LEGAL_ACTIONS
       await self._run_step(session, cid, FlowStepName.LEGAL_ACTIONS, SessionPhase.DECIDE)
+
+      # On-screen prompt (Play/Keep after drawing, colour picker, "Continue"…):
+      # the game blocks on a modal button that must be clicked before any card
+      # move. Handle it FIRST — click the button and end this cycle. Only fires
+      # when perception (VLM) reported prompt buttons with coordinates.
+      gs_now = observation.game_state or {}
+      prompt = choose_prompt(gs_now.get("prompts"))
+      if prompt is not None:
+        await self._click_prompt(binding, prompt, detail, cid)
+        session.last_action_type = "prompt_click"
+        return {"correlation_id": cid, "prompt_clicked": prompt.get("label")}
+
       legal_actions = await self._legal_actions(detail.game_id, observation)
 
       if detail.config.model_assist_enabled:
@@ -435,7 +447,22 @@ class FlowController:
   ) -> None:
     action = decision.chosen_action
     if detail.game_id:
-      await self.clients.apply_action(detail.game_id, action, detail.session_id, cid)
+      # The simulated uno-core game is the source of truth ONLY for the mock
+      # adapter. On a REAL adapter (windows/web) we play against the actual game
+      # on screen; the simulator runs a parallel, desynced model, so a rejected
+      # move (400 — card not in its deck) must NOT crash the real click, which is
+      # the ground truth. Keep it fatal for mock; advisory (log + continue) for
+      # real screen play.
+      is_real_screen = binding.adapter_type in ("windows", "web")
+      try:
+        await self.clients.apply_action(detail.game_id, action, detail.session_id, cid)
+      except Exception as exc:  # noqa: BLE001
+        if not is_real_screen:
+          raise
+        logger.warning(
+          "simulator_apply_rejected_ignored", session_id=detail.session_id,
+          adapter_type=binding.adapter_type, error=str(exc),
+        )
 
     registry = get_adapter_registry()
     client = registry.get_client(binding.adapter_type)
@@ -495,6 +522,35 @@ class FlowController:
     )
 
     await client.execute_action(binding.adapter_id, action_req, correlation_id=cid)
+
+  async def _click_prompt(self, binding: AdapterBinding, prompt: dict, detail: SessionDetail, cid: str) -> None:
+    """Click an on-screen prompt button (Play/Keep, colour picker, Continue).
+
+    Grounds the click to the button's perceived coordinate — the same mechanism
+    as card/draw grounding. Lets the agent get past modal dialogs it would
+    otherwise stall on (the recurring "draw → Play/Keep → stuck" case).
+    """
+    from uno_shared.adapter_protocol import GenericActionRequest
+    center = prompt.get("center") or {}
+    x, y = int(center.get("x", 0)), int(center.get("y", 0))
+    req = GenericActionRequest(
+      action_type="click_input",
+      selector_key="prompt",
+      domain_action="click_prompt",
+      extra={
+        "target_x": x, "target_y": y,
+        "grounded_by": "cv_detection",
+        "capture_screenshots": True,
+        "min_confidence": 0.55,
+        "allow_coordinate_fallback": True,
+        "prompt_label": prompt.get("label", ""),
+      },
+    )
+    registry = get_adapter_registry()
+    client = registry.get_client(binding.adapter_type)
+    logger.info("prompt_click session=%s label=%s x=%s y=%s",
+                detail.session_id, prompt.get("label"), x, y)
+    await client.execute_action(binding.adapter_id, req, correlation_id=cid)
 
   async def _record(self, detail: SessionDetail, cid: str, observation: Observation) -> None:
     if not detail.replay_id:

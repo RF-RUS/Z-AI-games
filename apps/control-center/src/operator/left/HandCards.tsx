@@ -15,7 +15,7 @@ const COLOR_HEX: Record<string, string> = {
   yellow: "#ffeb3b",
 };
 
-export default function HandCards({ cards, maxVisible = 7 }: Props) {
+export default function HandCards({ cards, maxVisible = 20 }: Props) {
   if (cards.length === 0) return null;
 
   const visible = cards.slice(0, maxVisible);

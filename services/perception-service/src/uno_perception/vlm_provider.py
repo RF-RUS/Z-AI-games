@@ -126,8 +126,14 @@ def _board_prompt(game_type: str) -> str:
         '"whose_turn":"self|opponent|unknown",'
         '"top_card":{"color":"red|green|blue|yellow|wild","value":"<number or action>"},'
         '"hand_cards":[{"color":"...","value":"..."}],'
+        '"prompts":[{"label":"<button text e.g. Play|Keep|Draw|choose a colour>",'
+        '"x":<center px>,"y":<center px>}],'
         '"confidence":0.0-1.0}\n'
         "hand_cards are the current player's own cards at the bottom, left to right. "
+        "prompts are any on-screen action BUTTONS or dialogs the player must click "
+        "right now (e.g. a 'Play'/'Keep' choice after drawing, a colour picker after "
+        "a wild, 'UNO!', 'Continue'). Give each button's visible label and the pixel "
+        "coordinate of its centre. Empty list if there are none. "
         "Use lowercase colours. If you cannot read a card's number/action, use an empty value."
     )
 
@@ -136,8 +142,9 @@ def _normalize_board(raw: dict[str, Any]) -> dict[str, Any] | None:
     """Normalize a VLM board dict into the canonical game_state shape.
 
     Output keys match what `UnuPerceptionAdapter.parse_vlm` / the operator panel
-    read: screen_type, whose_turn, top_card{color,value}, hand_cards[...]. Returns
-    None when the payload has no usable card data (so the caller falls back).
+    read: screen_type, whose_turn, top_card{color,value}, hand_cards[...]. Also
+    carries `prompts` (on-screen buttons the agent must click, with coords).
+    Returns None when the payload has no usable board/prompt data.
     """
     if not isinstance(raw, dict):
         return None
@@ -152,9 +159,25 @@ def _normalize_board(raw: dict[str, Any]) -> dict[str, Any] | None:
             return None
         return {"color": color, "value": value}
 
+    def prompt_btn(p: Any) -> dict[str, Any] | None:
+        if not isinstance(p, dict):
+            return None
+        label = str(p.get("label") or p.get("text") or "").strip()
+        if not label:
+            return None
+        out: dict[str, Any] = {"label": label}
+        if "x" in p and "y" in p:
+            try:
+                out["center"] = {"x": int(p["x"]), "y": int(p["y"])}
+            except (TypeError, ValueError):
+                pass
+        return out
+
     top = card(raw.get("top_card"))
     hand = [x for x in (card(h) for h in (raw.get("hand_cards") or [])) if x]
-    if not top and not hand:
+    prompts = [x for x in (prompt_btn(p) for p in (raw.get("prompts") or [])) if x]
+    # Usable if we read cards OR an on-screen prompt/button to act on.
+    if not top and not hand and not prompts:
         return None
 
     return {
@@ -163,6 +186,7 @@ def _normalize_board(raw: dict[str, Any]) -> dict[str, Any] | None:
         "top_card": top,
         "hand_cards": hand,
         "hand_count": len(hand),
+        "prompts": prompts,
         "confidence": raw.get("confidence", 0.0),
         "source": "vlm",
     }

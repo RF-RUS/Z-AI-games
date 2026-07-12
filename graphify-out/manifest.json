@@ -295,9 +295,9 @@
     "semantic_hash": "2e8a617df86e2835e521ae11049aaf3e"
   },
   "apps/control-center/src/operator/left/HandCards.tsx": {
-    "mtime": 1782905284.0258236,
-    "ast_hash": "be44866d4bebc44ddd852a9bae251bf1",
-    "semantic_hash": "be44866d4bebc44ddd852a9bae251bf1"
+    "mtime": 1783891793.009983,
+    "ast_hash": "cb0cc3c9104927f3455cc5d3a231ec75",
+    "semantic_hash": ""
   },
   "apps/control-center/src/operator/left/LeftRail.tsx": {
     "mtime": 1782905284.0260952,
@@ -1340,8 +1340,8 @@
     "semantic_hash": "82cca7ff8d3e6eccc4b126048115fd56"
   },
   "services/perception-service/src/uno_perception/merger.py": {
-    "mtime": 1783877405.2037294,
-    "ast_hash": "f63f1cb32130d74571b94912830704dc",
+    "mtime": 1783892085.5700755,
+    "ast_hash": "b5dba53aa17d41a3a762106e283557b5",
     "semantic_hash": ""
   },
   "services/perception-service/src/uno_perception/screenshot_plugin.py": {
@@ -1360,8 +1360,8 @@
     "semantic_hash": "d0d368ac502bbf2f1be019226fca269c"
   },
   "services/perception-service/src/uno_perception/vlm_provider.py": {
-    "mtime": 1783889106.7733386,
-    "ast_hash": "b2972121b248ed7df376872b76bce9a7",
+    "mtime": 1783892060.3756201,
+    "ast_hash": "544f5120cc679960881767c491adb5e1",
     "semantic_hash": ""
   },
   "services/policy-guard/pyproject.toml": {
@@ -1405,8 +1405,8 @@
     "semantic_hash": "2ed1dbc08841510d2b9cc151687b3f2c"
   },
   "services/session-orchestrator/src/uno_orchestrator/flow_controller.py": {
-    "mtime": 1783888747.8024197,
-    "ast_hash": "8703460a9826e60ca0db5384f473d5b7",
+    "mtime": 1783893279.4872386,
+    "ast_hash": "24edf81cba971a398384c7b587ea8d85",
     "semantic_hash": ""
   },
   "services/session-orchestrator/src/uno_orchestrator/in_process_clients.py": {
@@ -5705,8 +5705,8 @@
     "semantic_hash": ""
   },
   "AGENT_LOG.md": {
-    "mtime": 1783884411.8615065,
-    "ast_hash": "f1d99d847d06dad188e744a23fb76ae6",
+    "mtime": 1783889718.2380326,
+    "ast_hash": "e7b7400a36575389dc1e838762a873ab",
     "semantic_hash": ""
   },
   "AGENT_STATUS.md": {
@@ -5715,8 +5715,8 @@
     "semantic_hash": ""
   },
   "AGENT_TODO.md": {
-    "mtime": 1783884475.1883557,
-    "ast_hash": "9168407d3bb9e8587a1e8d104eb6a9c7",
+    "mtime": 1783890175.3621037,
+    "ast_hash": "ae68a7c09292ad47138d21aa90749fe8",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -6575,18 +6575,18 @@
     "semantic_hash": ""
   },
   "services/session-orchestrator/src/uno_orchestrator/perceived_actions.py": {
-    "mtime": 1783878092.549535,
-    "ast_hash": "bf43ef9467c379e2be780588dd23c83b",
+    "mtime": 1783892277.2462122,
+    "ast_hash": "29a7ece38064b1c5419902baf35809c3",
     "semantic_hash": ""
   },
   "tests/unit/test_perceived_actions.py": {
-    "mtime": 1783881835.8814678,
-    "ast_hash": "208df7892f447a1f3bda05c0a103f2f1",
+    "mtime": 1783892906.0605173,
+    "ast_hash": "aee41fc6d8f2238658afc1eed11f4518",
     "semantic_hash": ""
   },
   "tests/unit/test_vlm_perception.py": {
-    "mtime": 1783877541.9817283,
-    "ast_hash": "99b6ec93451b3005a7d9bcb8812e6930",
+    "mtime": 1783889969.2011232,
+    "ast_hash": "0cddf1d38e545c5fa17280b7c5be03e6",
     "semantic_hash": ""
   },
   "tests/fixtures/uno_desktop/ubisoft_hand3.jpeg": {
@@ -6652,6 +6652,46 @@
   "models/benchmarks/results/d261c6df-8436-40df-9e31-5aa92bc8a16a.json": {
     "mtime": 1783889522.6704242,
     "ast_hash": "6942a4339f321d7b044087e98700388d",
+    "semantic_hash": ""
+  },
+  "data/replays/artifacts/replay-8ffc7844_observations.json": {
+    "mtime": 1783891010.9042594,
+    "ast_hash": "37b99089732216f475f7580e3ce39060",
+    "semantic_hash": ""
+  },
+  "data/replays/artifacts/replay-b8ca27cc_observations.json": {
+    "mtime": 1783891010.9143975,
+    "ast_hash": "2aaab2fabe2146345beea22d41ac3e2b",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/0e045e4a-5165-4c83-a223-9a7be6bf3085.json": {
+    "mtime": 1783893315.671413,
+    "ast_hash": "d432adefe2493a78bafc1387503fb973",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/59fed393-1db3-42e2-8c1f-5ae6abdea630.json": {
+    "mtime": 1783890080.7772467,
+    "ast_hash": "e6972299834aa44676e9e1210f68a10b",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/a4b23f16-74c8-400b-b32d-2a175814097d.json": {
+    "mtime": 1783892928.8726041,
+    "ast_hash": "12b7abdfc84946e1cf9b14464d639033",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/a82684bc-9249-40bf-af9a-dc0e0b04e3c1.json": {
+    "mtime": 1783890080.7343874,
+    "ast_hash": "a289cc157137b102741b8edff94b4e5a",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/af9de33e-4a0f-475d-9892-09246d9a4b57.json": {
+    "mtime": 1783893315.739749,
+    "ast_hash": "75f52da1a3cd0b8d63915c34fc986f22",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/d79c2dc2-796d-471e-81e5-632e182942e0.json": {
+    "mtime": 1783892928.7830665,
+    "ast_hash": "5e255e7883ed081903dfbc44d99162ce",
     "semantic_hash": ""
   }
 }

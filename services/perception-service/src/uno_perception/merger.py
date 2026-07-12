@@ -93,7 +93,7 @@ def build_observation(
   if vlm_has_cards:
     game_state = game_state or {}
     game_state["cv_build"] = "v3"
-    for k in ("screen_type", "whose_turn", "top_card", "hand_cards", "hand_count"):
+    for k in ("screen_type", "whose_turn", "top_card", "hand_cards", "hand_count", "prompts"):
       if vlm_board.get(k) is not None:
         game_state[k] = vlm_board[k]
     game_state["recognition_method"] = "vlm"
