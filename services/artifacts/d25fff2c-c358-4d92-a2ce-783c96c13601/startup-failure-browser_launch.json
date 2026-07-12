@@ -1,0 +1,13 @@
+{
+  "failed_stage": "browser_launch",
+  "error_message": "Playwright startup failed at stage=browser_launch (991ms): BrowserType.launch: Executable doesn't exist at /Users/vs/Library/Caches/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-mac-x64/chrome-headless-shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     playwright install                                     ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝",
+  "stage_timings_ms": {
+    "browser_launch": 991
+  },
+  "screenshot_path": null,
+  "trace_path": null,
+  "log_path": null,
+  "url": "https://pizz.uno/singleplayer",
+  "profile_id": "real-unoh-web",
+  "page_goto": null
+}

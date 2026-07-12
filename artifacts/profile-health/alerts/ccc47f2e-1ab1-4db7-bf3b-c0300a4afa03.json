@@ -1,0 +1,28 @@
+{
+  "alert_id": "ccc47f2e-1ab1-4db7-bf3b-c0300a4afa03",
+  "profile_id": "local-mock-uno",
+  "severity": "critical",
+  "alert_type": "broken_immediate",
+  "message": "Profile local-mock-uno is BROKEN — required selectors failed",
+  "timestamp_ms": 1783490764062,
+  "run_id": "de25e111-e2c6-4ed4-8b47-1a51a625226a",
+  "correlation_id": "de25e111-e2c6-4ed4-8b47-1a51a625226a",
+  "details": {
+    "required_failures": 3
+  },
+  "remediation": {
+    "runbook_path": "docs/runbooks/real-unoh-web-profile.md",
+    "summary": "Required selectors failed — profile unusable until fixed",
+    "next_actions": [
+      "Open latest artifact JSON and screenshot",
+      "Run scripts/inspect-pizzuno-game.py if site changed",
+      "Update primary selectors in profile JSON",
+      "See runbook: docs/runbooks/real-unoh-web-profile.md"
+    ],
+    "suspected_selectors": [
+      "hand_area",
+      "discard_top_card",
+      "draw_button"
+    ]
+  }
+}

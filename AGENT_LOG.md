@@ -205,3 +205,20 @@ Append-only. Newest last.
 - **How verified:** ruff clean on all changed files; full `pytest tests/unit` regression run.
 - **Next:** [#6] verification hardening remains in backlog (needs profile region metadata; deferred
   to avoid unvalidated edits to perception core). [#7] real-Windows run blocked on host (#B1).
+
+---
+
+### 2026-07-05 — ROOT CAUSE of stale perception: dev-backend never stops services
+- **Diagnostic:** `[CVv3] pcv=MISSING avg_brightness=101` → capture is fine (real content) but the
+  PERCEPTION service (:8103) runs stale code. The pcv marker nailed it.
+- **ROOT CAUSE:** `scripts/dev-backend.ps1` only `Start-Process`'d services, never stopped old ones.
+  uvicorn runs without `--reload`, so after `git pull` old processes keep serving OLD code and
+  re-running just spawns duplicates that fail to bind. → every "restart" left perception stale.
+- **Fixed:** dev-backend.ps1 now kills any listener on each service port before starting; added
+  `scripts/stop-backend.ps1`. New code guaranteed live after pull.
+- **Also:** saved `hand3.jpeg` (3 fanned cards); segmentation over-counts it (6 vs 3) — sparse fanned
+  hands overlap without gaps + wider per-card spacing than the width/60 model. Known limitation, needs
+  live tuning; NOT a blocker for reaching in_game.
+- **Files:** `scripts/dev-backend.ps1`, `scripts/stop-backend.ps1` (NEW), fixture `hand3.jpeg`.
+- **Next for user:** pull, run FIXED `dev-backend.ps1` (or `stop-backend.ps1` then `dev-backend.ps1`),
+  rerun → expect `pcv=v3`, `screen_type=in_game`, `hand_cards>0`, GAME STATE ≠ Unknown.
