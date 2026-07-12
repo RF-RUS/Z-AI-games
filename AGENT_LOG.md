@@ -415,3 +415,41 @@ Append-only. Newest last.
 - **Next:** user enables Ollama per runbook and reruns; then #11/#12 for real strategy. Draw stall
   should be gone once perception emits a draw_pile region (heuristic already does; VLM board does not
   yet emit deck coords — see #11).
+
+---
+
+### 2026-07-12 (f) — Ollama not called (profile disabled) + recognition diagnostics
+- **Trigger:** User installed Ollama + llama3.2-vision, set env, but saw NO calls to the model; cards
+  still misrecognized (agent DRAWS when a playable card is in hand; top card value wrong). Screenshot
+  confirms colour-ish guesses, no values → the heuristic ran, not the VLM.
+- **Root cause of "Ollama never called":** the shipped profile `local__ollama-vlm.json` had
+  `"enabled": false` (runbook said to flip it; step was missed). model-runtime `/invoke` returns **503**
+  for a disabled profile → `infer_vision` swallowed it and fell back to heuristic **silently**. Same
+  class of bug as the pcv saga: a real failure with no visibility.
+- **Fixes (visibility-first, like the pcv marker):**
+  1. Enabled the profile by default (`"enabled": true`).
+  2. `infer_vision` now returns `(VisionInference|None, status)`; `api.perceive` stamps `vlm_status`
+     onto game_state; the operator `[CVv3]` line now shows `rec=<vlm|heuristic|none>` and, on fallback,
+     `vlm=<reason>` — `disabled` / `http_503` (profile off) / `http_404` (bad id) / `error` /
+     `mock_fallback`. No more guessing whether Ollama is being hit.
+  3. **mock_fallback trap surfaced:** model-runtime silently falls back to a MOCK provider (canned
+     board: red6/green-reverse/yellow-reverse) on any real-provider error, returning 200. Now flagged
+     as `vlm=mock_fallback` so fabricated cards aren't mistaken for a real read.
+  4. Provider now sniffs image MIME (PNG vs JPEG) from magic bytes instead of hardcoding png — a strict
+     vision server would reject a mislabeled JPEG and silently break vision.
+- **Recognition quality (#2) — diagnosis, not a heuristic tune:** `card_recognition._detect_card_number`
+  is vertical-brightness-profile matching vs reference digit shapes — it CANNOT read stylized 3D glossy
+  Ubisoft glyphs. This is exactly D6's premise; tuning it is per-render calibration (anti-goal). The fix
+  IS getting the VLM to actually run. So #1 and #2 are the same root: VLM wasn't executing. Wrong values
+  also explain the draw: 9d needs values → none → falls back to the simulated engine → plays/draws wrong.
+- **Files:** `models/profiles/local__ollama-vlm.json` (enabled),
+  `services/perception-service/src/uno_perception/vlm_provider.py` (status returns),
+  `services/perception-service/src/uno_perception/api.py` (stamp vlm_status),
+  `services/session-orchestrator/src/uno_orchestrator/flow_controller.py` ([CVv3] rec=/vlm=),
+  `services/model-runtime-service/src/uno_model_runtime/providers.py` (MIME sniff),
+  `docs/runbooks/vlm-ollama-setup.md` (diagnostic table + enabled profile).
+- **Verified:** ruff clean; `pytest tests/unit` 329 passed / 7 skipped; vlm_status stamping confirmed
+  (`disabled` when off); MIME sniff PNG/JPEG. Live Ollama call needs the user's host.
+- **Next for user:** re-pull, ensure Ollama running (`ollama serve`, `ollama list` shows the model),
+  set `VLM_PERCEPTION=1` + `VLM_PROFILE_ID=local/ollama-vlm`, restart backend, rerun. Read the `[CVv3]`
+  line: want `rec=vlm`. If `rec=heuristic vlm=<reason>`, the reason is the exact fix (runbook §4).

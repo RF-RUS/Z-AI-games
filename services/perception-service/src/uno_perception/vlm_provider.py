@@ -53,15 +53,17 @@ async def infer_vision(
     screenshot_path: str,
     game_type: str = "uno",
     profile_id: str | None = None,
-) -> VisionInference | None:
-    """Screenshot → VisionInference via model-runtime, or None on failure.
+) -> tuple[VisionInference | None, str]:
+    """Screenshot → (VisionInference, status), or (None, reason) on failure.
 
-    Returns None (not an empty inference) so the caller can cleanly fall back to
-    the heuristic path. The structured payload uses the canonical board shape.
+    The status string surfaces WHY the VLM did/didn't produce a board so it can
+    show up in the operator diagnostic ("ok", "no_image", "http_503" = profile
+    disabled, "http_<code>", "error", "parse_failed", "empty_board"). The caller
+    falls back to the heuristic on any non-"ok" status.
     """
     image_b64 = _read_image_base64(screenshot_path)
     if not image_b64:
-        return None
+        return None, "no_image"
 
     body = {
         "context": {"use_case": "perception_board", "correlation_id": f"vlm_{game_type}"},
@@ -76,9 +78,15 @@ async def infer_vision(
             resp = await client.post(f"{MODEL_RUNTIME_URL}/invoke", json=body)
             resp.raise_for_status()
             result = resp.json()
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        logger.warning("vlm_inference_http error=%s status=%s", exc, code)
+        # 503 from model-runtime = profile disabled (the common "why is Ollama not
+        # called" cause). Surface the code so it's actionable in the operator.
+        return None, f"http_{code}"
     except Exception as exc:  # noqa: BLE001 — network/model failure → fall back
         logger.warning("vlm_inference_failed error=%s", exc)
-        return None
+        return None, "error"
 
     structured = result.get("structured") or {}
     # structured may be a StructuredModelOutput-shaped dict; unwrap to parsed.
@@ -90,17 +98,24 @@ async def infer_vision(
             structured = json.loads(raw_text)
         except json.JSONDecodeError:
             logger.warning("vlm_parse_failed text=%s", raw_text[:200])
-            return None
+            return None, "parse_failed"
 
     normalized = _normalize_board(structured)
     if normalized is None:
-        return None
+        return None, "empty_board"
+    # model-runtime silently falls back to a MOCK provider on any real-provider
+    # error, returning a canned board (200 OK). Surface that so we don't mistake
+    # fabricated cards for a real VLM read — the operator sees "mock_fallback".
+    if result.get("fallback_used"):
+        status = "mock_fallback"
+    else:
+        status = "ok"
     return VisionInference(
         model_id=str(result.get("profile_id") or profile_id or VLM_PROFILE_ID),
         raw_output=raw_text or json.dumps(structured),
         structured=normalized,
         confidence=float(normalized.get("confidence", 0.0) or 0.0),
-    )
+    ), status
 
 
 def _board_prompt(game_type: str) -> str:

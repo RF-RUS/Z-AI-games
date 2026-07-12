@@ -35,20 +35,30 @@ async def perceive(req: PerceptionRequest) -> Observation:
   # VLM perception (D6, env-gated via VLM_PERCEPTION): when enabled and a
   # screenshot is present, run the vision model and feed its structured board
   # into the merger's existing `vlm` slot. This is the game-agnostic primary
-  # path; the heuristic canvas_plugin remains the fallback (VLM off / no image /
-  # inference failed → vlm stays None and nothing changes).
+  # path; the heuristic canvas_plugin remains the fallback. `vlm_status` records
+  # WHY the VLM did/didn't run so the operator [CVv3] line can show it (e.g.
+  # "disabled" = VLM_PERCEPTION off, "http_503" = profile disabled).
   vlm = req.vlm
-  if vlm is None and req.screenshot is not None and vlm_enabled():
-    shot_path = getattr(req.screenshot, "path", None)
-    if shot_path:
-      try:
-        vlm = await infer_vision(shot_path, game_type=req.game_type or "uno")
-      except Exception:  # noqa: BLE001 — never let VLM break perception
-        vlm = None
-  return build_observation(
+  vlm_status: str | None = None
+  if vlm is None and req.screenshot is not None:
+    if not vlm_enabled():
+      vlm_status = "disabled"
+    else:
+      shot_path = getattr(req.screenshot, "path", None)
+      if not shot_path:
+        vlm_status = "no_image_path"
+      else:
+        try:
+          vlm, vlm_status = await infer_vision(shot_path, game_type=req.game_type or "uno")
+        except Exception:  # noqa: BLE001 — never let VLM break perception
+          vlm, vlm_status = None, "error"
+  obs = build_observation(
     req.session_id, dom=req.dom, ui=req.ui, ocr=req.ocr, vlm=vlm,
     screenshot=req.screenshot, game_type=req.game_type,
   )
+  if vlm_status:
+    obs.game_state = {**(obs.game_state or {}), "vlm_status": vlm_status}
+  return obs
 
 
 @app.post("/merge-confidence", tags=["perception"])

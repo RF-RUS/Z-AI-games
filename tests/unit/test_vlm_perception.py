@@ -94,3 +94,33 @@ def test_merger_vlm_board_survives_screenshot_present():
     assert gs.get("hand_count") == 3
     assert gs.get("top_card") == {"color": "yellow", "value": "reverse"}
     assert gs.get("recognition_method") == "vlm"
+
+
+# --- diagnostics: MIME sniff + perceive stamps vlm_status ------------------
+
+def test_provider_sniffs_image_mime():
+    import base64
+
+    from uno_model_runtime.providers import _sniff_image_mime
+    png = base64.b64encode(bytes.fromhex("89504e470d0a1a0a") + b"x" * 20).decode()
+    jpg = base64.b64encode(bytes.fromhex("ffd8ffe0") + b"x" * 20).decode()
+    assert _sniff_image_mime(png) == "image/png"
+    assert _sniff_image_mime(jpg) == "image/jpeg"
+    assert _sniff_image_mime("!!!not-base64!!!") == "image/png"  # safe default
+
+
+def test_perceive_stamps_vlm_status_disabled(monkeypatch):
+    """VLM off → game_state carries vlm_status=disabled for the [CVv3] diagnostic."""
+    import asyncio
+
+    import uno_perception.api as api
+    monkeypatch.setattr(api, "vlm_enabled", lambda: False)
+    req = api.PerceptionRequest(
+        session_id="s",
+        screenshot=ScreenshotFrame(
+            frame_id="f", session_id="s", width=10, height=10,
+            path="/nonexistent.png", captured_at_ms=1,
+        ),
+    )
+    obs = asyncio.run(api.perceive(req))
+    assert (obs.game_state or {}).get("vlm_status") == "disabled"

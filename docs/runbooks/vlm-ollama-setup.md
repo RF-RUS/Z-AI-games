@@ -37,7 +37,7 @@ first (the desktop app also runs it).
 
 ## 2. Enable the bundled Ollama profile
 
-A ready profile ships at `models/profiles/local__ollama-vlm.json`:
+A ready profile ships at `models/profiles/local__ollama-vlm.json` (enabled):
 
 ```json
 {
@@ -47,14 +47,14 @@ A ready profile ships at `models/profiles/local__ollama-vlm.json`:
   "model_name": "llama3.2-vision",
   "use_cases": ["perception_board"],
   "supports_multimodal": true,
-  "enabled": false
+  "enabled": true
 }
 ```
 
-- Set `"enabled": true`.
 - If you pulled a different model, change `"model_name"` to match it exactly
   (as shown by `ollama list`).
 - `base_url` must end in `/v1` (Ollama's OpenAI-compatible route).
+- To turn the profile off, set `"enabled": false`.
 
 The model-registry service loads every `models/profiles/*.json` on startup, so no
 registration step is needed beyond editing the file.
@@ -87,17 +87,31 @@ dummy key.
 
 ## 4. Verify it's live
 
-Run one session and watch the operator's **NEXT ACTION** diagnostic line:
+Run one session and watch the operator's **NEXT ACTION** diagnostic line. The
+`[CVv3]` marker now reports which recognizer ran and why:
 
-- `[CVv3] pcv=v3 … hand_cards=N` with **N > 0 and real card values** in the
-  GAME STATE panel → the VLM is reading the board.
-- The GAME STATE panel (left rail) shows the hand *with numbers/actions* and the
-  top card. Colour-only pills mean the model didn't read a value — try
-  `qwen2.5vl` or a larger model.
+- `rec=vlm` → the VLM produced the board (Ollama was called). GAME STATE panel
+  should show the hand *with values* + the top card.
+- `rec=heuristic vlm=<reason>` → the VLM did NOT run; the old colour-only
+  heuristic was used. The `vlm=` reason tells you what to fix:
+  - `vlm=disabled` — `VLM_PERCEPTION` isn't set to 1 (env not applied — set it
+    before `dev-backend.ps1`).
+  - `vlm=http_503` — the profile is **disabled**; set `"enabled": true` in
+    `models/profiles/local__ollama-vlm.json`.
+  - `vlm=http_404` — wrong `VLM_PROFILE_ID` (must be `local/ollama-vlm`).
+  - `vlm=mock_fallback` — model-runtime reached Ollama but the call FAILED and it
+    fell back to a canned mock board. Check Ollama is running (`ollama serve`)
+    and `model_name` matches `ollama list`; the cards you see are fake.
+  - `vlm=error` / `vlm=http_500` — Ollama returned an error (model not pulled,
+    out of memory). Check the Ollama logs.
+
+Common first-run cause: **the profile ships disabled** — `vlm=http_503` means
+flip `"enabled": true`.
 
 If the VLM fails or is disabled, perception silently falls back to the heuristic
-(`recognition_method` will be `heuristic` instead of `vlm`), so a bad model
-never breaks the run — it just reverts to the old behaviour.
+(colour-only, no reliable card values), so a bad model never breaks the run — it
+just reverts to the old behaviour. But the agent won't play well on a real 3D
+UNO client until `rec=vlm` shows up.
 
 ## How it fits together
 

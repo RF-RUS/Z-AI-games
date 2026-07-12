@@ -18,9 +18,10 @@ _Updated: 2026-07-12_
 - 11 new unit tests; suite 324 passed / 7 skipped; ruff clean; VLM off by default (no regression).
 
 ## Next
-- [#10-real] User: register a vision profile + `VLM_PERCEPTION=1`/`VLM_PROFILE_ID`, point at a local
-  vLLM (Qwen2-VL) or **Ollama** (see `docs/runbooks/vlm-ollama-setup.md`). Verify `[CVv3] pcv=v3`, panel
-  shows the hand, agent plays a matching card.
+- [#10-real] User: Ollama profile now ships **enabled**. Ensure `ollama serve` is running +
+  `VLM_PERCEPTION=1` / `VLM_PROFILE_ID=local/ollama-vlm`, restart backend, rerun. Read `[CVv3]`: want
+  `rec=vlm`. If `rec=heuristic vlm=<reason>`, the reason is the exact fix (runbook §4: 503=profile off,
+  disabled=env not set, mock_fallback=Ollama down, error=model not pulled).
 - [#11] **Perceive opponents.** Neither heuristic nor VLM emit opponent state today. Extract per-seat
   `hand_count` + last discard (VLM prompt already sees the table — add fields to the board schema +
   `_normalize_board`). ALSO have the VLM board emit a `draw_pile`/deck coordinate so the draw-grounding

@@ -18,6 +18,22 @@ from uno_schemas.model import (
 )
 
 
+def _sniff_image_mime(image_base64: str) -> str:
+  """Detect image MIME from base64 magic bytes (PNG vs JPEG).
+
+  A strict vision server rejects a JPEG sent as data:image/png. Windows capture
+  emits PNG, fixtures are JPEG — sniff so both work. Defaults to png.
+  """
+  try:
+    import base64
+    head = base64.b64decode(image_base64[:24] + "==", validate=False)[:3]
+    if head[:3] == b"\xff\xd8\xff":
+      return "image/jpeg"
+  except Exception:  # noqa: BLE001
+    pass
+  return "image/png"
+
+
 class ModelProvider(ABC):
   provider_type: ModelProviderType
 
@@ -131,13 +147,14 @@ class OpenAICompatibleProvider(ModelProvider):
     base = (profile.base_url or "").rstrip("/")
     api_key = os.getenv(profile.api_key_env, "not-needed")
     # Multimodal: when a screenshot is attached, send OpenAI vision content parts
-    # (text + image_url data URI). vLLM/llama.cpp with a VL model accept this.
-    # Text-only requests keep the plain string content (unchanged behavior).
+    # (text + image_url data URI). vLLM/llama.cpp/Ollama with a VL model accept
+    # this. Text-only requests keep the plain string content (unchanged behavior).
     if req.image_base64:
+      mime = _sniff_image_mime(req.image_base64)
       content: object = [
         {"type": "text", "text": prompt},
         {"type": "image_url",
-         "image_url": {"url": f"data:image/png;base64,{req.image_base64}"}},
+         "image_url": {"url": f"data:{mime};base64,{req.image_base64}"}},
       ]
     else:
       content = prompt

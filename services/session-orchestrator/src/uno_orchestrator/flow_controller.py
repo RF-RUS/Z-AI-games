@@ -169,10 +169,17 @@ class FlowController:
       elif gs.get("cv_status"):
         cv_fail = f" cv_status={gs['cv_status']}"
       pcv = gs.get("cv_build") or "MISSING(restart-perception-8103)"
+      # Which recognizer actually ran + why VLM did/didn't. Makes "is Ollama
+      # being called?" visible in the operator instead of guessing: rec=vlm means
+      # the VLM path produced the board; rec=heuristic means it fell back (VLM off,
+      # profile disabled, or inference failed — see vlm_status).
+      rec = gs.get("recognition_method") or "none"
+      vlm_status = gs.get("vlm_status")
+      rec_note = f" rec={rec}" + (f" vlm={vlm_status}" if vlm_status else "")
       perception_note = (
         f"[CVv3] pcv={pcv} screenshot={shot_desc} screen_type={gs.get('screen_type', '?')} "
         f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}"
-        f"{bright}{cv_fail}{frame_path}"
+        f"{rec_note}{bright}{cv_fail}{frame_path}"
       )
       logger.info(
         "perception_diag", session_id=detail.session_id,
