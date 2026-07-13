@@ -11,6 +11,51 @@ Ollama exposes an OpenAI-compatible API, so it reuses the existing
 `OpenAICompatibleProvider` — no code changes, just a model, a profile, and two
 env vars.
 
+## Quick config — `aeline/opan` (this machine)
+
+The exact settings to enter for the currently-used model. Do all three or the
+model stays idle (VLM off) and the agent keeps deciding with the mock/heuristic.
+
+**1. Env vars — set in `scripts/dev-backend.ps1` (top, before the `$services` list) OR in the shell before running it:**
+
+```powershell
+$env:VLM_PERCEPTION = "1"                 # turn the VLM path ON (off by default)
+$env:VLM_PROFILE_ID = "local/ollama-vlm"  # the aeline/opan profile
+$env:VLM_TIMEOUT_S  = "180"               # first call loads weights into VRAM — 30s is not enough
+```
+
+The profile `models/profiles/local__ollama-vlm.json` already has
+`"model_name": "aeline/opan"` and `"enabled": true` — nothing to change there.
+
+**2. Route UNO decisions/vision to the model — edit `packages/shared-utils/src/uno_shared/model_config.py`, the `"uno"` entry:**
+
+```python
+"uno": GameModelConfig(
+    game_type="uno",
+    strategy_models=["local/ollama-vlm"],   # was ["mock/uno-assistant"] → agent now reasons with the model
+    vision_models=["local/ollama-vlm"],     # was [] → screenshot read by the model, not the pixel heuristic
+    chat_models=["mock/uno-assistant"],
+    intent_models=[],
+    fallback_to_heuristic=True,
+    chat_enabled=True,
+    model_chat_enabled=True,
+),
+```
+
+Without this, `resolve_model_profile("uno", "strategy")` returns the mock, so
+the chat shows `Planning: … [heuristic]` and never `[AI]` — no real card choice
+with reasoning.
+
+**3. Warm the model once so the first tick doesn't time out:**
+
+```powershell
+ollama run aeline/opan "ok"    # loads weights into VRAM; keep Ollama running after
+```
+
+`ReadTimeout` in the operator's NEXT ACTION = the model was called but didn't
+answer in time — almost always the cold-start VRAM load. Warm-up + the 180s
+timeout above fixes it. After the first call, ticks are fast.
+
 ## 1. Install Ollama and pull a vision model
 
 ```bash

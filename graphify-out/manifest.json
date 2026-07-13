@@ -5090,8 +5090,8 @@
     "semantic_hash": ""
   },
   "packages/shared-utils/src/uno_shared/model_config.py": {
-    "mtime": 1782905284.1912227,
-    "ast_hash": "09408fac1cc000b1ae020704a3d88bf8",
+    "mtime": 1783940123.6971345,
+    "ast_hash": "9fee766fc781609a78eb2d658b7ecdef",
     "semantic_hash": ""
   },
   "packages/shared-utils/src/uno_shared/model_observability.py": {
@@ -5705,8 +5705,8 @@
     "semantic_hash": ""
   },
   "AGENT_LOG.md": {
-    "mtime": 1783889718.2380326,
-    "ast_hash": "e7b7400a36575389dc1e838762a873ab",
+    "mtime": 1783893420.9128795,
+    "ast_hash": "801fcda8f102d6733f66d623e61ddc10",
     "semantic_hash": ""
   },
   "AGENT_STATUS.md": {
@@ -6620,8 +6620,8 @@
     "semantic_hash": ""
   },
   "models/profiles/local__ollama-vlm.json": {
-    "mtime": 1783888936.683836,
-    "ast_hash": "9b1cd25427445df9fcb7e1b5f63da96c",
+    "mtime": 1783933126.5244987,
+    "ast_hash": "ef791330b4875a3b8505c2b9f40bc1a5",
     "semantic_hash": ""
   },
   "tests/unit/test_draw_grounding.py": {
@@ -6630,8 +6630,8 @@
     "semantic_hash": ""
   },
   "docs/runbooks/vlm-ollama-setup.md": {
-    "mtime": 1783889658.4310725,
-    "ast_hash": "7aae4ad7ee6e0935cd31b548bc5bbef8",
+    "mtime": 1783938414.6411142,
+    "ast_hash": "93b5686d827fdb6985e17685a1f664c0",
     "semantic_hash": ""
   },
   "models/benchmarks/results/34543639-88dd-4c6f-afc5-480a85e03499.json": {
@@ -6692,6 +6692,41 @@
   "models/benchmarks/results/d79c2dc2-796d-471e-81e5-632e182942e0.json": {
     "mtime": 1783892928.7830665,
     "ast_hash": "5e255e7883ed081903dfbc44d99162ce",
+    "semantic_hash": ""
+  },
+  "data/replays/artifacts/replay-b16f56ba_observations.json": {
+    "mtime": 1783933126.5214305,
+    "ast_hash": "28ceadd276089179175df3c8600ffb88",
+    "semantic_hash": ""
+  },
+  "data/replays/artifacts/replay-d3ab3659_observations.json": {
+    "mtime": 1783933126.5229993,
+    "ast_hash": "ab44ad1a5db91571d9aabd53ce69aab5",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/215363fb-1b5d-4ce7-ac1c-4f93963fa0a5.json": {
+    "mtime": 1783926305.4421513,
+    "ast_hash": "94c6945d23940889e1d22ebfacaa2dea",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/4e6a61a6-f202-47a7-881b-79fbb4a3a913.json": {
+    "mtime": 1783926261.511219,
+    "ast_hash": "8fa648a035db983ce7425e0cacfcd8ac",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/9bf85eff-60f1-46b0-9f77-a37e90b69448.json": {
+    "mtime": 1783926261.5617745,
+    "ast_hash": "996ff491e241f9f145378b57fe54e8ce",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/edb6bebd-d5b3-4f87-848a-869a43bb822e.json": {
+    "mtime": 1783926261.5111742,
+    "ast_hash": "c4a1f7964ad3cf6af9d6927b2fa9f5a2",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/f521e8ae-a74a-46a3-a519-7371b8903797.json": {
+    "mtime": 1783926261.5615041,
+    "ast_hash": "376972febfd38fe309487f3dc29feac8",
     "semantic_hash": ""
   }
 }

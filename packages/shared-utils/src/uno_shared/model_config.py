@@ -16,8 +16,8 @@ logger = logging.getLogger("model_config")
 _DEFAULT_CONFIGS: dict[str, GameModelConfig] = {
     "uno": GameModelConfig(
         game_type="uno",
-        strategy_models=["mock/uno-assistant"],
-        vision_models=[],
+        strategy_models=["local/ollama-vlm"],
+        vision_models=["local/ollama-vlm"],
         chat_models=["mock/uno-assistant"],
         intent_models=[],
         fallback_to_heuristic=True,
