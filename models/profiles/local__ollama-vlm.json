@@ -3,7 +3,7 @@
   "display_name": "Local Ollama vision model (VLM perception)",
   "provider": "ollama_openai",
   "base_url": "http://127.0.0.1:11434/v1",
-  "model_name": "llama3.2-vision",
+  "model_name": "aeline/opan",
   "api_key_env": "OLLAMA_API_KEY",
   "enabled": true,
   "capabilities": ["vision_understanding", "text_generation"],
