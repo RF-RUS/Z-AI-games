@@ -106,4 +106,4 @@ def test_get_game_config_registered():
     """Registered game returns its config."""
     config = get_game_config("uno")
     assert config.game_type == "uno"
-    assert "mock/uno-assistant" in config.strategy_models
+    assert "local/ollama-vlm" in config.strategy_models
