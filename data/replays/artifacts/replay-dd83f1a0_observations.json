@@ -1,0 +1,2256 @@
+[
+  {
+    "observation_id": "ad3fd8c4-b5a9-40f4-a146-25ab2c155628",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "ad3fd8c4-b5a9-40f4-a146-25ab2c155628",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959258460,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "green",
+            "color_confidence": 0.661,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.397,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 647,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 672,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "blue",
+            "color_confidence": 0.556,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.334,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 698,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 723,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_2",
+            "color": "blue",
+            "color_confidence": 0.615,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.369,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 749,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 774,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "green",
+              "color_confidence": 0.661,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.397,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 647,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 672,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "blue",
+              "color_confidence": 0.556,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.334,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 698,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 723,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_2",
+              "color": "blue",
+              "color_confidence": 0.615,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.369,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 749,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 774,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 3,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "d50910d8-0af3-43a9-983c-9b1ed8cd116a"
+  },
+  {
+    "observation_id": "89aebb36-e10d-4665-b87b-b5c6fa66030a",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "89aebb36-e10d-4665-b87b-b5c6fa66030a",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959269191,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "green",
+            "color_confidence": 0.661,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.397,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 647,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 672,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "blue",
+            "color_confidence": 0.556,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.334,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 698,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 723,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_2",
+            "color": "blue",
+            "color_confidence": 0.615,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.369,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 749,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 774,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "green",
+              "color_confidence": 0.661,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.397,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 647,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 672,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "blue",
+              "color_confidence": 0.556,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.334,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 698,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 723,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_2",
+              "color": "blue",
+              "color_confidence": 0.615,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.369,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 749,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 774,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 3,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "6934ee9a-5605-452a-8523-69868bdd7fca"
+  },
+  {
+    "observation_id": "c8e156bd-5d32-44f4-b4b8-bd70d3bdbf4f",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "c8e156bd-5d32-44f4-b4b8-bd70d3bdbf4f",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959281459,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "green",
+            "color_confidence": 0.661,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.397,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 647,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 672,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "blue",
+            "color_confidence": 0.571,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.343,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 698,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 723,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_2",
+            "color": "blue",
+            "color_confidence": 0.615,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.369,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 749,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 774,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "green",
+              "color_confidence": 0.661,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.397,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 647,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 672,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "blue",
+              "color_confidence": 0.571,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.343,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 698,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 723,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_2",
+              "color": "blue",
+              "color_confidence": 0.615,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.369,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 749,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 774,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 3,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "06d6e66a-7968-414d-baa0-30923409b3f8"
+  },
+  {
+    "observation_id": "670da688-a36c-4f00-9c80-cbf713012d57",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "670da688-a36c-4f00-9c80-cbf713012d57",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959294355,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "green",
+            "color_confidence": 0.661,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.397,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 647,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 672,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "blue",
+            "color_confidence": 0.571,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.343,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 698,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 723,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_2",
+            "color": "blue",
+            "color_confidence": 0.615,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.369,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 749,
+              "y": 569,
+              "width": 51,
+              "height": 166
+            },
+            "center": {
+              "x": 774,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "green",
+              "color_confidence": 0.661,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.397,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 647,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 672,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "blue",
+              "color_confidence": 0.571,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.343,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 698,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 723,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_2",
+              "color": "blue",
+              "color_confidence": 0.615,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.369,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 749,
+                "y": 569,
+                "width": 51,
+                "height": 166
+              },
+              "center": {
+                "x": 774,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 3,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "aee20199-5e7d-4220-83eb-8a0ed29c2158"
+  },
+  {
+    "observation_id": "fe1b96ee-d3f4-4940-9d1f-a4ce76dc9f16",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "fe1b96ee-d3f4-4940-9d1f-a4ce76dc9f16",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959313711,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "green",
+            "color_confidence": 0.648,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.389,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 647,
+              "y": 569,
+              "width": 55,
+              "height": 166
+            },
+            "center": {
+              "x": 674,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "blue",
+            "color_confidence": 0.586,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.352,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 702,
+              "y": 569,
+              "width": 56,
+              "height": 166
+            },
+            "center": {
+              "x": 730,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_2",
+            "color": "blue",
+            "color_confidence": 0.546,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.328,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 758,
+              "y": 569,
+              "width": 56,
+              "height": 166
+            },
+            "center": {
+              "x": 786,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "red",
+          "color_confidence": 1.0,
+          "value": "3",
+          "value_confidence": 0.643,
+          "overall_confidence": 0.821,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "green",
+              "color_confidence": 0.648,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.389,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 647,
+                "y": 569,
+                "width": 55,
+                "height": 166
+              },
+              "center": {
+                "x": 674,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "blue",
+              "color_confidence": 0.586,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.352,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 702,
+                "y": 569,
+                "width": 56,
+                "height": 166
+              },
+              "center": {
+                "x": 730,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_2",
+              "color": "blue",
+              "color_confidence": 0.546,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.328,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 758,
+                "y": 569,
+                "width": 56,
+                "height": 166
+              },
+              "center": {
+                "x": 786,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "red",
+            "color_confidence": 1.0,
+            "value": "3",
+            "value_confidence": 0.643,
+            "overall_confidence": 0.821,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 3,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "f6cd69fc-2566-4f30-97c8-d031db185bd6"
+  },
+  {
+    "observation_id": "dc8839c6-7a86-4f41-bf3e-a744d869190c",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "dc8839c6-7a86-4f41-bf3e-a744d869190c",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959399055,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "green",
+          "color_confidence": 0.187,
+          "value": "0",
+          "value_confidence": 0.843,
+          "overall_confidence": 0.515,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "wild",
+            "color_confidence": 1.0,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.6,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 795,
+              "y": 569,
+              "width": 58,
+              "height": 166
+            },
+            "center": {
+              "x": 824,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "wild",
+            "color_confidence": 1.0,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.6,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 853,
+              "y": 569,
+              "width": 59,
+              "height": 166
+            },
+            "center": {
+              "x": 882,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_2",
+            "color": "wild",
+            "color_confidence": 1.0,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.6,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 912,
+              "y": 569,
+              "width": 59,
+              "height": 166
+            },
+            "center": {
+              "x": 941,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "green",
+          "color_confidence": 0.187,
+          "value": "0",
+          "value_confidence": 0.843,
+          "overall_confidence": 0.515,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "green",
+            "color_confidence": 0.187,
+            "value": "0",
+            "value_confidence": 0.843,
+            "overall_confidence": 0.515,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "wild",
+              "color_confidence": 1.0,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.6,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 795,
+                "y": 569,
+                "width": 58,
+                "height": 166
+              },
+              "center": {
+                "x": 824,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "wild",
+              "color_confidence": 1.0,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.6,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 853,
+                "y": 569,
+                "width": 59,
+                "height": 166
+              },
+              "center": {
+                "x": 882,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_2",
+              "color": "wild",
+              "color_confidence": 1.0,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.6,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 912,
+                "y": 569,
+                "width": 59,
+                "height": 166
+              },
+              "center": {
+                "x": 941,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "green",
+            "color_confidence": 0.187,
+            "value": "0",
+            "value_confidence": 0.843,
+            "overall_confidence": 0.515,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 3,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "6d77a228-762e-4f84-b03c-45496ab48a7d"
+  },
+  {
+    "observation_id": "2f0a6376-de7b-4510-ace2-7116d975e631",
+    "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+    "screenshot": null,
+    "dom_snapshot": null,
+    "observation": {
+      "observation_id": "2f0a6376-de7b-4510-ace2-7116d975e631",
+      "session_id": "dd83f1a0-b2e4-4d77-b067-2a0a069dfadc",
+      "timestamp_ms": 1783959407850,
+      "game_type": "uno_canvas",
+      "game_state": {
+        "cv_build": "v3",
+        "screen_type": "in_game",
+        "whose_turn": "unknown",
+        "regions": [
+          {
+            "id": "hand",
+            "type": "button",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569,
+            "width": 583,
+            "height": 166,
+            "actionable": true
+          },
+          {
+            "id": "play_area",
+            "type": "unknown",
+            "label": "Play Area area",
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121,
+            "actionable": false
+          },
+          {
+            "id": "draw_pile",
+            "type": "button",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151,
+            "width": 142,
+            "height": 106,
+            "actionable": true
+          }
+        ],
+        "actionable_targets": [
+          {
+            "id": "hand",
+            "label": "Hand area",
+            "x": 388,
+            "y": 569
+          },
+          {
+            "id": "draw_pile",
+            "label": "Draw Pile area",
+            "x": 336,
+            "y": 151
+          }
+        ],
+        "source": "screenshot_heuristic",
+        "top_card": {
+          "card_id": "play_area_0",
+          "color": "green",
+          "color_confidence": 0.193,
+          "value": "0",
+          "value_confidence": 0.843,
+          "overall_confidence": 0.518,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "hand_cards": [
+          {
+            "card_id": "hand_0",
+            "color": "wild",
+            "color_confidence": 0.775,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.465,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 849,
+              "y": 569,
+              "width": 61,
+              "height": 166
+            },
+            "center": {
+              "x": 879,
+              "y": 652
+            }
+          },
+          {
+            "card_id": "hand_1",
+            "color": "red",
+            "color_confidence": 0.839,
+            "value": "unknown",
+            "value_confidence": 0.0,
+            "overall_confidence": 0.503,
+            "location": "hand",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": "value not recognized (color+coordinate only)",
+            "bounds": {
+              "x": 910,
+              "y": 569,
+              "width": 61,
+              "height": 166
+            },
+            "center": {
+              "x": 940,
+              "y": 652
+            }
+          }
+        ],
+        "discard_card": {
+          "card_id": "play_area_0",
+          "color": "green",
+          "color_confidence": 0.193,
+          "value": "0",
+          "value_confidence": 0.843,
+          "overall_confidence": 0.518,
+          "location": "play_area",
+          "recognition_method": "heuristic",
+          "uncertainty_reason": null,
+          "bounds": {
+            "x": 557,
+            "y": 349,
+            "width": 181,
+            "height": 121
+          },
+          "center": {
+            "x": 647,
+            "y": 409
+          }
+        },
+        "recognition_method": "heuristic",
+        "recognition_detail": {
+          "top_card": {
+            "card_id": "play_area_0",
+            "color": "green",
+            "color_confidence": 0.193,
+            "value": "0",
+            "value_confidence": 0.843,
+            "overall_confidence": 0.518,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_cards": [
+            {
+              "card_id": "hand_0",
+              "color": "wild",
+              "color_confidence": 0.775,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.465,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 849,
+                "y": 569,
+                "width": 61,
+                "height": 166
+              },
+              "center": {
+                "x": 879,
+                "y": 652
+              }
+            },
+            {
+              "card_id": "hand_1",
+              "color": "red",
+              "color_confidence": 0.839,
+              "value": "unknown",
+              "value_confidence": 0.0,
+              "overall_confidence": 0.503,
+              "location": "hand",
+              "recognition_method": "heuristic",
+              "uncertainty_reason": "value not recognized (color+coordinate only)",
+              "bounds": {
+                "x": 910,
+                "y": 569,
+                "width": 61,
+                "height": 166
+              },
+              "center": {
+                "x": 940,
+                "y": 652
+              }
+            }
+          ],
+          "discard_card": {
+            "card_id": "play_area_0",
+            "color": "green",
+            "color_confidence": 0.193,
+            "value": "0",
+            "value_confidence": 0.843,
+            "overall_confidence": 0.518,
+            "location": "play_area",
+            "recognition_method": "heuristic",
+            "uncertainty_reason": null,
+            "bounds": {
+              "x": 557,
+              "y": 349,
+              "width": 181,
+              "height": 121
+            },
+            "center": {
+              "x": 647,
+              "y": 409
+            }
+          },
+          "hand_count": 2,
+          "crops_generated": 0,
+          "extraction_errors": []
+        },
+        "vlm_status": "disabled"
+      },
+      "game_elements": [
+        {
+          "type": "region",
+          "id": "hand",
+          "label": "Hand area",
+          "actionable": true
+        },
+        {
+          "type": "region",
+          "id": "draw_pile",
+          "label": "Draw Pile area",
+          "actionable": true
+        }
+      ],
+      "visible_chat": [],
+      "confidence": {
+        "overall": 0.65,
+        "game_state": 0.5,
+        "game_elements": 0.0,
+        "chat_visible": 0.0
+      },
+      "evidence": [
+        {
+          "source": "ui_automation",
+          "element_tree": {
+            "extracted": {
+              "chat_messages": [],
+              "discard_pile_count": 1,
+              "direction": 1,
+              "pending_draw": 0
+            },
+            "window_title": "UNO",
+            "backend": "uia",
+            "nodes_count": 7,
+            "truncated": false,
+            "sparse_tree": false
+          },
+          "confidence": 0.65
+        }
+      ],
+      "discrepancies": []
+    },
+    "artifacts": [],
+    "correlation_id": "71d41e05-8afb-4ffb-9018-26586913b2dd"
+  }
+]
