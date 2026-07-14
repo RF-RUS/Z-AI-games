@@ -281,6 +281,7 @@ Any model behind an OpenAI-compatible `/chat/completions` endpoint works:
 | Chat intent (model) | Implemented | **Wired** | chat-intent-service calls model-runtime |
 | Chat reply (model) | Implemented | **Wired** | chat-response-service calls model-runtime |
 | VLM perception | Implemented | **Wired** | perception-service vlm_provider.py |
+| Action grounding (VLM) | Implemented | **Wired** | perception `/ground` → `VLMGroundingProvider`; orchestrator sets `target_x/y` (choose_color) |
 | Orchestrator reads GameModelConfig | Implemented | **Wired** | `flow_controller._decide()` resolves model profile via `resolve_model_profile()` |
 | Perception auto-routing VLM | Designed | **Not yet** | Provider exists; routing logic needed |
 | Operator UI model telemetry | Designed | **Not yet** | Logs have data; UI exposure needed |

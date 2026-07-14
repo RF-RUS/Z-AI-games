@@ -192,6 +192,13 @@ screenshot ─▶ perception /perceive
 
 - Decision **D6** (AGENT_DECISIONS): VLM primary, heuristic fallback — the "any
   card game" rationale.
+- Decision **D7** (AGENT_DECISIONS): generic action-grounding layer — the same
+  `VLM_PERCEPTION=1` + vision profile also turns on `VLMGroundingProvider`, which
+  grounds actions like `choose_color` on canvas games (colour cubes UIA can't
+  see). Without it, the colour picker after a Wild card cannot be clicked and the
+  session stalls. See `docs/architecture/plugin-interfaces.md#groundingprovider`.
 - `services/perception-service/src/uno_perception/vlm_provider.py` — the producer.
+- `services/perception-service/src/uno_perception/grounding_providers.py` — the
+  grounding provider (reuses this same vision profile).
 - `services/model-runtime-service/src/uno_model_runtime/providers.py` —
   `OpenAICompatibleProvider` (attaches the image as OpenAI vision content parts).

@@ -262,7 +262,7 @@ class FlowController:
       session.pre_action_had_error = bool(detail.error)
       await self._run_step(session, cid, FlowStepName.EXECUTE, SessionPhase.EXECUTE)
       try:
-        await self._execute(binding, decision, detail, cid, observation)
+        await self._execute(binding, decision, detail, cid, observation, screenshot)
         session.last_execute_success = True
       except Exception:
         session.last_execute_success = False
@@ -443,7 +443,7 @@ class FlowController:
 
   async def _execute(
     self, binding: AdapterBinding, decision: DecisionResult, detail: SessionDetail,
-    cid: str, observation: Observation | None = None,
+    cid: str, observation: Observation | None = None, screenshot: ScreenshotFrame | None = None,
   ) -> None:
     action = decision.chosen_action
     if detail.game_id:
@@ -513,6 +513,16 @@ class FlowController:
         if draw_target is not None:
           payload = {**(payload or {}), "draw_target": list(draw_target)}
 
+    # Ground choose_color to a click point on canvas/Electron (the colour cubes
+    # aren't in the UIA tree). Cheap path first: the colour button may already be
+    # in the perceived prompts[]. Fall back to the VLM grounding provider only
+    # when it isn't. Sets target_x/target_y that _map_action_windows passes on.
+    if action_type_str == "choose_color":
+      color = payload.get("chosen_color") if payload else None
+      xy = await self._ground_choose_color(color, observation, screenshot, detail)
+      if xy is not None:
+        payload = {**(payload or {}), "target_x": xy[0], "target_y": xy[1]}
+
     action_req = client.map_action(
       action_type=action_type_str,
       profile_id=binding.profile_id or "local-mock-uno",
@@ -522,6 +532,34 @@ class FlowController:
     )
 
     await client.execute_action(binding.adapter_id, action_req, correlation_id=cid)
+
+  async def _ground_choose_color(
+    self, color: str | None, observation: Observation | None,
+    screenshot: ScreenshotFrame | None, detail: SessionDetail,
+  ) -> tuple[int, int] | None:
+    """Resolve a screen point for choosing `color`, or None if not groundable.
+
+    Cheapest-first: reuse an already-perceived colour button, else ask the VLM
+    grounding provider. Returns integer screenshot coords, or None so the caller
+    sends an ungrounded click (the pre-existing behaviour) rather than stalling.
+    """
+    gs = getattr(observation, "game_state", None) or {}
+    # Cheap path: the colour button is already in the perceived prompts[].
+    prompt = choose_prompt(gs.get("prompts"), prefer_color=color)
+    if prompt and prompt.get("center"):
+      c = prompt["center"]
+      return int(c["x"]), int(c["y"])
+    # Fallback: VLM grounding. Needs a screenshot on disk to look at.
+    shot_path = getattr(screenshot, "path", None) if screenshot else None
+    if not shot_path:
+      return None
+    game_type = getattr(observation, "game_type", None) or detail.config.adapter_type or "unknown"
+    res = await self.clients.ground(
+      "choose_color", shot_path, params={"color": color or ""}, game_type=game_type,
+    )
+    if res.get("found") and res.get("x") is not None and res.get("y") is not None:
+      return int(res["x"]), int(res["y"])
+    return None
 
   async def _click_prompt(self, binding: AdapterBinding, prompt: dict, detail: SessionDetail, cid: str) -> None:
     """Click an on-screen prompt button (Play/Keep, colour picker, Continue).

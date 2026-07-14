@@ -159,6 +159,49 @@ class CanvasUNOPerceptionPlugin:
 
 ---
 
+## GroundingProvider
+
+**Responsibility**: Resolve *where to click* for a decided action (e.g.
+`choose_color=red`) — the counterpart to perception's *what is on screen*. This
+seam keeps adapters game-agnostic: they receive a click point and click it, with
+no knowledge of cards, colours, or suits.
+
+**Contract**: `services/perception-service/src/uno_perception/grounding.py`
+
+```python
+class GroundingProvider(Protocol):
+    method: str  # "uia" | "template" | "vlm"
+    async def ground(self, req: GroundingRequest) -> GroundingResult: ...
+
+# req: action_type, screenshot_path, params ({"color": "red"}), game_type, profile
+# res: found, x, y, confidence, method, reason   (x,y in screenshot pixels)
+```
+
+`resolve_grounding(req, providers, min_confidence)` tries providers
+**cheapest-first**; the first hit at/above the threshold wins, a broken provider
+never blocks a fallback, and `found=True ⟹ confidence ≥ min_confidence`.
+
+**Implementations** (`grounding_providers.py`):
+
+| Provider | Status | Notes |
+|----------|--------|-------|
+| `VLMGroundingProvider` | **Wired** | Asks the vision model for the click point directly; reuses the VLM `/invoke` path. Gated on `VLM_PERCEPTION=1`. |
+| `UIAGroundingProvider` | Planned | Move the existing UIA element lookup behind the contract. |
+| `TemplateGroundingProvider` | Planned | OpenCV template/anchor match for games shipping reference assets. |
+
+**Call path**: orchestrator `_execute` → perception `POST /ground`
+(`clients.ground`) → `resolve_grounding` → `target_x/target_y` on the adapter
+request. For `choose_color`, a cheap path first reuses an already-perceived
+`prompts[]` colour button before the VLM round-trip. Verified clicks cache into
+learned_zones so repeats resolve via the cheap path.
+
+**Upgrade path**: if direct-coordinate accuracy falls short, switch
+`VLMGroundingProvider` to **Set-of-Marks** — generate candidate marks with
+OpenCV, overlay numbered labels, ask the VLM for a mark number (OmniParser
+style).
+
+---
+
 ## RulesPlugin
 
 **Responsibility**: Game rules — legal actions, turn detection, state transitions, affordance reconciliation.

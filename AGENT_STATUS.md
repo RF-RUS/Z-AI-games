@@ -1,6 +1,6 @@
 # AGENT_STATUS
 
-_Updated: 2026-07-12 · Agent: Claude (senior autonomous coding agent)_
+_Updated: 2026-07-14 · Agent: Claude (senior autonomous coding agent)_
 
 ## Goal
 A **universal card-game agent**: perceive → decide → act → recover **fully autonomously** on ANY
@@ -83,6 +83,9 @@ typical faults, survives long runs, resumes after break/crash. **Open:** real-ha
 - Mature RPA pipeline: locate→act→verify (`rpa/executor/visual_executor.py`).
 - Target cascade: UIA → learned zones (Postgres) → static layout_targets
   (`rpa/perception/target_locator.py`) — no single hardcoded coord path.
+- Generic action-grounding layer (D7, 2026-07-14): orchestrator resolves *where to click* for a
+  decided action via perception `POST /ground` (UIA→template→VLM providers) and passes `target_x/y`
+  to the adapter — fixes `choose_color` on canvas games; adapters stay game-agnostic.
 - Humanized input, focus handling, multi-method screenshot capture (pywinauto/PIL/PrintWindow/BitBlt).
 - In-process autonomous loop (`orchestrator._run_loop`) + error classification/recovery (`recovery.py`).
 - CI green since fix_0.1.2; 292 unit tests pass.

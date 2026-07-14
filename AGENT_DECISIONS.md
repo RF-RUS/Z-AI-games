@@ -71,3 +71,26 @@ cost/offline constraints). Grounding (click the returned coordinate) reuses the 
 Supersedes the heuristic-first assumption in D5 Path A; Path A's coordinate-grounding wiring is kept.
 **Open:** confirm on a Windows host after backend restart that `pcv=v3` (rules out the stale-service
 red herring) before investing in the VLM producer.
+
+### D7 (2026-07-14) — Generic action-grounding layer (VLM), adapters stay dumb
+**Finding:** `choose_color` (colour picker after a Wild) stalled on canvas/Electron UNO: the colour
+cubes are drawn on canvas, absent from the UIA tree, and no coordinates reached the adapter, so the
+session hung on a `ReadTimeout`. Hardcoding an OpenCV colour-cube detector would fix UNO but is a
+per-game heuristic — the wrong abstraction for a universal agent (Svintus picks a suit, another game
+something else).
+**Decision:** Add a game-agnostic **grounding layer** — "where do I click for decided action X?" —
+separate from perception ("what is on screen"). Contract in `grounding.py` (`GroundingProvider`,
+`resolve_grounding`); providers tried cheapest→dearest: UIA → template(OpenCV) → **VLM**. Ship the
+universal net first: `VLMGroundingProvider` asks the vision model for the click point directly
+(reuses the D6 VLM path, no new deps). Orchestrator resolves via perception `POST /ground` and passes
+`target_x/target_y` to the adapter; the adapter just clicks. For `choose_color`, a cheap path reuses
+an already-perceived `prompts[]` colour button before falling back to the VLM.
+**Why:** New games plug in via a profile/model, never by patching an adapter. One vision path to
+configure (reuses `vision_models` + `VLM_PROFILE_ID`). Verified click points cache into learned_zones
+so repeats resolve via the cheap path.
+**Consequence:** `VLMGroundingProvider` + `default_providers()` in `grounding_providers.py`; `/ground`
+endpoint + `clients.ground()`; `choose_color` grounded in `flow_controller._execute`; reliability
+guards (UIA-walk time budget, adapter execute deadline) so grounding failures degrade cleanly instead
+of `ReadTimeout`. Deferred (upgrade path): Set-of-Marks + OpenCV candidate generation, Template/UIA
+providers behind the contract, a separate `grounding_models` field. Requires `VLM_PERCEPTION=1` + a
+vision profile to work end-to-end.

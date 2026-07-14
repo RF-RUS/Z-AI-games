@@ -240,6 +240,21 @@ class InProcessClients(ServiceClients):
       r.raise_for_status()
       return Observation.model_validate(r.json())
 
+  async def ground(self, action_type, screenshot_path, params=None, game_type="unknown",
+                   profile=None, min_confidence=0.5):
+    body = {
+      "action_type": action_type, "screenshot_path": screenshot_path,
+      "params": params or {}, "game_type": game_type, "profile": profile,
+      "min_confidence": min_confidence,
+    }
+    try:
+      async with self._transport(perception_app) as c:
+        r = await c.post("/ground", json=body)
+        r.raise_for_status()
+        return r.json()
+    except Exception as exc:  # noqa: BLE001 — mirror ServiceClients.ground best-effort miss
+      return {"found": False, "method": "none", "reason": f"ground_error: {exc}"}
+
   async def decide(self, req: DecisionRequest) -> DecisionResult:
     from uno_decision.policy import decide_heuristic, decide_random
     if req.strategy_id.value == "random":

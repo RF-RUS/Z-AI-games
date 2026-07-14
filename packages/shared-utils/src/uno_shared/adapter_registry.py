@@ -306,6 +306,14 @@ class GenericAdapterClient:
             if isinstance(draw_target, (list, tuple)) and len(draw_target) == 2:
                 base_extra["target_x"], base_extra["target_y"] = int(draw_target[0]), int(draw_target[1])
                 base_extra["grounded_by"] = "cv_detection"
+        elif action_type == "choose_color":
+            # Colour picker on canvas/Electron: the flow controller grounds the
+            # chosen colour to target_x/target_y (perceived prompt or VLM). Pass
+            # them through so the adapter's grounded-click path fires instead of a
+            # doomed UIA lookup for a canvas-drawn cube.
+            selector_key = "choose_color"
+            if base_extra.get("target_x") is not None and base_extra.get("target_y") is not None:
+                base_extra["grounded_by"] = "grounding"
         return GenericActionRequest(
             action_type="click_input",
             selector_key=selector_key,

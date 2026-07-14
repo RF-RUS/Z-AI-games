@@ -1,9 +1,21 @@
 # AGENT_TODO
 
-_Updated: 2026-07-12_
+_Updated: 2026-07-14_
 
 ## In Progress
 - _(idle — awaiting user's next Windows run + optional local-VLM enablement)_
+
+## Done (2026-07-14, D7 — generic action grounding)
+- [#13] Grounding layer: `GroundingProvider` contract + `resolve_grounding` (cheapest-first,
+  `found ⟹ conf≥min`), `VLMGroundingProvider` + `default_providers` reusing the VLM `/invoke` path.
+- `POST /ground` on perception + `clients.ground()` (+ in-process); `choose_color` grounded in
+  `flow_controller._execute` (cheap perceived-`prompts[]` path → VLM fallback → `target_x/target_y`);
+  `choose_color` branch in `_map_action_windows`.
+- Reliability: UIA-walk time budget (`extract_ui_tree`), adapter execute deadline (`api.py`),
+  `choose_color` added to UIA-skip set — grounding failures degrade cleanly, no more `ReadTimeout`.
+- `tests/unit/test_vlm_grounding.py` (8 tests, no live model); `.env.example` VLM/zone vars; docs
+  updated (overview, plugin-interfaces, model-integration, integration/perception, vlm-ollama runbook).
+- Deferred (upgrade path): Set-of-Marks+OpenCV, Template/UIA providers behind the contract.
 
 ## Done (2026-07-12, Plans A + B)
 - [A] Perceived game state → operator panel: `DetectedCard` + hand/top-card fields on `StrategySnapshot`;

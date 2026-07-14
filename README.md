@@ -16,9 +16,9 @@ Adapters (eyes/hands) → ObservedState → PerceptionPlugin → InferredState
 StrategyPlugin ← LegalActions ← RulesPlugin (rules ∩ affordances)
      ↓                                                      ↑
 ExecutionPlugin → adapter clicks/keypresses        ModelLayer (optional)
-                                            heuristic ← → model-assist
-                                            template  ← → model-generate
-                                            rule-based ← → model-classify
+     ↓ (where to click?)                     heuristic ← → model-assist
+GroundingProvider (UIA→template→VLM)         template  ← → model-generate
+                                             rule-based ← → model-classify
 ```
 
 See [Architecture Overview](docs/architecture/overview.md), [Intermediate Contract](docs/architecture/intermediate-contract.md), and [Model Integration](docs/architecture/model-integration.md).
@@ -41,6 +41,7 @@ See [Architecture Overview](docs/architecture/overview.md), [Intermediate Contra
 | **Chat intent** | `detect_intent_rules()` | `detect_intent_model()` → chat_intent prompt | rule-based |
 | **Chat reply** | `generate_reply_template()` | `generate_reply_model()` → chat_reply_generate prompt | template |
 | **Vision/CV** | DOM/UIA parsing | `infer_from_screenshot()` → VLM | DOM-only |
+| **Grounding** | UIA element / perceived prompt | `POST /ground` → VLM click-point | UIA-only |
 
 **Providers:** OpenAI-compatible (OpenAI, vLLM, llama.cpp), Mock (fallback).
 **Config:** Per-game `GameModelConfig` declares preferred models per task.

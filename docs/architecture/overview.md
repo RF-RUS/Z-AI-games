@@ -174,6 +174,14 @@ All inter-service communication is synchronous HTTP REST. No message queues.
 **Produces**: `InferredState` (game-specific entities, turn, screen state)
 **Never**: Accesses UI directly, executes actions.
 
+**Action grounding** (`grounding.py` / `grounding_providers.py`, `POST /ground`):
+a layer separate from perception that answers *where to click for a decided
+action* (e.g. `choose_color=red`). Providers are tried cheapest-first
+(UIA → template → VLM); the orchestrator passes the resolved `target_x/target_y`
+to the adapter, which just clicks. This is what lets the agent act on
+canvas-drawn controls (colour cubes) that UIA can't see. See
+[plugin-interfaces.md](plugin-interfaces.md#groundingprovider).
+
 ### decision-service (port 8106)
 **Role**: Strategy dispatch, action selection. Hosts per-game `StrategyPlugin` implementations.
 **Key functions**: `decide_heuristic()`, `decide_random()`
@@ -237,6 +245,10 @@ The platform is designed so that **adding a new game requires only implementing 
 2. `RulesPlugin` — what moves are legal
 3. `StrategyPlugin` — how to choose among legal moves
 4. `ExecutionPlugin` (optional) — multi-step interaction planning
+
+Grounding (*where* to click for a chosen action) is handled by the generic
+`GroundingProvider` layer, not per-game code — a new game supplies a vision
+profile, not a new grounder. interaction planning
 
 The adapters, orchestrator, guard, operator UI, and trace system are **fully generic**. They know nothing about UNO, cards, colors, or game rules.
 

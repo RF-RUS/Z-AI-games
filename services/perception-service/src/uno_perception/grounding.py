@@ -108,4 +108,11 @@ async def resolve_grounding(
         if result.found and result.confidence >= min_confidence:
             return result
         last = result
+    # Nothing met the threshold. A below-threshold hit is NOT a usable ground —
+    # keep the invariant "found=True ⟹ confidence >= min_confidence" so callers
+    # can trust `found` without re-checking confidence.
+    if last.found:
+        return GroundingResult.miss(
+            last.method, f"low_confidence {last.confidence:.2f} < {min_confidence:.2f}",
+        )
     return last

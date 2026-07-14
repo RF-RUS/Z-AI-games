@@ -94,6 +94,32 @@ class ServiceClients:
       r.raise_for_status()
       return Observation.model_validate(r.json())
 
+  async def ground(
+    self, action_type: str, screenshot_path: str, params: dict | None = None,
+    game_type: str = "unknown", profile: dict | None = None, min_confidence: float = 0.5,
+  ) -> dict:
+    """Resolve a click point for a decided action via perception /ground.
+
+    Returns the raw GroundResponse dict ({found, x, y, confidence, method, ...}).
+    Best-effort: on any transport error returns a miss so a grounding outage
+    degrades to an ungrounded click rather than stalling the tick.
+    """
+    body = {
+      "action_type": action_type,
+      "screenshot_path": screenshot_path,
+      "params": params or {},
+      "game_type": game_type,
+      "profile": profile,
+      "min_confidence": min_confidence,
+    }
+    try:
+      async with httpx.AsyncClient(timeout=self.timeout) as client:
+        r = await client.post(f"{self.perception}/ground", json=body)
+        r.raise_for_status()
+        return r.json()
+    except Exception as exc:  # noqa: BLE001 — grounding outage must not stall the tick
+      return {"found": False, "method": "none", "reason": f"ground_error: {exc}"}
+
   async def decide(self, req: DecisionRequest) -> DecisionResult:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
       r = await client.post(f"{self.decision}/decide", json=req.model_dump(mode="json"))

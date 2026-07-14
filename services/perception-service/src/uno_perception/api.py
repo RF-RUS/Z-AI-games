@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from uno_perception.grounding import GroundingRequest, resolve_grounding
+from uno_perception.grounding_providers import default_providers
 from uno_perception.merger import build_observation, merge_confidence, register_game_adapter
 from uno_perception.uno_adapter import UnuPerceptionAdapter
 from uno_perception.vlm_provider import infer_vision, vlm_enabled
@@ -64,6 +66,50 @@ async def perceive(req: PerceptionRequest) -> Observation:
 @app.post("/merge-confidence", tags=["perception"])
 async def merge(scores: list[float]) -> dict:
   return {"merged": merge_confidence(*scores)}
+
+
+class GroundRequest(BaseModel):
+  action_type: str
+  screenshot_path: str
+  params: dict = {}
+  game_type: str = "unknown"
+  profile: dict | None = None
+  min_confidence: float = 0.5
+
+
+class GroundResponse(BaseModel):
+  found: bool
+  x: float | None = None
+  y: float | None = None
+  confidence: float = 0.0
+  method: str = "none"
+  reason: str = ""
+  metadata: dict = {}
+
+
+@app.post("/ground", response_model=GroundResponse, tags=["grounding"])
+async def ground(req: GroundRequest) -> GroundResponse:
+  """Resolve a click point for a decided action (e.g. choose_color=red).
+
+  Tries the configured providers cheapest-first (see grounding_providers); the
+  first hit at/above min_confidence wins. Returns a miss (found=False) with the
+  most informative reason when nothing grounds the action — the caller decides
+  whether to fall back (e.g. ungrounded click, skip, ask the operator).
+  """
+  greq = GroundingRequest(
+    action_type=req.action_type,
+    screenshot_path=req.screenshot_path,
+    params=req.params,
+    game_type=req.game_type,
+    profile=req.profile,
+  )
+  res = await resolve_grounding(
+    greq, default_providers(req.game_type), min_confidence=req.min_confidence,
+  )
+  return GroundResponse(
+    found=res.found, x=res.x, y=res.y, confidence=res.confidence,
+    method=res.method, reason=res.reason, metadata=res.metadata,
+  )
 
 
 def main() -> None:
