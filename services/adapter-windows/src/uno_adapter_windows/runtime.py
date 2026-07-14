@@ -20,6 +20,11 @@ from uno_schemas.adapter_windows import (
 
 ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "artifacts"
 MAX_NODES = 200
+# ponytail: wall-clock cap on the UIA walk. Chromium/Electron UIA trees can be
+# huge and enumerate slowly; without this the walk can exceed the orchestrator's
+# HTTP timeout and stall the whole session with a ReadTimeout. Raise if a native
+# app legitimately needs deeper walks.
+UIA_WALK_BUDGET_S = 4.0
 STALE_WINDOW_ERROR = "Selected game window is no longer available"
 
 
@@ -205,10 +210,12 @@ async def extract_ui_tree(window, backend: str) -> tuple[list[UiNodeSnapshot], b
     truncated = False
     sparse = True
     node_idx = [0]
+    deadline = time.perf_counter() + UIA_WALK_BUDGET_S
 
     def walk(element, depth: int) -> None:
       nonlocal truncated, sparse
-      if len(nodes) >= MAX_NODES:
+      if len(nodes) >= MAX_NODES or time.perf_counter() >= deadline:
+        # Out of node budget or time budget — stop here and return what we have.
         truncated = True
         return
       node = _node_from_element(element, depth, node_idx)

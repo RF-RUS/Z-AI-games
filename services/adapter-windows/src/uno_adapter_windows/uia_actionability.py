@@ -26,7 +26,7 @@ BROWSER_MATCH_CARD_REQUIRES_WEB = (
 )
 
 MATCH_CARD_SELECTOR_KEYS = frozenset(
-  {"play_card", "play_red_five", "play_button", "draw", "draw_card", "draw_button"}
+  {"play_card", "play_red_five", "play_button", "draw", "draw_card", "draw_button", "choose_color"}
 )
 
 

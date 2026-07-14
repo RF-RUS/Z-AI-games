@@ -1,3 +1,4 @@
+import asyncio
 import time
 from collections import defaultdict
 
@@ -28,6 +29,10 @@ app: FastAPI = svc.create_app()
 _action_timestamps: dict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 1.0
 _RATE_LIMIT_MAX = 10
+# ponytail: adapter-side execution deadline, must stay below the orchestrator's
+# HTTP read timeout (clients.py self.timeout=15s) so a hung click/UIA walk comes
+# back as a structured failure instead of a ReadTimeout that stalls the session.
+_EXECUTE_DEADLINE_S = 12.0
 
 
 @app.get("/profiles", response_model=list[WindowsAdapterProfile], tags=["profiles"])
@@ -100,7 +105,18 @@ async def execute_action(
   a = get_adapter(adapter_id)
   if not a:
     raise HTTPException(404, "adapter not found")
-  return await a.execute(req, correlation_id)
+  try:
+    return await asyncio.wait_for(a.execute(req, correlation_id), timeout=_EXECUTE_DEADLINE_S)
+  except TimeoutError:
+    # Never let a hung execute bubble up as a ReadTimeout — return a structured
+    # failure so the orchestrator's verification records "delivery failed" cleanly.
+    return WindowsActionExecutionResult(
+      success=False,
+      action_type=req.action_type,
+      error=f"execution exceeded {_EXECUTE_DEADLINE_S:.0f}s deadline",
+      correlation_id=correlation_id,
+      uncertain=True,
+    )
 
 
 @app.get("/adapters/{adapter_id}/screenshot", tags=["adapter"])
