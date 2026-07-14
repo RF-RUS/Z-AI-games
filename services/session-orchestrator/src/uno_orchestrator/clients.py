@@ -42,6 +42,16 @@ def _url(service: str) -> str:
   return f"http://{host}:{port}"
 
 
+# ponytail: perceive/ground run the VLM synchronously (VLM_TIMEOUT_S, default
+# 30s) plus a cold-start model load. The generic 15s client timeout is SHORTER
+# than that, so the orchestrator would ReadTimeout before the model ever answers
+# (the "GPU busy but AI didn't help" bug). Give VLM-bearing calls an HTTP budget
+# well above VLM_TIMEOUT_S so the internal timeout always fires first. Env-tunable
+# for slow/cold local models.
+_VLM_TIMEOUT_S = float(os.getenv("VLM_TIMEOUT_S", "30"))
+VLM_HTTP_TIMEOUT_SEC = float(os.getenv("VLM_HTTP_TIMEOUT_SEC", str(_VLM_TIMEOUT_S + 90.0)))
+
+
 class ServiceClients:
   def __init__(self, timeout: float = 15.0) -> None:
     self.timeout = timeout
@@ -82,7 +92,9 @@ class ServiceClients:
     self, session_id: str, dom: DomEvidence | None = None, ui: UiEvidence | None = None,
     screenshot: ScreenshotFrame | None = None,
   ) -> Observation:
-    async with httpx.AsyncClient(timeout=self.timeout) as client:
+    # VLM-bearing call — use the long budget so a slow/cold vision model isn't
+    # cut off by the generic client timeout (see VLM_HTTP_TIMEOUT_SEC).
+    async with httpx.AsyncClient(timeout=VLM_HTTP_TIMEOUT_SEC) as client:
       body: dict[str, Any] = {"session_id": session_id}
       if dom:
         body["dom"] = dom.model_dump(mode="json")
@@ -113,7 +125,7 @@ class ServiceClients:
       "min_confidence": min_confidence,
     }
     try:
-      async with httpx.AsyncClient(timeout=self.timeout) as client:
+      async with httpx.AsyncClient(timeout=VLM_HTTP_TIMEOUT_SEC) as client:
         r = await client.post(f"{self.perception}/ground", json=body)
         r.raise_for_status()
         return r.json()

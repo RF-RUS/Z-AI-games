@@ -802,6 +802,11 @@ class SessionOrchestrator:
       detail.flow_state = transition(detail.flow_state, FlowState.ACTIVE)
       detail.error = None
       logger.info("adapter_observe_warmup_ok", session_id=detail.session_id, adapter_type=binding.adapter_type)
+      # Warm the VLM model into VRAM off the critical path. The first real
+      # perceive otherwise pays Ollama's cold-start load (tens of seconds), which
+      # made the model look "not working" while the GPU spun up mid-tick. Fire and
+      # forget: no-op when VLM is disabled, never blocks loop start.
+      asyncio.create_task(self._warmup_vlm(session, binding))
       if detail.automatic and (not session.loop_task or session.loop_task.done()):
         session.loop_task = asyncio.create_task(self._run_loop(session))
         logger.info("autonomous_loop_started", session_id=detail.session_id)
@@ -821,6 +826,21 @@ class SessionOrchestrator:
         error_type=type(exc).__name__,
         adapter_type=binding.adapter_type,
       )
+
+  async def _warmup_vlm(self, session: RuntimeSession, binding) -> None:
+    """Best-effort: run one perceive so the vision model loads before tick #1.
+
+    Non-fatal and non-blocking — any failure (VLM off, slow load, transport) is
+    swallowed. The point is only to trigger the cold-start model load early; the
+    first real tick's perceive then hits a warm model.
+    """
+    try:
+      cid = str(uuid4())
+      _dom, _ui, _conf, screenshot = await self._flow._observe(binding, cid)
+      await self._clients.perceive(session.detail.session_id, screenshot=screenshot)
+      logger.info("vlm_warmup_ok", session_id=session.detail.session_id)
+    except Exception as exc:  # noqa: BLE001 — warmup is best-effort, never fatal
+      logger.info("vlm_warmup_skipped", session_id=session.detail.session_id, reason=str(exc))
 
   def create_session_legacy(self, config: SessionConfig) -> SessionState:
     spec = SessionSpec(config=config)

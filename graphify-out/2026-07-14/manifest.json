@@ -845,9 +845,9 @@
     "semantic_hash": "8774c91b4b7002a856132ec8b164bad2"
   },
   "services/adapter-web/src/uno_adapter_web/runtime.py": {
-    "mtime": 1783047897.0114992,
-    "ast_hash": "c1c680ca30182ac48672b9695df7f6df",
-    "semantic_hash": "c1c680ca30182ac48672b9695df7f6df"
+    "mtime": 1784013191.4270694,
+    "ast_hash": "0a72045e4fc56309514e39316da94778",
+    "semantic_hash": ""
   },
   "services/adapter-web/src/uno_adapter_web/selector_resolver.py": {
     "mtime": 1783047897.0124667,
@@ -930,9 +930,9 @@
     "semantic_hash": "dfb0bcce9a66b1472a5da13d9b0fb550"
   },
   "services/adapter-windows/src/uno_adapter_windows/api.py": {
-    "mtime": 1783078922.4654794,
-    "ast_hash": "73177bfafaabe4b9573d84ce05382dc6",
-    "semantic_hash": "73177bfafaabe4b9573d84ce05382dc6"
+    "mtime": 1784018997.9261966,
+    "ast_hash": "b99cfa8fa6997d5e28396be72adabc48",
+    "semantic_hash": ""
   },
   "services/adapter-windows/src/uno_adapter_windows/browser_attach.py": {
     "mtime": 1782905284.2173269,
@@ -1030,14 +1030,14 @@
     "semantic_hash": "1430b0c859cd9b839b184361f0937b79"
   },
   "services/adapter-windows/src/uno_adapter_windows/runtime.py": {
-    "mtime": 1783236403.7659676,
-    "ast_hash": "d2db84590bc8c1c2c1429a4b5bd076af",
-    "semantic_hash": "d2db84590bc8c1c2c1429a4b5bd076af"
+    "mtime": 1784018997.9269695,
+    "ast_hash": "1e21c9a74a00eb8ec4e8099313552775",
+    "semantic_hash": ""
   },
   "services/adapter-windows/src/uno_adapter_windows/uia_actionability.py": {
-    "mtime": 1782905284.2206984,
-    "ast_hash": "90bfb96bf175318f3b1644ba08d42004",
-    "semantic_hash": "90bfb96bf175318f3b1644ba08d42004"
+    "mtime": 1784018997.927538,
+    "ast_hash": "2ccbc59806c421adeaa5f1f0de9fc1f9",
+    "semantic_hash": ""
   },
   "services/adapter-windows/test-target/uno_mock_app.py": {
     "mtime": 1783047897.0168695,
@@ -1230,9 +1230,9 @@
     "semantic_hash": "e827a723de47c8b6c5127cc291b77271"
   },
   "services/decision-service/src/uno_decision/policy.py": {
-    "mtime": 1782905284.3489118,
-    "ast_hash": "ae5f6e854e34946c97d7a37003693e4e",
-    "semantic_hash": "ae5f6e854e34946c97d7a37003693e4e"
+    "mtime": 1784013202.8937376,
+    "ast_hash": "f93bca7e9ca6eb3708d1d6242534337e",
+    "semantic_hash": ""
   },
   "services/model-registry-service/pyproject.toml": {
     "mtime": 1782905284.3498645,
@@ -1315,8 +1315,8 @@
     "semantic_hash": "906035a56e1fee759873c46d7de8f6fb"
   },
   "services/perception-service/src/uno_perception/api.py": {
-    "mtime": 1783888917.154308,
-    "ast_hash": "3349a5f797c13ff15f2ece818ddbae0e",
+    "mtime": 1784024289.9580636,
+    "ast_hash": "9eba0a1fb48376719a8b2ed65445b4fa",
     "semantic_hash": ""
   },
   "services/perception-service/src/uno_perception/canvas_plugin.py": {
@@ -1395,9 +1395,9 @@
     "semantic_hash": "9b5a66cd653d787181472944b872b3b5"
   },
   "services/session-orchestrator/src/uno_orchestrator/clients.py": {
-    "mtime": 1783047897.020394,
-    "ast_hash": "1da44ce963b825eaaefb8bc20d8c5bd2",
-    "semantic_hash": "1da44ce963b825eaaefb8bc20d8c5bd2"
+    "mtime": 1784024652.3060408,
+    "ast_hash": "a2ba7b4a27b953475780b73d0e5a51f5",
+    "semantic_hash": ""
   },
   "services/session-orchestrator/src/uno_orchestrator/evaluation_runner.py": {
     "mtime": 1782905284.3620555,
@@ -1405,14 +1405,14 @@
     "semantic_hash": "2ed1dbc08841510d2b9cc151687b3f2c"
   },
   "services/session-orchestrator/src/uno_orchestrator/flow_controller.py": {
-    "mtime": 1783893279.4872386,
-    "ast_hash": "24edf81cba971a398384c7b587ea8d85",
+    "mtime": 1784027967.247341,
+    "ast_hash": "04326878f264840374228f5462713394",
     "semantic_hash": ""
   },
   "services/session-orchestrator/src/uno_orchestrator/in_process_clients.py": {
-    "mtime": 1783086739.989603,
-    "ast_hash": "d618c2768f5d6c43867e5cbf6fc34b0d",
-    "semantic_hash": "d618c2768f5d6c43867e5cbf6fc34b0d"
+    "mtime": 1784025606.0394182,
+    "ast_hash": "894945f4d99cd4297b4c943031d40f2b",
+    "semantic_hash": ""
   },
   "services/session-orchestrator/src/uno_orchestrator/main.py": {
     "mtime": 1782905284.3628623,
@@ -1580,9 +1580,9 @@
     "semantic_hash": "b450904829d57d846aacde3a9aba699f"
   },
   "docs/architecture/model-integration.md": {
-    "mtime": 1782905284.1052268,
-    "ast_hash": "55119b41310f44ab7c09510955b0ceb5",
-    "semantic_hash": "55119b41310f44ab7c09510955b0ceb5"
+    "mtime": 1784030786.0904863,
+    "ast_hash": "c413de9c896c1b7b3491c16b73ba9c6f",
+    "semantic_hash": ""
   },
   "docs/architecture/model-plugins.md": {
     "mtime": 1782905284.1053617,
@@ -1600,14 +1600,14 @@
     "semantic_hash": "7c022b8a1d3b0599e8cb27cba75dced2"
   },
   "docs/architecture/overview.md": {
-    "mtime": 1782905284.1057968,
-    "ast_hash": "6e23f25976d016a39da2df68e6e887f0",
-    "semantic_hash": "6e23f25976d016a39da2df68e6e887f0"
+    "mtime": 1784031021.0467741,
+    "ast_hash": "0ebd858c42eaa24f877fceb15fc2ea0b",
+    "semantic_hash": ""
   },
   "docs/architecture/plugin-interfaces.md": {
-    "mtime": 1782905284.1060116,
-    "ast_hash": "12c5f97ff662e2534ca4a9996c32c2de",
-    "semantic_hash": "12c5f97ff662e2534ca4a9996c32c2de"
+    "mtime": 1784030952.375157,
+    "ast_hash": "dbce2b5fc57d82b0c6d6a54b35dbe79b",
+    "semantic_hash": ""
   },
   "docs/architecture/test-strategy.md": {
     "mtime": 1782905284.1061528,
@@ -1640,9 +1640,9 @@
     "semantic_hash": "2e6284a05f5fdf9cc14c027f52ada585"
   },
   "docs/integration/perception.md": {
-    "mtime": 1782905284.1070118,
-    "ast_hash": "4c5f5ce4268f8b3dd230bbf37a2b66f9",
-    "semantic_hash": "4c5f5ce4268f8b3dd230bbf37a2b66f9"
+    "mtime": 1784031541.8360257,
+    "ast_hash": "cc6b1d4baebdbae288ce57bcbeee1cd6",
+    "semantic_hash": ""
   },
   "docs/integration/uno-core.md": {
     "mtime": 1782905284.1071384,
@@ -5035,8 +5035,8 @@
     "semantic_hash": ""
   },
   "packages/shared-utils/src/uno_shared/adapter_registry.py": {
-    "mtime": 1783883788.9597313,
-    "ast_hash": "a94ce37dfbe2d0e7fca9b27aa6ee786e",
+    "mtime": 1784028033.403642,
+    "ast_hash": "107ceeafea65382ed22a06dd592e7185",
     "semantic_hash": ""
   },
   "packages/shared-utils/src/uno_shared/chat_policy.py": {
@@ -5445,8 +5445,8 @@
     "semantic_hash": ""
   },
   "tests/unit/test_model_config.py": {
-    "mtime": 1782905284.404118,
-    "ast_hash": "8f2b4f18c05bae6f66877aa3d0b04247",
+    "mtime": 1783958746.2238445,
+    "ast_hash": "ec8a496b8a7e052613b32b391897d50e",
     "semantic_hash": ""
   },
   "tests/unit/test_model_registry.py": {
@@ -5700,8 +5700,8 @@
     "semantic_hash": ""
   },
   "AGENT_DECISIONS.md": {
-    "mtime": 1783870048.093916,
-    "ast_hash": "5546b15d4389cbbeef7fbcede3687e9f",
+    "mtime": 1784030431.1628685,
+    "ast_hash": "eb1decf5a6c1077e73089720c22e16db",
     "semantic_hash": ""
   },
   "AGENT_LOG.md": {
@@ -5710,13 +5710,13 @@
     "semantic_hash": ""
   },
   "AGENT_STATUS.md": {
-    "mtime": 1783870019.8881412,
-    "ast_hash": "da4d41ad643d24135a8112b2ddb81bf9",
+    "mtime": 1784032312.0771317,
+    "ast_hash": "87996791fe3d5fa43a20ebf13d674623",
     "semantic_hash": ""
   },
   "AGENT_TODO.md": {
-    "mtime": 1783890175.3621037,
-    "ast_hash": "ae68a7c09292ad47138d21aa90749fe8",
+    "mtime": 1784031993.8798954,
+    "ast_hash": "610f9b3cd6c2a0489450587002a6718d",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -5730,8 +5730,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1783884316.943327,
-    "ast_hash": "652e82f4de7bb1f3e2ed00a0c3bf9eac",
+    "mtime": 1784033121.9165854,
+    "ast_hash": "6a712823e292bd9ccdc2f9ca1fe1e3f5",
     "semantic_hash": ""
   },
   "ai-context/LOAD_RULES.md": {
@@ -6630,8 +6630,8 @@
     "semantic_hash": ""
   },
   "docs/runbooks/vlm-ollama-setup.md": {
-    "mtime": 1783938414.6411142,
-    "ast_hash": "93b5686d827fdb6985e17685a1f664c0",
+    "mtime": 1784031809.145426,
+    "ast_hash": "f1108ee0720fd8d96c6fdd965477cc70",
     "semantic_hash": ""
   },
   "models/benchmarks/results/34543639-88dd-4c6f-afc5-480a85e03499.json": {
@@ -6727,6 +6727,31 @@
   "models/benchmarks/results/f521e8ae-a74a-46a3-a519-7371b8903797.json": {
     "mtime": 1783926261.5615041,
     "ast_hash": "376972febfd38fe309487f3dc29feac8",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/f0ce3b94-ad18-4d51-8166-68df1904df55.json": {
+    "mtime": 1784034198.519363,
+    "ast_hash": "c2b8a9a959177a2776a9329da05956a5",
+    "semantic_hash": ""
+  },
+  "models/benchmarks/results/f921be71-bf62-4932-862e-ee52c1626bb9.json": {
+    "mtime": 1784034198.4832332,
+    "ast_hash": "e8dd5256ad85cec38d9f6d5a118df4f2",
+    "semantic_hash": ""
+  },
+  "services/perception-service/src/uno_perception/grounding.py": {
+    "mtime": 1784028535.8470123,
+    "ast_hash": "66f3e74d3d89e97e2397a3f46699f1b4",
+    "semantic_hash": ""
+  },
+  "services/perception-service/src/uno_perception/grounding_providers.py": {
+    "mtime": 1784023755.2659442,
+    "ast_hash": "2713f7fb56a5f2b6bdea461629c806b9",
+    "semantic_hash": ""
+  },
+  "tests/unit/test_vlm_grounding.py": {
+    "mtime": 1784028830.5212193,
+    "ast_hash": "0ba592d3843c8b1f86869fb80b3375d6",
     "semantic_hash": ""
   }
 }
