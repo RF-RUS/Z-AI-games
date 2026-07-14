@@ -38,7 +38,7 @@ from uno_schemas.adapter_web import (
   WebStartupDiagnostics,
 )
 
-ARTIFACTS_DIR = Path(__file__).resolve().parents[3] / "artifacts"
+ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "artifacts"
 logger = logging.getLogger(__name__)
 
 

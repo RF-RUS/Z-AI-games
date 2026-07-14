@@ -231,31 +231,6 @@ async def decide_model(req: DecisionRequest) -> DecisionResult:
     tracker.complete(record, success=False, fallback_used=True, fallback_reason=str(exc))
     return decide_heuristic(req)
 
-    candidates = []
-    for i, action in enumerate(req.legal_actions):
-      is_chosen = i == action_index
-      candidates.append(DecisionCandidate(
-        action=action,
-        score=model_confidence if is_chosen else 0.3,
-        reason=reasoning if is_chosen else "not selected",
-      ))
-
-    return DecisionResult(
-      chosen_action=chosen_action,
-      confidence=min(0.95, model_confidence),
-      explanation=DecisionExplanation(
-        summary=f"Model chose {_get_action_type(chosen_action)}: {reasoning}",
-        candidates=sorted(candidates, key=lambda c: -c.score)[:5],
-        model_used=True,
-        model_id=result.get("model_id"),
-      ),
-      correlation_id=req.correlation_id,
-    )
-
-  except Exception as exc:
-    logger.warning("model_decision_failed error=%s — falling back to heuristic", str(exc))
-    return decide_heuristic(req)
-
 
 # ── Main dispatch ──
 

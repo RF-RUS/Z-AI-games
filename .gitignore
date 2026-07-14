@@ -21,5 +21,6 @@ apps/control-center/dist/
 apps/control-center/out/
 services/adapter-web/artifacts/
 services/adapter-windows/artifacts/
+services/artifacts/
 artifacts/agent-runs/
 *.gguf
