@@ -73,4 +73,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-packages
       - name: Run integration tests
-        run: uv run pytest tests/integration -v --tb=short || true
+        # NO "|| true" here: it made this job swallow every failure, so a red
+        # integration suite still reported green (the 2026-08-16 audit found
+        # 8 failing tests behind a green CI badge).
+        run: uv run pytest tests/integration -v --tb=short

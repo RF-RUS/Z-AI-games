@@ -1,9 +1,126 @@
 # AGENT_TODO
 
-_Updated: 2026-07-14_
+_Updated: 2026-08-07_
 
 ## In Progress
-- _(idle — awaiting user's next Windows run + optional local-VLM enablement)_
+- [#16] **VERIFY the click-grounding fix — nothing below has been executed.** Written 2026-08-05 with no
+  shell available: `uno_perception/hand_fusion.py`, the geometry block in `merger.py`, both
+  `flow_controller.py` edits, `tests/unit/test_hand_fusion.py`. Steps:
+  1. `.\.venv\Scripts\python.exe -m pytest tests\unit -q`
+  2. Restart the backend, play, and confirm **the mouse actually moves**.
+  3. In `artifacts/cycle_trace/<session>/NNNN/cycle.json` check `game_state.hand_geometry`:
+     want `grounded == len(hand_cards)` and `method == "index"`. `grounded: 0` with a `reason` tells you
+     which half failed; `method: "color_match"` means segmentation and the VLM disagreed on the hand.
+  4. Grep the orchestrator log for `execute_refused_by_adapter` — if it fires, the coordinate reached the
+     adapter and the adapter still refused, which is a *different* bug from having no coordinate.
+- [#17] **Cycle takes 76.9 s** (session `e9f527e3`, cycle 4) with only ~11 s of it in the VLM. Suspect two
+  VLM round-trips per cycle (perception + policy advice). Cycle 5 then failed in `observe` after 17.5 s and
+  the operator showed "Session appears stale — no new steps arriving". Note the `merger.py` fix makes this
+  *worse*: the heuristic now runs on VLM cycles too. Measure before optimizing — `timings_ms` is in every
+  `cycle.json`.
+- [#14] **Grow the perception corpus.** Infrastructure is landed and green (see below); it is empty.
+  **Real frames now exist** at `artifacts/cycle_trace/e9f527e3-1383-4cf4-9ac9-7a023d65f235/0001..0004`, so
+  `promote` is possible today. Cover different SCREEN TYPES (opponent's turn, own turn, colour picker,
+  end-of-round, plus one where perception was visibly wrong — the VLM read the red *skip* as `red 0`)
+  and **hand-verify each `expected.json`**. Until that happens `test_perception_corpus` skips — and a
+  skip means the regression net does not exist yet, not that perception is fine.
+  Runbook: `docs/runbooks/cycle-trace-and-replay.md`. Environment hygiene is part of the task: one UNO
+  window, nothing overlapping the game area, or the frames are worthless as ground truth.
+- [#15] **Confirm the thinking kill switch works.** Restart backend, play, and check that
+  `provider_empty_content` is gone from the model-runtime log and `[CVv3]` reads `rec=vlm vlm=ok`.
+  If `reasoning_chars` is still large, the build honours neither flag → **switch `model_name` to a
+  non-thinking VLM** (qwen2.5vl, minicpm-v, llava). Do NOT raise `max_tokens` a third time; 1024 and 3072
+  both returned `finish_reason=length` with empty content.
+  _(Partly answered: session `e9f527e3` reached `vlm_status: "ok"` at confidence 0.95 with a correct
+  7-card hand, so the kill switch appears to work — still wants one clean confirming log.)_
+- [#19] **Bring Ollama back up** to clear `vlm_status: "mock_fallback"` (seen in session `cd83b7b0`).
+  Operational issue — no code change needed. With the snapshot fix (#T8) in place, the next VLM-down cycle
+  will run the heuristic cleanly. Checkpoint: cycle trace shows `crops_generated > 0` and
+  `extraction_errors: []`.
+
+## Done (2026-08-07 — transform confirmed clean; test pollution patched; opponents + draw_pile; policy parse rescue)
+- [#Td] **Policy parse rescue — `decide_model` now uses `_extract_json_object`.**
+  Same class of bug as #T9 (vlm_provider): `json.loads` on the bare model response fails on fenced or
+  preamble-wrapped JSON and silently falls back to heuristic with `fallback_reason="parse_failed"`. The
+  helper `_extract_json_object` was already present in `policy.py`; wired it into the `JSONDecodeError`
+  handler so rescue is attempted before declaring failure. +8 tests in `test_decision_policy.py`
+  (5 helper + 3 rescue path with httpx mocked). **NOT VERIFIED** (shell unavailable).
+  Expected new baseline: 378 passed / 1 skipped.
+- [#11] **Opponents + draw_pile in VLM board.** `vlm_provider._board_prompt` now requests
+  `opponents:[{seat,hand_count}]` and `draw_pile:{x,y}`. `_normalize_board` extracts both (opponent
+  helper coerces `hand_count` to int; `draw_pile` is `None` on absent/malformed coords). Merger copies
+  `opponents` in the VLM-board key loop and injects `draw_pile` into `actionable_targets` so
+  `find_draw_target` works on the VLM path even when the heuristic geometry block is skipped.
+  +5 tests in `test_vlm_perception.py`. **NOT VERIFIED** (shell unavailable).
+  Expected new baseline: 370 passed / 1 skipped.
+- [#18] **Click transform confirmed 1:1 — not the cursor-shift bug.** Read `logs/adapter-windows.log`:
+  `grounded_click` shows `frame_w=1296 frame_h=759 win_w=1296.0 win_h=759.0 scale_x=1.0 scale_y=1.0
+  success=True`. Math checks out exactly (`86+649=735`, `166+652=818`). The pre-T5 "cursor above cards"
+  symptom was the agent having no coordinate at all (falling to the UIA path), not a transform error.
+  `grounded_by=None` is expected: the grounding provider has no named target for `play_card`, so the
+  raw card-center coordinate from perception is used directly.
+- [#Hk-s1] **`test_flow_cycle_failure.py` test pollution fixed.** Added `tmp_path, monkeypatch` to
+  `test_observe_timeout_marks_failed_step_and_keeps_active_on_retry` and set
+  `AGENT_CYCLE_TRACE_DIR` to `tmp_path / "trace"`. The pre-existing `artifacts/cycle_trace/s1/`
+  directory in the repo is a leftover from before the fix; delete it manually.
+- [#T9] **Rescue `parse_failed` VLM responses via `_extract_json_object`.** `cd83b7b0` cycle 1 had
+  `vlm_status: "parse_failed"` — the model returned fenced or preamble-wrapped JSON that
+  `json.loads(raw_text)` couldn't parse directly. Added `_extract_json_object(text)` to
+  `vlm_provider.py`: tries markdown fence regex first, then a brace-counter scan to skip any
+  reasoning preamble. The old `vlm_parse_failed` log now fires only for genuinely unrecoverable
+  responses. +5 tests in `test_vlm_perception.py`. **NOT VERIFIED** (shell unavailable).
+  Expected new baseline: 365 passed / 1 skipped.
+
+- [#T8] **Screenshot snapshot in `perception-service/src/uno_perception/api.py`.**
+  When `vlm_status: "mock_fallback"` (Ollama down, VLM timed out), the heuristic fallback ran 30+ s after
+  request start and called `PIL.Image.open(screenshot.path)`. By then the adapter may have deleted or
+  overwritten the `evidence-*.png` file → "unrecognized data stream". Fix: read the file into a
+  `tempfile.mkstemp` snapshot **at request start**, before the VLM call. Both VLM and heuristic use the
+  stable temp path. Cleaned up in `try/finally`. If the initial read fails (`OSError`), the original path
+  is kept and downstream errors remain explicit. `data_base64` is NOT populated by the orchestrator (only
+  `path` is set), so the fix had to work at the file level.
+  New tests: `tests/unit/test_perception_snapshot.py` (4 cases: survives deletion, independent copy,
+  cleanup in finally, OSError keeps original path).
+  **NOT VERIFIED:** ruff and `pytest tests/unit` unrun (no shell). Baseline 356 passed / 1 skipped.
+
+## Done (2026-08-05 — the agent had no coordinate to click)
+- [#T5] `uno_perception/hand_fusion.py` — identity from the VLM, geometry from the heuristic. They were
+  mutually exclusive in `merger.build_observation` (`if not vlm_has_cards`), so fixing the VLM broke every
+  click. Governing rule: **never guess an alignment** — no coordinate is a stall, a wrong coordinate is a
+  move the agent never chose. `game_state["hand_geometry"]` now records which path grounded the hand.
+- [#T6] `flow_controller._execute` raises on a refused action. Adapters answer **HTTP 200 even when they
+  refuse** (success lives in the body) and the return value was discarded → the operator said "Delivered"
+  while the mouse never moved.
+- [#T7] The trace was labelling every *successful* cycle `ok=false`: `failed_at` is a **progress** marker,
+  not a failure marker. Now records the exception instead — and as `f"{type(exc).__name__}: {exc}"`,
+  because httpx transport errors have an empty `str()`.
+
+## Done (2026-08-04 — perception made testable offline)
+- [#T1] `uno_shared.cycle_trace` — per-cycle frame + **full** perceived board (not counts) + provenance +
+  decision, game-agnostic, best-effort, disk-bounded. Hooked into `run_cycle` from a `finally` so FAILED
+  cycles are captured too — those are the frames worth having.
+- [#T2] `scripts/replay_perception.py` — re-runs recognition over saved frames with no game, no services,
+  no GPU. `promote` builds a fixture but leaves a `_TODO` key that makes the test fail until a human
+  verifies the label, so the corpus cannot enshrine the current bug.
+- [#T3] Fixed a bug CLASS found by the new tests: `getattr(obj, "attr", None)` does not protect against an
+  attribute that RAISES (its default only covers `AttributeError`). In `recovery.format_exception_message`
+  this meant the error FORMATTER raised inside `_handle_failure` — the recovery path died while reporting
+  a timeout. Also fixed in `cycle_trace`. `pytest tests/unit`: 356 passed, 1 skipped.
+- [#T4] VLM empty-response root cause + fix: qwen3-vl is a thinking model billing reasoning against
+  `max_tokens`; server-side `metadata.extra_body` now turns thinking off. Same bug on the `policy_advice`
+  path (256-token default) fixed. See `AGENT_LOG.md` 2026-08-04.
+
+## Housekeeping
+- ~~**Unit tests pollute the real artifacts dir.**~~ **Fixed 2026-08-07** — `test_flow_cycle_failure`
+  now sets `AGENT_CYCLE_TRACE_DIR` via `monkeypatch`. The pre-existing `artifacts/cycle_trace/s1/`
+  directory is a leftover; delete it manually.
+- **ruff is declared in `[dependency-groups] dev` but is NOT installed in `.venv`** (`No module named
+  ruff`), so `ruff check .` in `ai-context/RUNBOOKS.md` silently cannot run and lint has been skipped.
+  Fix: `uv sync --group dev` (or `.\.venv\Scripts\python.exe -m pip install "ruff>=0.15.0"`).
+- ~16 modules under `services/` still use `logging.getLogger()`, which in this repo is a **silent
+  logger** (structlog owns stdout; stdlib records fall to `lastResort` → stderr, WARNING+ only).
+  `perception/vlm_provider.py` and `decision/policy.py` are converted. Convert on touch, and remember
+  structlog's `warning()` takes kwargs, NOT `%s`.
 
 ## Done (2026-07-14, D7 — generic action grounding)
 - [#13] Grounding layer: `GroundingProvider` contract + `resolve_grounding` (cheapest-first,
@@ -34,10 +151,6 @@ _Updated: 2026-07-14_
   `VLM_PERCEPTION=1` / `VLM_PROFILE_ID=local/ollama-vlm`, restart backend, rerun. Read `[CVv3]`: want
   `rec=vlm`. If `rec=heuristic vlm=<reason>`, the reason is the exact fix (runbook §4: 503=profile off,
   disabled=env not set, mock_fallback=Ollama down, error=model not pulled).
-- [#11] **Perceive opponents.** Neither heuristic nor VLM emit opponent state today. Extract per-seat
-  `hand_count` + last discard (VLM prompt already sees the table — add fields to the board schema +
-  `_normalize_board`). ALSO have the VLM board emit a `draw_pile`/deck coordinate so the draw-grounding
-  fix works on the VLM path too (heuristic already emits it; VLM board currently does not).
 - [#12] **Opponent-aware strategy.** `_score_action` only scores the agent's own card. Once #11 lands,
   score with opponent context: pressure the low-card player (skip/reverse/+2 when next player is near
   UNO), hoard wilds, manage colour. This is where a real winning strategy lives.

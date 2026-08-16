@@ -1,10 +1,19 @@
+import os
+import tempfile
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from uno_perception.grounding import GroundingRequest, resolve_grounding
 from uno_perception.grounding_providers import default_providers
 from uno_perception.merger import build_observation, merge_confidence, register_game_adapter
 from uno_perception.uno_adapter import UnuPerceptionAdapter
-from uno_perception.vlm_provider import infer_vision, vlm_enabled
+from uno_perception.vlm_provider import (
+  MODEL_RUNTIME_URL,
+  VLM_PROFILE_ID,
+  VLM_TIMEOUT_S,
+  infer_vision,
+  vlm_enabled,
+)
 from uno_schemas.perception import (
   DomEvidence,
   Observation,
@@ -19,6 +28,16 @@ from uno_shared.service_app import ServiceApp
 register_game_adapter("uno", UnuPerceptionAdapter())
 
 svc = ServiceApp("perception-service", description="Evidence merger — never canonical truth")
+# Surface the VLM gate in /health. These are read at MODULE IMPORT time, so the
+# values here are exactly what /perceive will use for the life of the process —
+# which makes /health the cheapest way to confirm VLM_PERCEPTION actually reached
+# the service, without waiting for a game cycle to produce a [CVv3] line. This
+# was the missing check behind "I set VLM_PERCEPTION=1 and it still ran on the
+# heuristic": nothing loaded .env, and nothing reported that fact.
+svc.set_health_detail("vlm_enabled", vlm_enabled())
+svc.set_health_detail("vlm_profile_id", VLM_PROFILE_ID)
+svc.set_health_detail("vlm_timeout_s", VLM_TIMEOUT_S)
+svc.set_health_detail("model_runtime_url", MODEL_RUNTIME_URL)
 app: FastAPI = svc.create_app()
 
 
@@ -34,33 +53,59 @@ class PerceptionRequest(BaseModel):
 
 @app.post("/perceive", response_model=Observation, tags=["perception"])
 async def perceive(req: PerceptionRequest) -> Observation:
-  # VLM perception (D6, env-gated via VLM_PERCEPTION): when enabled and a
-  # screenshot is present, run the vision model and feed its structured board
-  # into the merger's existing `vlm` slot. This is the game-agnostic primary
-  # path; the heuristic canvas_plugin remains the fallback. `vlm_status` records
-  # WHY the VLM did/didn't run so the operator [CVv3] line can show it (e.g.
-  # "disabled" = VLM_PERCEPTION off, "http_503" = profile disabled).
-  vlm = req.vlm
-  vlm_status: str | None = None
-  if vlm is None and req.screenshot is not None:
-    if not vlm_enabled():
-      vlm_status = "disabled"
-    else:
-      shot_path = getattr(req.screenshot, "path", None)
-      if not shot_path:
-        vlm_status = "no_image_path"
+  # ── Screenshot snapshot ────────────────────────────────────────────────────
+  # The adapter's evidence-*.png file may be deleted or overwritten between the
+  # VLM call and the heuristic fallback (up to ~30 s later on a slow cycle that
+  # hits the VLM timeout).  Snapshot the bytes into a process-local temp file
+  # right now so every PIL Image.open() in this request reads a stable copy.
+  # If the read fails we keep the original path; downstream errors will be explicit.
+  _snap: str | None = None
+  screenshot = req.screenshot
+  if screenshot and screenshot.path:
+    try:
+      with open(screenshot.path, "rb") as fh:
+        raw = fh.read()
+      fd, _snap = tempfile.mkstemp(suffix=".png")
+      os.write(fd, raw)
+      os.close(fd)
+      screenshot = screenshot.model_copy(update={"path": _snap})
+    except OSError:
+      pass  # keep original path; let downstream report the specific error
+
+  try:
+    # VLM perception (D6, env-gated via VLM_PERCEPTION): when enabled and a
+    # screenshot is present, run the vision model and feed its structured board
+    # into the merger's existing `vlm` slot. This is the game-agnostic primary
+    # path; the heuristic canvas_plugin remains the fallback. `vlm_status` records
+    # WHY the VLM did/didn't run so the operator [CVv3] line can show it (e.g.
+    # "disabled" = VLM_PERCEPTION off, "http_503" = profile disabled).
+    vlm = req.vlm
+    vlm_status: str | None = None
+    if vlm is None and screenshot is not None:
+      if not vlm_enabled():
+        vlm_status = "disabled"
       else:
-        try:
-          vlm, vlm_status = await infer_vision(shot_path, game_type=req.game_type or "uno")
-        except Exception:  # noqa: BLE001 — never let VLM break perception
-          vlm, vlm_status = None, "error"
-  obs = build_observation(
-    req.session_id, dom=req.dom, ui=req.ui, ocr=req.ocr, vlm=vlm,
-    screenshot=req.screenshot, game_type=req.game_type,
-  )
-  if vlm_status:
-    obs.game_state = {**(obs.game_state or {}), "vlm_status": vlm_status}
-  return obs
+        shot_path = getattr(screenshot, "path", None)
+        if not shot_path:
+          vlm_status = "no_image_path"
+        else:
+          try:
+            vlm, vlm_status = await infer_vision(shot_path, game_type=req.game_type or "uno")
+          except Exception:  # noqa: BLE001 — never let VLM break perception
+            vlm, vlm_status = None, "error"
+    obs = build_observation(
+      req.session_id, dom=req.dom, ui=req.ui, ocr=req.ocr, vlm=vlm,
+      screenshot=screenshot, game_type=req.game_type,
+    )
+    if vlm_status:
+      obs.game_state = {**(obs.game_state or {}), "vlm_status": vlm_status}
+    return obs
+  finally:
+    if _snap:
+      try:
+        os.unlink(_snap)
+      except OSError:
+        pass
 
 
 @app.post("/merge-confidence", tags=["perception"])

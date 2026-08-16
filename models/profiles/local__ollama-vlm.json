@@ -1,19 +1,19 @@
 {
   "profile_id": "local/ollama-vlm",
-  "display_name": "Local Ollama vision model (VLM perception)",
+  "display_name": "Local Ollama vision model (qwen3-vl 4B, VLM perception)",
   "provider": "ollama_openai",
   "base_url": "http://127.0.0.1:11434/v1",
-  "model_name": "aeline/opan",
+  "model_name": "bahtiyorovnozim/qwen3-vl-5-4b:latest",
   "api_key_env": "OLLAMA_API_KEY",
   "enabled": true,
   "capabilities": ["vision_understanding", "text_generation"],
   "use_cases": ["perception_board"],
   "priority": 40,
-  "max_tokens_default": 512,
+  "max_tokens_default": 1024,
   "temperature_default": 0.1,
-  "timeout_seconds": 60.0,
-  "supports_json_mode": true,
+  "timeout_seconds": 150.0,
+  "supports_json_mode": false,
   "supports_multimodal": true,
-  "safety_limits": {"max_tokens": "512"},
-  "metadata": {"setup": "ollama pull llama3.2-vision  (or qwen2.5vl); Ollama serves an OpenAI-compatible API at :11434/v1"}
+  "safety_limits": {"max_tokens": "1024"},
+  "metadata": {"extra_body": "{\"think\": false, \"chat_template_kwargs\": {\"enable_thinking\": false}}", "thinking_note": "extra_body EXISTS TO TURN THINKING OFF. qwen3-vl reasons before answering, and the reasoning is billed against max_tokens: at 1024 AND at 3072 it returned finish_reason=length with an EMPTY message.content (10275 chars of reasoning, no JSON). The reasoning proved the model READS the board correctly - it named the player and the top card - so this is purely an output-budget problem. Prompt wording ('/no_think') did not help; only a server-side flag does. Both spellings are sent because the name differs per runtime (Ollama: think, HF chat template: chat_template_kwargs.enable_thinking) and unknown JSON fields are ignored by these servers. If reasoning_chars is still large in provider_empty_content after this, the build honours NEITHER flag - switch model_name to a non-thinking VLM (qwen2.5vl, minicpm-v, llava) rather than raising the budget again.", "setup": "Pick a VLM whose architecture your Ollama build supports: ollama show <model> must list 'vision' under Capabilities AND the model must actually load. Ollama serves an OpenAI-compatible API at :11434/v1", "arch_warning": "DO NOT use llama3.2-vision here. Its architecture is 'mllama', which Ollama 0.32.5 cannot load at all: a plain TEXT request returns 500 with 'llama-server process has terminated: exit status 1: error loading model: unknown model architecture: mllama'. It failed on every perception call. qwen3vl IS supported on this build (verified with aeline/opan and qwen3-vl-5-4b).", "timeout_note": "timeout_seconds must stay BELOW VLM_TIMEOUT_S (.env, 180) which must stay below VLM_HTTP_TIMEOUT_SEC (280); innermost budget fails first so the error names the real cause instead of a ReadTimeout further out", "model_choice": "Avoid a tiny 'thinking' VLM (aeline/opan, qwen3vl 2.1B): a 2B model cannot read fanned, rotated, glossy card glyphs, and reasoning tokens compete with the JSON for the token budget.", "json_mode_note": "supports_json_mode is deliberately FALSE. It makes providers.py send response_format={type:json_object}, which Ollama maps to format=json - an extra failure surface we do not need, since _parse_structured() already extracts the JSON substring between the first { and the last } from plain text. Re-enable only after verifying the exact model handles it."}
 }

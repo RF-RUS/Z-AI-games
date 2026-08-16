@@ -60,6 +60,9 @@ def _desktop_profile() -> WindowsAdapterProfile:
     window=WindowMatcher(title_regex="UNO"),
     layout_targets={"play_button": {"x_ratio": 0.56, "y_ratio": 0.34, "label": "Play"}},
     action_mappings={"play_red_five": "Play Red 5"},
+    # Aliases are profile-declared (game knowledge lives in the profile,
+    # not in the locator) — see test_selector_aliases.py.
+    selector_aliases={"play_red_five": "play_button"},
     match_automation=None,
   )
 

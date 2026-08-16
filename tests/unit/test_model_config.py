@@ -106,4 +106,16 @@ def test_get_game_config_registered():
     """Registered game returns its config."""
     config = get_game_config("uno")
     assert config.game_type == "uno"
-    assert "local/ollama-vlm" in config.strategy_models
+
+
+def test_default_uno_config_has_no_machine_specific_model():
+    """Hardcoded defaults must not point at a developer-machine endpoint.
+
+    strategy_models for the BUILT-IN uno config used to be ['local/ollama-vlm']
+    (http://127.0.0.1:11434). resolve_model_profile then auto-enabled model
+    assist in _decide, so every UNO session — including unit/integration
+    tests — made live network calls to a local Ollama. Defaults must resolve
+    to None; real models are opt-in via register_game_config().
+    """
+    result = resolve_model_profile("uno", "strategy")
+    assert result is None

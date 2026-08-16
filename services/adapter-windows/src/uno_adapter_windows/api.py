@@ -30,8 +30,9 @@ _action_timestamps: dict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 1.0
 _RATE_LIMIT_MAX = 10
 # ponytail: adapter-side execution deadline, must stay below the orchestrator's
-# HTTP read timeout (clients.py self.timeout=15s) so a hung click/UIA walk comes
-# back as a structured failure instead of a ReadTimeout that stalls the session.
+# HTTP read timeout (adapter_registry.ADAPTER_HTTP_TIMEOUT_SEC, 45s default) so a
+# hung click/UIA walk comes back as a structured failure instead of a ReadTimeout
+# that stalls the session.
 _EXECUTE_DEADLINE_S = 12.0
 
 

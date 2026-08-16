@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { ServiceHealthState, getProfileCompatibility, ProfileCompatibility } from "./unoApiClient";
+import { ServiceHealthState, getProfileCompatibility, ProfileCompatibility, CdpTab } from "./unoApiClient";
 import GameWindowPicker from "./GameWindowPicker";
 import BrowserTabPicker from "./BrowserTabPicker";
 import { SelectedGameWindow } from "./windowAttachPayload";
@@ -10,7 +10,7 @@ interface Props {
     adapterType: string;
     profileId: string;
     selectedWindow?: SelectedGameWindow | null;
-    selectedTab?: { url: string; id: string } | null;
+    selectedTab?: CdpTab | null;
     gameType?: string;
   }) => void;
 }
@@ -66,7 +66,7 @@ export default function SessionSetup({ health, onStart }: Props) {
   const [adapterType, setAdapterType] = useState("windows");
   const [profileId, setProfileId] = useState("real-uno-desktop");
   const [selectedWindow, setSelectedWindow] = useState<SelectedGameWindow | null>(null);
-  const [selectedTab, setSelectedTab] = useState<{ url: string; id: string } | null>(null);
+  const [selectedTab, setSelectedTab] = useState<CdpTab | null>(null);
   const [starting, setStarting] = useState(false);
   const [attachStage, setAttachStage] = useState<AttachStage>("idle");
   const [attachError, setAttachError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function SessionSetup({ health, onStart }: Props) {
     load();
   }, [adapterType]);
 
-  const handleTabSelect = useCallback((tab: { url: string; id: string } | null) => {
+  const handleTabSelect = useCallback((tab: CdpTab | null) => {
     setSelectedTab(tab);
     setAutoSuggestion(null);
     if (!tab || adapterType !== "web" || compatMap.size === 0) return;

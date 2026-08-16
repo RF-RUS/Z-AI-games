@@ -23,6 +23,14 @@ from uno_shared.logging import get_logger
 
 logger = get_logger("adapter_registry")
 
+# Generic HTTP budget for adapter calls. The adapter's own /execute deadline
+# (_EXECUTE_DEADLINE_S, 12s) must stay BELOW this so a hung click comes back as a
+# structured "delivery failed" rather than a bare ReadTimeout. Note that evidence
+# capture has no adapter-side deadline, and a screenshot + UIA walk gets much
+# slower once a local vision model is saturating the machine — which is why 15s
+# started timing out only after VLM perception was switched on. Env-tunable.
+ADAPTER_HTTP_TIMEOUT_SEC = float(os.getenv("ADAPTER_HTTP_TIMEOUT_SEC", "45"))
+
 
 def _service_url(service: str) -> str:
     port_map = {
@@ -45,12 +53,12 @@ class GenericAdapterClient:
         self,
         adapter_type: str,
         base_url: str,
-        timeout: float = 15.0,
+        timeout: float | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self.adapter_type = adapter_type
         self.base_url = base_url
-        self.timeout = timeout
+        self.timeout = ADAPTER_HTTP_TIMEOUT_SEC if timeout is None else timeout
         # Optional ASGI (or custom) transport. When set, all HTTP calls route
         # through it instead of the network — enables fully in-process runs
         # (e.g. autonomous mock sessions) without standing up the services.
@@ -542,18 +550,46 @@ def _card_center(card: dict) -> tuple[int, int] | None:
     return None
 
 
+def _has_real_value(card: dict) -> bool:
+  """Does this card carry a usable value, or is it a colour-only heuristic detection?
+
+  The heuristic CV emits `value: "unknown"` (it reads colour, never the number); the
+  VLM emits a real value. Whether leniency below is acceptable depends entirely on
+  which of those produced the card.
+  """
+  v = str(card.get("value", "") or "").strip().lower()
+  return v not in ("", "unknown", "none", "?")
+
+
 def _find_card_center(
     hand_cards: list[dict] | None, card_color: str | None, card_value: str | None
 ) -> tuple[int, int] | None:
     """Resolve the click center of the target card from CV-detected hand cards.
 
-    Prefers an exact color+value match; falls back to the first color match, then
-    (if nothing else) the first detected card. Value matching is lenient because
-    the current heuristic CV recognises colour but not always the number.
+    Exact colour+value first. A colour-only match is allowed ONLY for a candidate
+    whose value is unreadable anyway — see below.
+
+    HISTORY / WHY THE FALLBACKS SHRANK (2026-08-05)
+    -----------------------------------------------
+    This used to fall back to "first colour match" and then to "the first card with any
+    resolvable centre at all". Both were written when the heuristic was the only source
+    of hand cards and every value was literally `"unknown"`, so matching on value was
+    impossible and leniency was the only way to click anything.
+
+    Once the VLM started supplying real values, those fallbacks became the exact bug
+    this layer is supposed to prevent: the decision says *red 4*, no red 4 has geometry,
+    and the agent confidently clicks a green card instead — a move it never chose, logged
+    as a success. The last fallback ignored `card_color` entirely, so there was no
+    scenario in which it clicked the right card.
+
+    Returning None is the SAFE outcome: `_map_action_windows` then emits no
+    `target_x/target_y`, the adapter refuses, and (since 2026-08-05) the orchestrator
+    raises instead of reporting "Delivered". A stall is visible and fixable; a wrong
+    click is silent. Same rule as `uno_perception.hand_fusion`: never guess an alignment.
     """
     if not hand_cards:
         return None
-    # 1) exact color + value
+    # 1) exact colour + value — the only unambiguous answer.
     if card_color and card_value:
         for c in hand_cards:
             if (c.get("color", "").lower() == card_color.lower()
@@ -561,18 +597,21 @@ def _find_card_center(
                 center = _card_center(c)
                 if center:
                     return center
-    # 2) first color match
+    # 2) colour match. Permitted when the caller asked for no particular value, or for a
+    #    candidate whose value is unreadable (colour-only heuristic detection) — there,
+    #    clicking it is the best available inference rather than a contradiction. A card
+    #    with a KNOWN, DIFFERENT value is never an acceptable substitute.
     if card_color:
         for c in hand_cards:
-            if c.get("color", "").lower() == card_color.lower():
-                center = _card_center(c)
-                if center:
-                    return center
-    # 3) first card with a resolvable center
-    for c in hand_cards:
-        center = _card_center(c)
-        if center:
-            return center
+            if c.get("color", "").lower() != card_color.lower():
+                continue
+            if card_value and _has_real_value(c):
+                continue
+            center = _card_center(c)
+            if center:
+                return center
+    # 3) No third fallback, on purpose. See the docstring: clicking an arbitrary card is
+    #    worse than not clicking.
     return None
 
 

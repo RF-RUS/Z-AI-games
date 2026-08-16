@@ -122,7 +122,11 @@ class ModelInvocationRequest(BaseModel):
   # bytes WITHOUT a data: prefix. Providers that support vision attach it to the
   # message; text-only providers ignore it.
   image_base64: str | None = None
-  max_tokens: int = 256
+  # None = inherit the profile's max_tokens_default at invoke time. A schema
+  # default of 256 used to override the profile (e.g. ollama-vlm needs 1024):
+  # thinking models burned all 256 tokens on reasoning and answered with an
+  # empty content.
+  max_tokens: int | None = None
   temperature: float = 0.2
   expect_json: bool = False
 

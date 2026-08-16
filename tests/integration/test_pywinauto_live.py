@@ -78,9 +78,21 @@ async def test_pywinauto_evidence_after_live_attach():
     client.post(f"/adapters/{aid}/detach")
 
 
+def _adapter_windows_live() -> bool:
+  """True when the adapter-windows service is running on :8105."""
+  try:
+    return httpx.get("http://127.0.0.1:8105/health", timeout=1.0).status_code == 200
+  except Exception:
+    return False
+
+
+ADAPTER_WINDOWS_LIVE = _adapter_windows_live()
+
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.skipif(__import__("sys").platform != "win32", reason="Windows only")
+@pytest.mark.skipif(not ADAPTER_WINDOWS_LIVE, reason="adapter-windows service not running on :8105 (start dev-backend.ps1)")
 async def test_orchestrator_windows_attach_retry_real():
   """Requires running adapter-windows on :8105. Launch via dev-backend.ps1 first."""
   subprocess.run(

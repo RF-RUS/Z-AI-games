@@ -1,10 +1,10 @@
 """Playwright real-mode tests against local deterministic test target."""
 
 import pytest
+from conftest import requires_chromium  # noqa: I001
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from uno_adapter_web.api import app
-from uno_adapter_web.runtime import playwright_available
 from uno_schemas.adapter_web import AdapterMode, AttachWebAdapterRequest
 
 
@@ -24,7 +24,7 @@ def test_mock_web_uno_round():
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-@pytest.mark.skipif(not playwright_available(), reason="Playwright not installed")
+@requires_chromium
 async def test_playwright_local_target(web_test_server):
   transport = ASGITransport(app=app)
   async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -49,7 +49,7 @@ async def test_playwright_local_target(web_test_server):
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-@pytest.mark.skipif(not playwright_available(), reason="Playwright not installed")
+@requires_chromium
 async def test_playwright_full_pipeline(web_test_server):
   from uno_chat_intent.api import app as intent_app
   from uno_chat_response.api import app as response_app

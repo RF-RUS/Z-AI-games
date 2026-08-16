@@ -4,6 +4,13 @@ Visual trace captures screenshots at each pipeline step (observe, execute before
 
 **This pipeline is game-agnostic.** It traces adapter execution for any game — UNO, chess, poker, or custom. The `meta.json` fields are game-specific (populated by the perception plugin), but the trace capture mechanism is generic.
 
+> **Not the same as the cycle trace.** This pipeline is Playwright-specific (it needs a `page`, so it
+> never fires for the Windows adapter) and records **counts, not content** (`cv.hand_cards: 9`,
+> `cv.top_card: true`) — you can see that nine cards were found, never which nine. For the per-cycle
+> record used as an offline perception regression corpus, see
+> [cycle-trace-and-replay.md](cycle-trace-and-replay.md). The two are complementary and write to
+> separate directories.
+
 ## Feature flag
 
 | Variable | Default | Purpose |

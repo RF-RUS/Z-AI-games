@@ -91,6 +91,12 @@ async def test_openai_provider_with_mock_http():
     expect_json=True,
   )
   fake_resp = AsyncMock()
+  # status_code must be a real int, not the AsyncMock default: the provider now
+  # inspects `resp.status_code >= 400` before parsing, so that it can log the response
+  # BODY on an error (a local runtime puts the actual reason there — rejected image
+  # input, refused format=json, model load failure — while raise_for_status() alone
+  # only ever says "Server error '500'").
+  fake_resp.status_code = 200
   fake_resp.raise_for_status = lambda: None
   fake_resp.json = lambda: {
     "choices": [{"message": {"content": '{"directed_at_bot": true, "reply_required": true, "confidence": 0.9}'}}],
@@ -100,3 +106,66 @@ async def test_openai_provider_with_mock_http():
     provider = OpenAICompatibleProvider(ModelProviderType.LLAMA_CPP_OPENAI)
     resp = await provider.invoke(profile, "prompt", req)
   assert resp.structured.parse_success
+
+
+@pytest.mark.asyncio
+async def test_profile_max_tokens_default_applied_when_unset():
+  """A request without max_tokens must inherit profile.max_tokens_default.
+
+  The schema default (256) used to win over the profile's max_tokens_default:
+  thinking VLMs (qwen3-vl) spent all 256 tokens on reasoning and returned
+  finish_reason=length with an EMPTY content — every model-assist call
+  silently degraded to the heuristic fallback.
+  """
+  from uno_model_runtime.invoker import invoke_with_fallback
+
+  profile = ModelProfile(
+    profile_id="test/llama", display_name="t", provider=ModelProviderType.LLAMA_CPP_OPENAI,
+    base_url="http://fake/v1", model_name="m",
+    max_tokens_default=1024,
+  )
+  req = ModelInvocationRequest(
+    context=ModelInvocationContext(use_case=ModelUseCase.CHAT_INTENT, correlation_id="mt1"),
+    prompt="say hi",
+  )
+  assert req.max_tokens is None, "schema default must be None so the profile default can apply"
+
+  fake_resp = AsyncMock()
+  fake_resp.status_code = 200
+  fake_resp.raise_for_status = lambda: None
+  fake_resp.json = lambda: {
+    "choices": [{"message": {"content": "hi"}}],
+    "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+  }
+  with patch("httpx.AsyncClient.post", return_value=fake_resp) as post:
+    await invoke_with_fallback(profile, req)
+  body = post.call_args.kwargs["json"]
+  assert body["max_tokens"] == 1024, "profile max_tokens_default must reach the provider request"
+
+
+@pytest.mark.asyncio
+async def test_explicit_max_tokens_wins_over_profile_default():
+  """An explicitly requested max_tokens must not be overridden by the profile."""
+  from uno_model_runtime.invoker import invoke_with_fallback
+
+  profile = ModelProfile(
+    profile_id="test/llama", display_name="t", provider=ModelProviderType.LLAMA_CPP_OPENAI,
+    base_url="http://fake/v1", model_name="m",
+    max_tokens_default=1024,
+  )
+  req = ModelInvocationRequest(
+    context=ModelInvocationContext(use_case=ModelUseCase.CHAT_INTENT, correlation_id="mt2"),
+    prompt="say hi",
+    max_tokens=64,
+  )
+  fake_resp = AsyncMock()
+  fake_resp.status_code = 200
+  fake_resp.raise_for_status = lambda: None
+  fake_resp.json = lambda: {
+    "choices": [{"message": {"content": "hi"}}],
+    "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+  }
+  with patch("httpx.AsyncClient.post", return_value=fake_resp) as post:
+    await invoke_with_fallback(profile, req)
+  body = post.call_args.kwargs["json"]
+  assert body["max_tokens"] == 64

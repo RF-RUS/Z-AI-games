@@ -13,11 +13,20 @@ from uno_shared.game_plugin import GameModelConfig
 logger = logging.getLogger("model_config")
 
 # Default configs for known games
+#
+# Defaults must stay MACHINE-INDEPENDENT. A profile like local/ollama-vlm
+# (http://127.0.0.1:11434) is a developer-machine endpoint: when listed here,
+# resolve_model_profile() auto-enabled model assist in the flow controller and
+# every UNO session — including the test suite — made live network calls to a
+# local Ollama. Real model profiles are opt-in via register_game_config()
+# (game plugin startup) or by enabling model assist in session config; VLM
+# perception is separately env-gated via VLM_PROFILE_ID (defaults to the mock
+# profile).
 _DEFAULT_CONFIGS: dict[str, GameModelConfig] = {
     "uno": GameModelConfig(
         game_type="uno",
-        strategy_models=["local/ollama-vlm"],
-        vision_models=["local/ollama-vlm"],
+        strategy_models=["heuristic"],
+        vision_models=[],
         chat_models=["mock/uno-assistant"],
         intent_models=[],
         fallback_to_heuristic=True,

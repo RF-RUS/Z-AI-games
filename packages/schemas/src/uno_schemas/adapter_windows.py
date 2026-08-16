@@ -52,6 +52,10 @@ class WindowsAdapterProfile(BaseModel):
   chat_selectors: dict[str, ControlSelector] = Field(default_factory=dict)
   screenshot_crops: dict[str, dict[str, int]] = Field(default_factory=dict)
   action_mappings: dict[str, str] = Field(default_factory=dict)
+  # domain action → selector/layout key (e.g. "draw" → "draw_button"). Lives in
+  # the profile so the locator stays game-agnostic: each game plugin declares
+  # its own aliases instead of the locator hardcoding them.
+  selector_aliases: dict[str, str] = Field(default_factory=dict)
   layout_targets: dict[str, dict[str, float | str]] = Field(default_factory=dict)
   match_automation: str | None = None
   notes: str = ""

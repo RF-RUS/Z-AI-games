@@ -93,13 +93,79 @@ def build_observation(
   if vlm_has_cards:
     game_state = game_state or {}
     game_state["cv_build"] = "v3"
-    for k in ("screen_type", "whose_turn", "top_card", "hand_cards", "hand_count", "prompts"):
+    for k in ("screen_type", "whose_turn", "top_card", "hand_cards", "hand_count", "prompts", "opponents"):
       if vlm_board.get(k) is not None:
         game_state[k] = vlm_board[k]
     game_state["recognition_method"] = "vlm"
+    # draw_pile — injected into actionable_targets so find_draw_target works on
+    # the VLM path even when the heuristic geometry block fails (no screenshot,
+    # PIL missing, etc.). Only added when no draw/deck target already exists.
+    dp = vlm_board.get("draw_pile")
+    if dp and dp.get("x") is not None and dp.get("y") is not None:
+      targets = list(game_state.get("actionable_targets") or [])
+      if not any("draw" in str(t.get("id", "")).lower() for t in targets):
+        targets.append({"id": "draw_pile", "label": "Draw Pile",
+                        "x": int(dp["x"]), "y": int(dp["y"])})
+        game_state["actionable_targets"] = targets
     if vlm_board.get("hand_cards"):
       game_elements = [{"type": "card", **c} for c in vlm_board["hand_cards"]]
     overall = max(overall, float(vlm_board.get("confidence", 0.0) or 0.0))
+
+    # GEOMETRY. The VLM knows WHICH cards are in the hand; it does not know WHERE
+    # they are, and it never will — bounding boxes are the weakest thing a VLM does.
+    # The heuristic segmentation knows where (per-slot bounds, calibrated on real
+    # frames) but only the colour. Until 2026-08-05 these two paths were mutually
+    # exclusive (`if not vlm_has_cards` below), so the moment the VLM started working
+    # every click lost its target: perception was perfect, the decision was correct,
+    # and the mouse never moved because `_find_card_center` had no coordinate to find.
+    # Run the heuristic for its geometry ONLY, and never let it touch identity.
+    if screenshot and screenshot.path:
+      try:
+        from uno_perception.canvas_plugin import HeuristicCanvasUNOPlugin
+        from uno_perception.hand_fusion import attach_hand_geometry
+        from uno_perception.hand_segmentation import segment_hand_cards
+
+        geo = HeuristicCanvasUNOPlugin().infer_from_screenshot(screenshot.path)
+        # `regions` / `actionable_targets` are what ground a DRAW click
+        # (`find_draw_target` reads them). Without them the agent cannot draw even
+        # when it correctly decides it must.
+        regions = [
+          {
+            "id": r.region_id, "type": r.region_type, "label": r.label,
+            "x": r.x, "y": r.y, "width": r.width, "height": r.height,
+            "actionable": r.is_actionable,
+          }
+          for r in geo.regions
+        ]
+        if regions:
+          game_state["regions"] = regions
+          game_state["actionable_targets"] = [
+            {"id": r.region_id, "label": r.label, "x": r.x, "y": r.y}
+            for r in geo.actionable_targets
+          ]
+
+        hand_region = next(
+          (r for r in regions if r["id"] == "hand" or r["type"] == "hand"), None
+        )
+        if hand_region and game_state.get("hand_cards"):
+          slots = segment_hand_cards(screenshot.path, hand_region)
+          fused, fusion_diag = attach_hand_geometry(game_state["hand_cards"], slots)
+          game_state["hand_cards"] = fused
+          # Recorded, not inferred: "the agent did not click" and "the agent had no
+          # coordinate to click" are different bugs, and this is what tells them
+          # apart in the cycle trace after the fact.
+          game_state["hand_geometry"] = fusion_diag
+          game_elements = [{"type": "card", **c} for c in fused]
+        else:
+          game_state["hand_geometry"] = {
+            "grounded": 0, "method": "none",
+            "reason": "no hand region in heuristic output" if not hand_region else "no hand cards",
+          }
+      except Exception as exc:  # noqa: BLE001 — geometry is an enhancement, never fatal
+        game_state["hand_geometry"] = {
+          "grounded": 0, "method": "none",
+          "reason": f"{type(exc).__name__}: {exc}",
+        }
 
   # Screenshot perception: supplement or replace UIA data when screenshot available
   if screenshot and screenshot.path and not vlm_has_cards:

@@ -37,6 +37,11 @@ from uno_schemas.adapter_windows import (
   WindowsAdapterProfile,
   WindowsRpaStatus,
 )
+from uno_shared.logging import get_logger
+
+# structlog, NOT `logging.getLogger`: the stdlib root logger is unconfigured in this
+# repo, so its INFO records go nowhere at all. See `_execute_grounded_click`.
+_click_logger = get_logger("adapter_windows.click")
 
 
 class VisualRpaExecutor:
@@ -371,24 +376,40 @@ class VisualRpaExecutor:
   async def _screenshot_to_screen(self, sx: float, sy: float, frame_path: str | None) -> tuple[int, int]:
     """Map a SCREENSHOT-pixel point to an absolute SCREEN point.
 
-    The captured frame corresponds to the window rectangle, so we scale by
-    (window_size / frame_size) to survive DPI / capture scaling, then offset by
-    the window origin. Falls back to a 1:1 offset if the frame size is unknown.
+    The captured frame corresponds to the window rectangle (`_capture_via_printwindow`
+    uses `GetWindowRect`), so we scale by (window_size / frame_size) to survive DPI /
+    capture scaling, then offset by the window origin.
+
+    CAVEAT worth knowing before trusting a click (2026-08-05): the scale is derived from
+    `before_path`, a frame captured HERE, while `sx/sy` were derived from the frame
+    PERCEPTION saw. Those are two different captures. Same size ⇒ correct; different
+    size (window moved, resized, or a DPI change between the two) ⇒ silently wrong
+    coordinates and a click into empty table. `_scale_debug` records what was actually
+    used so this is checkable in the log instead of being inferred from where the mouse
+    ended up.
     """
     left = self._bounds.get("left", 0) if self._bounds else 0
     top = self._bounds.get("top", 0) if self._bounds else 0
     win_w = (self._bounds.get("right", 0) - left) if self._bounds else 0
     win_h = (self._bounds.get("bottom", 0) - top) if self._bounds else 0
     scale_x = scale_y = 1.0
+    frame_w = frame_h = 0
     if frame_path:
       try:
         from PIL import Image
         with Image.open(frame_path) as im:
           fw, fh = im.size
+        frame_w, frame_h = fw, fh
         if fw > 0 and fh > 0 and win_w > 0 and win_h > 0:
           scale_x, scale_y = win_w / fw, win_h / fh
       except Exception:
         pass
+    self._scale_debug = {
+      "frame_w": frame_w, "frame_h": frame_h,
+      "win_w": win_w, "win_h": win_h,
+      "origin_x": left, "origin_y": top,
+      "scale_x": round(scale_x, 4), "scale_y": round(scale_y, 4),
+    }
     return int(left + sx * scale_x), int(top + sy * scale_y)
 
   async def _execute_grounded_click(
@@ -414,11 +435,24 @@ class VisualRpaExecutor:
     except Exception as exc:
       error = str(exc)
 
-    import logging
-    logging.getLogger("adapter-windows.audit").info(
-      "grounded_click adapter=windows session=%s domain=%s screenshot=(%s,%s) screen=(%s,%s) success=%s error=%s",
-      self._session_id, req.domain_action, req.target_x, req.target_y,
-      screen_x, screen_y, error is None, error,
+    # WARNING (2026-08-05): this used to be `logging.getLogger(...).info(...)`, which in
+    # this repo is a SILENT logger — structlog owns stdout and the stdlib root is never
+    # configured, so INFO records are dropped entirely. That made the one line describing
+    # where the agent actually clicked invisible, and left "the mouse moved but the card
+    # was not played" undiagnosable except by watching the cursor. It carries the whole
+    # transform (frame size, window size, origin, scale) because the suspicion is the
+    # transform itself: a mismatch between the frame perception measured and the frame
+    # captured here silently shifts every click.
+    _click_logger.info(
+      "grounded_click",
+      session_id=self._session_id,
+      domain=req.domain_action,
+      screenshot_x=req.target_x, screenshot_y=req.target_y,
+      screen_x=screen_x, screen_y=screen_y,
+      grounded_by=(getattr(req, "extra", None) or {}).get("grounded_by"),
+      success=error is None,
+      error=error,
+      **(getattr(self, "_scale_debug", None) or {}),
     )
 
     self._state.set_status(WindowsRpaStatus.VERIFYING)

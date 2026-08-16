@@ -124,3 +124,136 @@ def test_perceive_stamps_vlm_status_disabled(monkeypatch):
     )
     obs = asyncio.run(api.perceive(req))
     assert (obs.game_state or {}).get("vlm_status") == "disabled"
+
+
+# --- _extract_json_object: rescue parse_failed responses --------------------
+
+def test_extract_json_fenced_json_block():
+    from uno_perception.vlm_provider import _extract_json_object
+    text = '```json\n{"screen_state":"in_game","hand_cards":[]}\n```'
+    result = _extract_json_object(text)
+    assert result is not None
+    import json
+    parsed = json.loads(result)
+    assert parsed["screen_state"] == "in_game"
+
+
+def test_extract_json_fenced_no_language_tag():
+    import json
+
+    from uno_perception.vlm_provider import _extract_json_object
+    text = '```\n{"top_card":{"color":"red","value":"4"}}\n```'
+    result = _extract_json_object(text)
+    assert result is not None
+    assert json.loads(result)["top_card"]["color"] == "red"
+
+
+def test_extract_json_reasoning_preamble():
+    import json
+
+    from uno_perception.vlm_provider import _extract_json_object
+    text = (
+        "Let me analyze the screenshot carefully. I can see cards in the hand.\n"
+        '{"screen_state":"in_game","whose_turn":"self","hand_cards":[{"color":"blue","value":"3"}]}'
+    )
+    result = _extract_json_object(text)
+    assert result is not None
+    assert json.loads(result)["whose_turn"] == "self"
+
+
+def test_extract_json_no_json_returns_none():
+    from uno_perception.vlm_provider import _extract_json_object
+    assert _extract_json_object("") is None
+    assert _extract_json_object("no braces here at all") is None
+    assert _extract_json_object(None) is None  # type: ignore[arg-type]
+
+
+def test_extract_json_nested_object():
+    """Brace counter must handle nested objects without false-closing."""
+    import json
+
+    from uno_perception.vlm_provider import _extract_json_object
+    text = '{"top_card":{"color":"yellow","value":"skip"},"hand_cards":[]}'
+    result = _extract_json_object(text)
+    assert result is not None
+    parsed = json.loads(result)
+    assert parsed["top_card"]["value"] == "skip"
+
+
+# --- opponents + draw_pile normalization (#11) --------------------------------
+
+def test_normalize_board_extracts_opponents():
+    """VLM opponent list lands in the normalized board under 'opponents'."""
+    raw = {
+        "screen_state": "in_game",
+        "top_card": {"color": "blue", "value": "3"},
+        "hand_cards": [{"color": "red", "value": "1"}],
+        "opponents": [
+            {"seat": "left", "hand_count": 3},
+            {"seat": "right", "hand_count": 1},
+        ],
+        "confidence": 0.9,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["opponents"] == [
+        {"seat": "left", "hand_count": 3},
+        {"seat": "right", "hand_count": 1},
+    ]
+
+
+def test_normalize_board_extracts_draw_pile():
+    """draw_pile coordinate is preserved and typed as int."""
+    raw = {
+        "screen_state": "in_game",
+        "top_card": {"color": "green", "value": "7"},
+        "hand_cards": [{"color": "green", "value": "2"}],
+        "draw_pile": {"x": 648, "y": 380},
+        "confidence": 0.85,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["draw_pile"] == {"x": 648, "y": 380}
+
+
+def test_normalize_board_draw_pile_missing_is_none():
+    """No draw_pile in the VLM response → field is None, not absent."""
+    raw = {
+        "screen_state": "in_game",
+        "hand_cards": [{"color": "yellow", "value": "5"}],
+        "confidence": 0.7,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["draw_pile"] is None
+
+
+def test_normalize_board_draw_pile_bad_coords_is_none():
+    """Malformed draw_pile (string coords, missing key) must not crash."""
+    raw = {
+        "hand_cards": [{"color": "blue", "value": "skip"}],
+        "draw_pile": {"x": "not-a-number", "y": 200},
+        "confidence": 0.6,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["draw_pile"] is None
+
+
+def test_merger_passes_draw_pile_to_actionable_targets():
+    """draw_pile from the VLM board is injected into actionable_targets so
+    find_draw_target works even when the heuristic geometry block is skipped."""
+    from uno_shared.adapter_registry import find_draw_target
+
+    board = _normalize_board({
+        "screen_state": "in_game",
+        "whose_turn": "self",
+        "top_card": {"color": "red", "value": "4"},
+        "hand_cards": [{"color": "red", "value": "4"}],
+        "draw_pile": {"x": 648, "y": 380},
+        "confidence": 0.88,
+    })
+    obs = build_observation("s1", vlm=_vlm(board), game_type="uno")
+    gs = obs.game_state or {}
+    # find_draw_target must resolve to the VLM-reported coordinate.
+    assert find_draw_target(gs) == (648, 380)

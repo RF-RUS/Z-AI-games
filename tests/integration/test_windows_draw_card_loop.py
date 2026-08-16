@@ -36,8 +36,12 @@ def test_real_profile_has_layout_targets():
 
 
 def test_draw_card_finds_target_via_layout_when_uia_empty():
-    """When UIA tree is empty, locate_selector falls back to layout_targets."""
-    profile = load_profile("real-uno-desktop")
+    """When UIA tree is empty, locate_selector falls back to layout_targets.
+
+    Uses local-mock-uno: real-uno-desktop is match_automation=web_only and its
+    layout fallback is deliberately suppressed (see the web_only test below).
+    """
+    profile = load_profile("local-mock-uno")
     window_bounds = {"left": 0.0, "top": 0.0, "right": 1920.0, "bottom": 1080.0}
     target = locate_selector("draw", profile, [], window_bounds=window_bounds)
     assert target is not None, "layout_targets should provide a fallback target"
@@ -50,13 +54,29 @@ def test_draw_card_finds_target_via_layout_when_uia_empty():
 
 
 def test_play_card_finds_target_via_layout_when_uia_empty():
-    """play_card action resolves to play_button layout target."""
-    profile = load_profile("real-uno-desktop")
+    """play_card action resolves to play_button layout target (non-web_only profile)."""
+    profile = load_profile("local-mock-uno")
     window_bounds = {"left": 100.0, "top": 50.0, "right": 1920.0, "bottom": 1080.0}
     target = locate_selector("play_red_five", profile, [], window_bounds=window_bounds)
     assert target is not None
     assert target.method == TargetAcquisitionMethod.COORDINATE
     assert target.label == "Play Red 5"
+
+
+def test_web_only_profile_suppresses_layout_fallback():
+    """web_only profiles return NO target instead of blind-clicking placeholders.
+
+    real-uno-desktop is preview-only: its layout_targets are placeholder
+    ratios, and clicking them fired a blind fixed-point click every tick
+    without ever hitting a real card. The locator must report "uncertain"
+    (None) so the executor surfaces it instead of hammering a wrong spot.
+    """
+    profile = load_profile("real-uno-desktop")
+    assert profile.match_automation == "web_only"
+    window_bounds = {"left": 0.0, "top": 0.0, "right": 1920.0, "bottom": 1080.0}
+    for key in ("draw", "play_red_five"):
+        target = locate_selector(key, profile, [], window_bounds=window_bounds)
+        assert target is None, f"web_only profile must not resolve {key} via layout placeholders"
 
 
 def test_action_mapping_enables_coordinate_fallback():

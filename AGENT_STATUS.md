@@ -88,7 +88,10 @@ typical faults, survives long runs, resumes after break/crash. **Open:** real-ha
   to the adapter — fixes `choose_color` on canvas games; adapters stay game-agnostic.
 - Humanized input, focus handling, multi-method screenshot capture (pywinauto/PIL/PrintWindow/BitBlt).
 - In-process autonomous loop (`orchestrator._run_loop`) + error classification/recovery (`recovery.py`).
-- CI green since fix_0.1.2; 292 unit tests pass.
+- CI green since fix_0.1.2. _(2026-08-16 audit+fix: the "integration" CI job had been
+  `|| true` — it swallowed every failure. Fixed; the full suite now actually gates.
+  Local reference run after the audit fixes: 490+ passed, e2e/live-service tests skip
+  cleanly when their prerequisites are absent.)_
 
 ## Partially done / weak
 - **Verification** is a global pixel-diff ratio (≥0.5%) — proves "something changed", not the right thing.

@@ -16,6 +16,13 @@ from uno_schemas.model import (
   ModelProviderType,
   StructuredModelOutput,
 )
+from uno_shared.logging import get_logger
+
+# structlog, NOT logging.getLogger(): the project configures structlog to print to
+# STDOUT, which is what lands in logs/<service>.log. A bare stdlib logger is never
+# configured, so its records go to Python's lastResort handler on STDERR (WARNING+
+# only, unformatted) and are effectively invisible.
+_logger = get_logger("model-runtime.provider")
 
 
 def _sniff_image_mime(image_base64: str) -> str:
@@ -167,6 +174,28 @@ class OpenAICompatibleProvider(ModelProvider):
     }
     if req.expect_json and profile.supports_json_mode:
       body["response_format"] = {"type": "json_object"}
+    # Per-profile escape hatch for server-specific knobs that are NOT part of the
+    # OpenAI schema — above all, switching OFF a thinking model. qwen3-vl burns its
+    # entire token budget on reasoning and returns an empty content with
+    # finish_reason=length; no prompt wording ("/no_think") and no budget increase
+    # fixes that, only a server-side flag does. The flag name differs per runtime
+    # (Ollama: "think", vLLM/HF template: "chat_template_kwargs.enable_thinking"),
+    # so keep it in profile metadata as a JSON string rather than hardcoding one
+    # vendor here. Unknown JSON fields are ignored by these servers, so sending
+    # several spellings at once is safe.
+    extra_raw = profile.metadata.get("extra_body")
+    if extra_raw:
+      try:
+        extra = json.loads(extra_raw)
+        if isinstance(extra, dict):
+          body.update(extra)
+      except json.JSONDecodeError as exc:
+        _logger.warning(
+          "provider_extra_body_invalid",
+          profile=profile.profile_id,
+          error=str(exc),
+          raw=extra_raw[:200],
+        )
 
     async with httpx.AsyncClient(timeout=profile.timeout_seconds) as client:
       resp = await client.post(
@@ -174,9 +203,50 @@ class OpenAICompatibleProvider(ModelProvider):
         headers={"Authorization": f"Bearer {api_key}"},
         json=body,
       )
-      resp.raise_for_status()
+      # Include the response BODY in the error. raise_for_status() alone reports
+      # only "Server error '500 Internal Server Error'", but for a local runtime
+      # (Ollama/vLLM/llama.cpp) the body carries the ACTUAL reason - unsupported
+      # image input, a rejected format=json, a model load failure, context
+      # overflow. That text is the difference between a fix and another guess.
+      # Also echo the three request knobs that decide whether a local VLM 500s.
+      if resp.status_code >= 400:
+        detail = " ".join(resp.text[:500].split())
+        raise httpx.HTTPStatusError(
+          f"{resp.status_code} from {base}/chat/completions "
+          f"(model={body['model']}, image={'yes' if req.image_base64 else 'no'}, "
+          f"json_mode={'yes' if 'response_format' in body else 'no'}): {detail}",
+          request=resp.request,
+          response=resp,
+        )
       data = resp.json()
-    text = data["choices"][0]["message"]["content"]
+    # A "thinking" model (qwen3-vl, deepseek-r1 style) can return 200 OK with an
+    # EMPTY message.content: it spent the whole max_tokens budget on reasoning and
+    # never reached the answer. The reasoning lives in a SEPARATE field, so reading
+    # only content yields "" and every downstream consumer reports a mysterious
+    # empty result (this is exactly what perception logged as vlm_empty_board with
+    # keys=[] raw= structured={}). Read the fallbacks, and surface finish_reason:
+    # "length" = the budget ran out; "stop" = the model genuinely answered nothing.
+    choice = (data.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    text = message.get("content") or ""
+    finish_reason = choice.get("finish_reason")
+    if not text:
+      reasoning = message.get("reasoning_content") or message.get("reasoning") or ""
+      _logger.warning(
+        "provider_empty_content",
+        model=body["model"],
+        finish_reason=finish_reason,
+        reasoning_chars=len(reasoning),
+        max_tokens=req.max_tokens,
+        reasoning_head=reasoning[:300],
+        hint=(
+          "finish_reason=length means the token budget was consumed by reasoning - "
+          "raise max_tokens or disable thinking for this model"
+        ),
+      )
+      # The answer may still sit inside the reasoning text; _parse_structured only
+      # needs a {...} substring, so give it the chance rather than returning "".
+      text = reasoning
     usage = data.get("usage", {})
     structured = _parse_structured(text, req.expect_json)
     return ModelInvocationResponse(

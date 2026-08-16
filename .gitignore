@@ -22,5 +22,10 @@ apps/control-center/out/
 services/adapter-web/artifacts/
 services/adapter-windows/artifacts/
 services/artifacts/
-artifacts/agent-runs/
+# Generated run outputs and analysis artifacts — never source. Keeping these
+# tracked added ~35MB of screenshots/replay-logs/graph snapshots to the repo
+# and made every run dirty the worktree.
+artifacts/
+data/replays/
+graphify-out/
 *.gguf

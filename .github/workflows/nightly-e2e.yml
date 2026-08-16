@@ -23,9 +23,10 @@ jobs:
           python -m playwright install chromium
           python -m playwright install-deps
       - name: Run Pizzuno E2E smoke
-        run: python -m pytest tests/smoke/test_pizzuno_e2e.py -v --tb=long -m smoke
-        env:
-          UNO_PLAYWRIGHT headless: "true"
+        # The e2e file is tests/e2e/test_pizzuno_e2e.py (the smoke path below
+        # never existed — the nightly job failed at collection every night).
+        # Marker -m e2e matches the file's documented invocation.
+        run: python -m pytest tests/e2e/test_pizzuno_e2e.py -v --tb=long -m e2e
       - name: Collect artifacts
         if: always()
         run: |

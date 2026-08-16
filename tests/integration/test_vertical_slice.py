@@ -149,6 +149,50 @@ async def test_loop_stops_on_error_and_sets_error_state():
 
 
 @pytest.mark.integration
+@pytest.mark.asyncio
+async def test_loop_runs_no_cycle_after_terminal_recovery_decision(monkeypatch):
+    """recovery=stop (ERROR + automatic=False) ends the loop for good.
+
+    Pins the contract: once a cycle reports a terminal outcome, the loop must
+    never run another cycle — no ERROR→ACTIVE "self-heal" revival. The old
+    failure mode (2026-08-16): a TypeError at execute made every cycle fail
+    unrecoverably, yet the session kept ticking forever from the operator's
+    point of view while tests raced the inter-cycle sleep.
+    """
+    orch = _make_orch()
+    spec = SessionSpec(
+        config=SessionConfig(adapter_type=AdapterType.MOCK, adapter_id="pending"),
+        automatic=True,
+    )
+    detail = await orch.create_session_with_game(spec)
+    await orch.attach_adapter(detail.session_id, AttachAdapterBody(adapter_type=AdapterType.MOCK))
+
+    real_run_cycle = orch._flow.run_cycle
+    calls = 0
+
+    async def stop_after_first_cycle(session):
+        nonlocal calls
+        calls += 1
+        await real_run_cycle(session)
+        # Simulate flow_controller's STOP branch: ERROR + automatic=False.
+        session.detail.flow_state = FlowState.ERROR
+        session.detail.automatic = False
+        return {"correlation_id": "test-stop"}
+
+    monkeypatch.setattr(orch._flow, "run_cycle", stop_after_first_cycle)
+    await orch.start(detail.session_id)
+
+    session = orch._sessions[detail.session_id]
+    for _ in range(60):  # generous: old code exits after its 1s inter-cycle sleep
+        await asyncio.sleep(0.05)
+        if session.loop_task.done():
+            break
+    assert session.loop_task.done(), "loop task should complete after recovery=stop"
+    assert session.detail.flow_state == FlowState.ERROR
+    assert calls == 1, "no further cycle may run after a terminal recovery decision"
+
+
+@pytest.mark.integration
 def test_adapter_client_contract():
     """Both adapter clients satisfy the required controller contract."""
     required_methods = [

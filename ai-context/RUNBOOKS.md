@@ -14,6 +14,7 @@ Index + gap-fillers only. Existing `docs/runbooks/*` are canonical; do not dupli
 | Windows automation | `docs/runbooks/windows-uia-debugging.md`, `windows-target-profiles.md` |
 | Model provider | `docs/runbooks/model-provider-setup.md`, `prompt-versioning.md` |
 | Fixtures | `docs/runbooks/fixture-capture.md` |
+| **Perception regressions** | `docs/runbooks/cycle-trace-and-replay.md` — per-cycle frame+board traces, and replaying recognition offline (no game, no services, no GPU). This is the guard rail for multi-game work: it is what tells you UNO still works after Svintus lands. |
 
 ## Quick commands
 ```
@@ -29,6 +30,9 @@ ruff check . ;  bandit -r services/ packages/ -ll --skip B101
 # session
 python scripts/serve-test-target.py
 python scripts/start-orchestrator-session-web.py --profile local-mock-uno --url http://127.0.0.1:8765/ --tick
+# perception corpus (offline; needs no game and no services)
+python scripts/replay_perception.py promote artifacts/cycle_trace/<session>/0003 --game uno --case <name>
+python scripts/replay_perception.py run --game uno -v
 ```
 
 ## Gaps (no runbook yet — write when first needed)

@@ -38,7 +38,10 @@ def test_decide_recovery_includes_message():
 
 
 @pytest.mark.asyncio
-async def test_observe_timeout_marks_failed_step_and_keeps_active_on_retry():
+async def test_observe_timeout_marks_failed_step_and_keeps_active_on_retry(tmp_path, monkeypatch):
+  # Prevent cycle-trace writes from landing in the real artifacts/cycle_trace/s1 dir.
+  monkeypatch.setenv("AGENT_CYCLE_TRACE_DIR", str(tmp_path / "trace"))
+
   mock_client = AsyncMock()
   mock_client.capture_evidence = AsyncMock(side_effect=httpx.ReadTimeout(""))
 

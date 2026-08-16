@@ -65,7 +65,7 @@ See [Model Integration](docs/architecture/model-integration.md) for full details
 ### Install
 
 ```powershell
-cd e:\dev\AI-games
+cd e:\dev\Z-AI-games
 .\scripts\setup-windows.ps1
 ```
 
@@ -78,7 +78,7 @@ cd e:\dev\AI-games
 ### Start Control Center
 
 ```powershell
-.\scripts\dev-desktop.ps1
+ .\scripts\dev-desktop.ps1
 ```
 
 ### Run a Session

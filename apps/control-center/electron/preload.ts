@@ -2,7 +2,9 @@ import { contextBridge, ipcRenderer } from "electron";
 import fs from "fs";
 import path from "path";
 
-const API_BASE = "http://127.0.0.1";
+// Mirrors src/unoApiClient.ts: overridable for non-local backends.
+// VITE_API_BASE for vite-rendered code; API_BASE as an Electron-level escape hatch.
+const API_BASE = process.env.VITE_API_BASE || process.env.API_BASE || "http://127.0.0.1";
 const ORCH = `${API_BASE}:8100`;
 
 contextBridge.exposeInMainWorld("unoApi", {

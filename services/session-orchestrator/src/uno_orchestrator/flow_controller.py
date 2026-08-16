@@ -34,6 +34,7 @@ from uno_schemas.orchestrator import (
 from uno_schemas.perception import DomEvidence, Observation, ScreenshotFrame, UiEvidence
 from uno_schemas.session import AdapterType, SessionPhase
 from uno_shared.adapter_registry import find_draw_target, get_adapter_registry
+from uno_shared.cycle_trace import write_cycle_trace
 from uno_shared.game_registry import _ensure_default_plugins, get_game_plugin
 from uno_shared.logging import get_logger
 
@@ -58,6 +59,11 @@ class RuntimeSession:
   retry_counts: dict[str, int] = field(default_factory=dict)
   last_recovery: Any = None
   loop_task: Any = None
+  # Monotonic per-session cycle number for the offline trace. Deliberately NOT
+  # metrics.total_steps: that only increments on a COMPLETED cycle, so every failed
+  # cycle would overwrite the previous one's trace directory — losing exactly the
+  # frames worth keeping.
+  cycle_counter: int = 0
 
 
 class LowConfidenceError(Exception):
@@ -125,6 +131,31 @@ class FlowController:
     started = time.perf_counter()
     failed_at: FlowStepName | None = None
 
+    # Pre-bound so the `finally` trace below can run after a failure at ANY step —
+    # a cycle that died in PERCEIVE still has a frame, and that frame is the most
+    # valuable one in the corpus. Without these initializations `finally` would
+    # raise NameError and swallow the real exception.
+    session.cycle_counter += 1
+    cycle_index = session.cycle_counter
+    screenshot = None
+    observation = None
+    legal_actions = None
+    decision = None
+    guard = None
+    # `failed_at` above is a PROGRESS marker, not a failure marker: on a successful
+    # cycle it keeps the name of the last step (RECORD), and `detail.error` is reset to
+    # None just before the happy-path return. Reading those two in the `finally` labelled
+    # every completed cycle `failed_at=record, ok=false` — a corpus that lies about which
+    # cycles worked is worse than no corpus. So record the EXCEPTION itself; a cycle that
+    # returns without raising (including the prompt_clicked / guard_blocked early
+    # returns) is by definition not a failure.
+    trace_failed_at = None
+    trace_error = None
+    t_observe_ms = 0
+    t_perceive_ms = 0
+    t_decide_ms = 0
+    t_execute_ms = 0
+
     try:
       binding = self._primary_binding(detail)
       if not binding or not binding.adapter_id:
@@ -132,17 +163,22 @@ class FlowController:
 
       failed_at = FlowStepName.OBSERVE
       await self._run_step(session, cid, FlowStepName.OBSERVE, SessionPhase.OBSERVE)
+      _t0 = time.perf_counter()
       dom, ui, obs_conf, screenshot = await self._observe(binding, cid)
+      t_observe_ms = int((time.perf_counter() - _t0) * 1000)
 
       failed_at = FlowStepName.PERCEIVE
       await self._run_step(session, cid, FlowStepName.PERCEIVE, SessionPhase.OBSERVE)
+      _t0 = time.perf_counter()
       observation = await self.clients.perceive(detail.session_id, dom=dom, ui=ui, screenshot=screenshot)
+      t_perceive_ms = int((time.perf_counter() - _t0) * 1000)
       session.latest_observation = observation
-      if observation.confidence.overall < detail.config.min_confidence:
-        raise LowConfidenceError(f"confidence {observation.confidence.overall} < {detail.config.min_confidence}")
+      # NOTE: the min_confidence gate used to sit HERE, above the diagnostic. It
+      # raises LowConfidenceError, so on exactly the runs you most need to debug
+      # the [CVv3] line was never produced. Diagnose first, then gate (below).
 
       # Perception diagnostic — surfaced in the Operator (NEXT ACTION) and logs.
-      # The [CVv2] marker confirms THIS build is running: if the operator does not
+      # The [CVv3] marker confirms THIS build is running: if the operator does not
       # show it, the backend Python services were not restarted with the new code.
       gs = observation.game_state or {}
       hand_n = len(gs.get("hand_cards", []) or [])
@@ -181,11 +217,24 @@ class FlowController:
         f"gs_conf={observation.confidence.game_state:.2f} hand_cards={hand_n}"
         f"{rec_note}{bright}{cv_fail}{frame_path}"
       )
+      # Log the full [CVv3] note EVERY cycle, not just on failure. It previously
+      # existed only inside the `detail.error` branch below, so once perception
+      # started working the line vanished entirely — leaving no way to confirm
+      # rec=vlm (i.e. that Ollama is actually being used) on a healthy session.
       logger.info(
-        "perception_diag", session_id=detail.session_id,
-        screenshot=shot_desc, screen_type=gs.get("screen_type"),
+        "perception_diag", session_id=detail.session_id, note=perception_note,
+        screenshot=shot_desc, screen_type=gs.get("screen_type"), recognizer=rec,
+        vlm_status=vlm_status,
         hand_cards=hand_n, game_state_confidence=observation.confidence.game_state,
       )
+
+      # Confidence gate, moved down from above so the [CVv3] diagnostic is always
+      # emitted first. The note is attached to the error so the operator shows WHY
+      # confidence was low (no screenshot? black frame? rec=heuristic?).
+      if observation.confidence.overall < detail.config.min_confidence:
+        raise LowConfidenceError(
+          f"confidence {observation.confidence.overall} < {detail.config.min_confidence}. {perception_note}"
+        )
 
       if observation.confidence.game_state == 0.0 and not gs.get("hand_cards"):
         detail.metrics.policy_blocks += 1
@@ -230,7 +279,9 @@ class FlowController:
 
       failed_at = FlowStepName.DECIDE
       await self._run_step(session, cid, FlowStepName.DECIDE, SessionPhase.DECIDE)
+      _t0 = time.perf_counter()
       decision = await self._decide(detail, observation, legal_actions, cid)
+      t_decide_ms = int((time.perf_counter() - _t0) * 1000)
       session.latest_decision = decision
 
       # Send pre-action chat message
@@ -261,12 +312,14 @@ class FlowController:
       session.pre_action_confidence = self._extract_observation_confidence(observation, decision)
       session.pre_action_had_error = bool(detail.error)
       await self._run_step(session, cid, FlowStepName.EXECUTE, SessionPhase.EXECUTE)
+      _t0 = time.perf_counter()
       try:
         await self._execute(binding, decision, detail, cid, observation, screenshot)
         session.last_execute_success = True
       except Exception:
         session.last_execute_success = False
         raise
+      t_execute_ms = int((time.perf_counter() - _t0) * 1000)
       detail.executed_correlation_ids.append(cid)
 
       # Send post-action chat message
@@ -294,7 +347,37 @@ class FlowController:
         "guard": guard,
       }
     except Exception as exc:
+      trace_failed_at = failed_at
+      # Not str(exc): httpx transport errors (ReadTimeout, ConnectError) have an EMPTY
+      # str(), which is how cycle 5 of session e9f527e3 came out as "failed at observe"
+      # with no reason at all.
+      trace_error = f"{type(exc).__name__}: {exc}"
       return await self._handle_failure(session, cid, exc, failed_at)
+    finally:
+      # One record per cycle, success or failure. This is what turns "restart 14
+      # services and launch a real game" into `pytest`: the frame and the full
+      # perceived board land on disk together, so recognition can be re-run offline
+      # against saved frames. See uno_shared.cycle_trace for the rationale.
+      write_cycle_trace(
+        session_id=detail.session_id,
+        cycle_index=cycle_index,
+        correlation_id=cid,
+        game_type=getattr(detail.config, "game_type", None) or detail.game_id,
+        screenshot=screenshot,
+        observation=observation,
+        legal_actions=legal_actions,
+        decision=decision,
+        guard=guard,
+        failed_at=trace_failed_at,
+        error=trace_error,
+        timings_ms={
+          "cycle": int((time.perf_counter() - started) * 1000),
+          "observe": t_observe_ms,
+          "perceive": t_perceive_ms,
+          "decide": t_decide_ms,
+          "execute": t_execute_ms,
+        },
+      )
 
   async def _run_step(self, session: RuntimeSession, cid: str, name: FlowStepName, phase: SessionPhase) -> None:
     session.detail.phase = phase
@@ -531,7 +614,26 @@ class FlowController:
       payload=payload,
     )
 
-    await client.execute_action(binding.adapter_id, action_req, correlation_id=cid)
+    result = await client.execute_action(binding.adapter_id, action_req, correlation_id=cid)
+
+    # The adapter answers HTTP 200 even when it REFUSED to act (no UIA target, no
+    # click point, confidence below threshold) — success/error live in the BODY. This
+    # return value used to be discarded, so a refused click became "Delivery:
+    # Delivered" in the operator with the mouse never moving, and the cycle went on to
+    # RECORD a step that never happened. An action the agent did not perform must be a
+    # failure, loudly: everything downstream (verification, retry, the belief that the
+    # board changed) is built on "delivered means clicked".
+    if result is not None and not getattr(result, "success", True):
+      err = getattr(result, "error", None) or "adapter refused the action"
+      logger.warning(
+        "execute_refused_by_adapter",
+        session_id=detail.session_id, adapter_type=binding.adapter_type,
+        action=action_type_str, selector_key=action_req.selector_key,
+        grounded_by=(action_req.extra or {}).get("grounded_by"),
+        target_x=(action_req.extra or {}).get("target_x"),
+        error=err,
+      )
+      raise RuntimeError(f"adapter did not perform {action_type_str}: {err}")
 
   async def _ground_choose_color(
     self, color: str | None, observation: Observation | None,
@@ -638,7 +740,10 @@ class FlowController:
         fallback_to_manual=policy.fallback_to_manual,
         message=exc_msg,
       )
-      detail.error = exc_msg
+      # Name the step in the operator-visible error. "ReadTimeout" alone doesn't
+      # say whether observe, perceive or execute stalled, and those have very
+      # different fixes (adapter capture vs slow VLM vs a hung click).
+      detail.error = f"{failed_at.value}: {exc_msg}" if failed_at else exc_msg
       if recovery.action == RecoveryMode.RETRY:
         session.retry_counts[retry_key] = retry_count + 1
         detail.metrics.retries += 1

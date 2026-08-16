@@ -1,6 +1,8 @@
 /** API client with Electron preload bridge + browser fetch fallback. */
 
-const API_BASE = "http://127.0.0.1";
+// Backend host is overridable so the UI can point at a non-local backend
+// (e.g. a LAN box) without a code change: VITE_API_BASE=http://192.168.1.10.
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1";
 const ORCH = `${API_BASE}:8100`;
 const ADAPTER_WEB = `${API_BASE}:8104`;
 const ADAPTER_WIN = `${API_BASE}:8105`;
@@ -303,7 +305,8 @@ export async function checkServiceHealth(port: number): Promise<ServiceHealthSta
   try {
     let data: ServiceHealthResponse;
     if (window.unoApi?.healthCheck) {
-      data = await window.unoApi.healthCheck(port);
+      // Bridge is typed as Record<string, unknown>; JSON boundary cast.
+      data = (await window.unoApi.healthCheck(port)) as unknown as ServiceHealthResponse;
     } else {
       data = await fetchJson<ServiceHealthResponse>(`${API_BASE}:${port}/health`);
     }
@@ -340,7 +343,7 @@ export async function isAdapterWindowsOnline(): Promise<boolean> {
 
 export async function getWindowsRpaPreview(adapterId: string): Promise<OperatorPreviewState> {
   if (window.unoApi?.getWindowsRpaPreview) {
-    return (await window.unoApi.getWindowsRpaPreview(adapterId)) as OperatorPreviewState;
+    return (await window.unoApi.getWindowsRpaPreview(adapterId)) as unknown as OperatorPreviewState;
   }
   return fetchJson<OperatorPreviewState>(`${ADAPTER_WIN}/adapters/${adapterId}/preview`, undefined, 5000);
 }
@@ -427,14 +430,14 @@ export async function listSessions(): Promise<SessionDetail[]> {
 
 export async function getSession(sessionId: string): Promise<SessionDetail> {
   if (window.unoApi?.getSession) {
-    return (await window.unoApi.getSession(sessionId)) as SessionDetail;
+    return (await window.unoApi.getSession(sessionId)) as unknown as SessionDetail;
   }
   return orchFetch<SessionDetail>(`/sessions/${sessionId}`);
 }
 
 export async function getSessionStatus(sessionId: string): Promise<OrchestratorStatusResponse> {
   if (window.unoApi?.getSessionStatus) {
-    return (await window.unoApi.getSessionStatus(sessionId)) as OrchestratorStatusResponse;
+    return (await window.unoApi.getSessionStatus(sessionId)) as unknown as OrchestratorStatusResponse;
   }
   return orchFetch<OrchestratorStatusResponse>(`/sessions/${sessionId}/status`);
 }
@@ -474,7 +477,7 @@ export async function tickSession(sessionId: string): Promise<Record<string, unk
   return orchFetch(`/sessions/${sessionId}/tick`, { method: "POST" });
 }
 
-const ADAPTER_WEB_BASE = "http://127.0.0.1:8104";
+const ADAPTER_WEB_BASE = ADAPTER_WEB;
 
 export async function checkCdpPort(cdpUrl: string = "http://127.0.0.1:9222"): Promise<CdpCheckResult> {
   const r = await fetch(`${ADAPTER_WEB_BASE}/cdp/check?cdp_url=${encodeURIComponent(cdpUrl)}`);

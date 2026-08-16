@@ -44,10 +44,25 @@
     "draw": "Draw",
     "play_red_five": "Play Red 5"
   },
+  "selector_aliases": {
+    "draw": "draw_button",
+    "play_red_five": "play_button"
+  },
   "layout_targets": {
-    "draw_button": {"x_ratio": 0.44, "y_ratio": 0.34, "label": "Draw"},
-    "play_button": {"x_ratio": 0.56, "y_ratio": 0.34, "label": "Play Red 5"}
+    "draw_button": {
+      "x_ratio": 0.44,
+      "y_ratio": 0.34,
+      "label": "Draw"
+    },
+    "play_button": {
+      "x_ratio": 0.56,
+      "y_ratio": 0.34,
+      "label": "Play Red 5"
+    }
   },
   "notes": "Deterministic tkinter test app for CI/dev. Not a commercial UNO client.",
-  "limitations": ["Sparse UIA on some tkinter builds", "Requires Windows for real mode"]
+  "limitations": [
+    "Sparse UIA on some tkinter builds",
+    "Requires Windows for real mode"
+  ]
 }

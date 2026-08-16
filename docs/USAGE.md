@@ -112,7 +112,7 @@ Fallback reasons are logged via `ModelUsageTracker`.
 ### Install
 
 ```powershell
-cd e:\dev\AI-games
+cd e:\dev\Z-AI-games
 .\scripts\setup-windows.ps1
 ```
 

@@ -7,23 +7,57 @@ duck-typing. Model-assist calls model-runtime-service for strategy advice.
 from __future__ import annotations
 
 import json
-import logging
 import random
+import re
 from typing import Any
 
 import httpx
 from uno_schemas.decision import (
-  DecisionCandidate,
-  DecisionExplanation,
-  DecisionRequest,
-  DecisionResult,
-  StrategyId,
+    DecisionCandidate,
+    DecisionExplanation,
+    DecisionRequest,
+    DecisionResult,
+    StrategyId,
 )
+from uno_shared.logging import get_logger
 
-logger = logging.getLogger("decision")
+# structlog, NOT logging.getLogger(): the project configures structlog to print to
+# STDOUT, which is what lands in logs/<service>.log. A bare stdlib logger is never
+# configured, so its records fall through to Python's lastResort handler — WARNING+
+# only, unformatted, on STDERR. Every fallback below was therefore invisible in the
+# service log, which is exactly how the perception-side failures went unnoticed for
+# days. NOTE: structlog's warning() takes kwargs, NOT %s interpolation.
+logger = get_logger("decision")
 
 MODEL_RUNTIME_URL = "http://127.0.0.1:8111"
 MODEL_TIMEOUT_S = 10.0
+
+
+def _extract_json_object(text: str) -> str | None:
+    """Pull the first valid JSON object from a model response.
+
+    Mirrors uno_perception.vlm_provider._extract_json_object — the same two
+    failure modes apply here: markdown code fences around the JSON, or a
+    reasoning preamble when the model ignores /no_think.  Returns the raw
+    JSON string (not parsed), or None if no {...} block can be found.
+    """
+    if not text:
+        return None
+    fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if fence_match:
+        return fence_match.group(1)
+    start = text.find("{")
+    if start == -1:
+        return None
+    depth = 0
+    for i, ch in enumerate(text[start:], start=start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
 
 
 def _get_action_type(action) -> str:
@@ -176,6 +210,11 @@ async def decide_model(req: DecisionRequest) -> DecisionResult:
         "prompt_id": "policy_advice",
         "variables": prompt_variables,
         "expect_json": True,
+        # Explicit, because the policy JSON carries a free-text "reasoning"
+        # field and profiles may default low (schema floor is 256): at 256 this
+        # call came back with finish_reason=length and an EMPTY content, which
+        # silently dropped every decision to the heuristic path.
+        "max_tokens": 768,
       })
       resp.raise_for_status()
       result = resp.json()
@@ -187,7 +226,14 @@ async def decide_model(req: DecisionRequest) -> DecisionResult:
       try:
         structured = json.loads(model_text)
       except json.JSONDecodeError:
-        logger.warning("model_response_parse_failed text=%s", model_text[:200])
+        cleaned = _extract_json_object(model_text)
+        if cleaned:
+          try:
+            structured = json.loads(cleaned)
+          except json.JSONDecodeError:
+            pass
+      if not structured:
+        logger.warning("model_response_parse_failed", text=model_text[:200])
         tracker.complete(record, success=False, fallback_used=True, fallback_reason="parse_failed", parse_success=False)
         return decide_heuristic(req)
 
@@ -199,7 +245,7 @@ async def decide_model(req: DecisionRequest) -> DecisionResult:
     if 0 <= action_index < len(req.legal_actions):
       chosen_action = req.legal_actions[action_index]
     else:
-      logger.warning("model_invalid_action_index index=%d max=%d", action_index, len(req.legal_actions) - 1)
+      logger.warning("model_invalid_action_index", index=action_index, max=len(req.legal_actions) - 1)
       tracker.complete(record, success=False, fallback_used=True, fallback_reason="invalid_action_index")
       return decide_heuristic(req)
 
@@ -227,7 +273,13 @@ async def decide_model(req: DecisionRequest) -> DecisionResult:
     )
 
   except Exception as exc:
-    logger.warning("model_decision_failed error=%s — falling back to heuristic", str(exc))
+    # Never str(exc) alone: httpx transport errors (ReadTimeout, ConnectError) have
+    # an EMPTY str(), so the log would read `error=` and say nothing at all.
+    logger.warning(
+      "model_decision_failed",
+      error=f"{type(exc).__name__}: {exc}",
+      note="falling back to heuristic",
+    )
     tracker.complete(record, success=False, fallback_used=True, fallback_reason=str(exc))
     return decide_heuristic(req)
 

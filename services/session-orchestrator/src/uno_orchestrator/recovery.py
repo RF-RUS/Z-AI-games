@@ -11,6 +11,25 @@ def format_exception_message(exc: Exception) -> str:
   msg = str(exc).strip()
   if msg:
     return msg
+  # httpx TRANSPORT errors (ReadTimeout, ConnectTimeout, ConnectError...) have an
+  # EMPTY str(), so the old fallback produced a bare "ReadTimeout" with no hint of
+  # WHICH service call died - perceive, capture_evidence and execute_action all
+  # surfaced identically, which is undiagnosable in the operator. httpx attaches
+  # the originating request, so name the target. Checked only AFTER str(exc) so
+  # errors with a useful message (e.g. HTTPStatusError, which carries the status
+  # code) keep it.
+  # try/except, NOT `getattr(exc, "request", None)`: on httpx exceptions `.request`
+  # is a PROPERTY that RAISES RuntimeError("The .request property has not been set.")
+  # when the error was constructed without one. getattr's default only covers
+  # AttributeError, so the raise escaped - out of the error FORMATTER, inside
+  # _handle_failure, i.e. the recovery path itself died while reporting a timeout and
+  # replaced it with an unrelated RuntimeError. Never let error formatting raise.
+  try:
+    request = exc.request  # type: ignore[attr-defined]
+  except Exception:  # noqa: BLE001
+    request = None
+  if request is not None:
+    return f"{type(exc).__name__} on {request.method} {request.url}"
   return type(exc).__name__
 
 

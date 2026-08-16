@@ -71,11 +71,14 @@ class InProcessAdapterClient:
         card_color: str | None = None,
         card_value: str | None = None,
         player_id: str | None = None,
+        hand_cards: list[dict] | None = None,
         payload: dict | None = None,
     ):
         from uno_shared.adapter_registry import GenericAdapterClient
         delegate = GenericAdapterClient(self.adapter_type, "http://noop")
-        return delegate.map_action(action_type, profile_id, card_color, card_value, player_id, payload=payload)
+        return delegate.map_action(
+            action_type, profile_id, card_color, card_value, player_id, hand_cards=hand_cards, payload=payload
+        )
 
     async def attach(self, request: GenericAttachRequest) -> GenericAttachResponse:
         body = {

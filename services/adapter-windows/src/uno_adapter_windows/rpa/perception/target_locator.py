@@ -62,9 +62,11 @@ def _center(bounds: dict[str, float] | None) -> dict[str, float] | None:
 
 def _selector_keys_to_try(selector_key: str, profile: WindowsAdapterProfile) -> list[str]:
   keys: list[str] = [selector_key]
-  aliases = {"draw": "draw_button", "play_red_five": "play_button"}
-  if selector_key in aliases:
-    keys.append(aliases[selector_key])
+  # Game-specific aliases come from the profile (selector_aliases), keeping
+  # this locator game-agnostic.
+  alias = profile.selector_aliases.get(selector_key)
+  if alias and alias not in keys:
+    keys.append(alias)
   mapped_title = profile.action_mappings.get(selector_key)
   if mapped_title:
     for sk, sel in profile.selectors.items():
