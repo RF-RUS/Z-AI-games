@@ -36,6 +36,16 @@ class SessionConfig(BaseModel):
   model_assist_enabled: bool = False
   active_model_id: str | None = None
   min_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+  # Dry-run safety mode: observe→infer→legalize→decide→guard run normally, but the
+  # EXECUTE step is never delivered to the adapter — the agent plans and reports
+  # what it WOULD do without touching the game. For testing new strategies/profiles
+  # against a live UI without risk.
+  dry_run: bool = False
+  # Shadow evaluation: also run the OPPOSITE strategy (heuristic ↔ model) as a
+  # non-binding observer every tick; disagreement rate appears in decision
+  # explanations so strategy promotion is data-backed. Costs one extra model call
+  # per tick when the primary is heuristic — enable deliberately.
+  shadow_evaluation: bool = False
 
 
 class SessionState(BaseModel):

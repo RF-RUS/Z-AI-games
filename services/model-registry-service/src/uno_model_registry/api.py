@@ -99,4 +99,4 @@ async def install(req: ModelInstallRequest) -> ModelManifest:
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_model_registry.api:app", host="127.0.0.1", port=SERVICE_PORTS["model-registry-service"])
+  uvicorn.run("uno_model_registry.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["model-registry-service"])

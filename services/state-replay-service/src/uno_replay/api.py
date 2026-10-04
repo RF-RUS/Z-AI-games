@@ -65,4 +65,4 @@ async def import_replay(envelope: ReplayEnvelope) -> dict:
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_replay.api:app", host="127.0.0.1", port=SERVICE_PORTS["state-replay-service"])
+  uvicorn.run("uno_replay.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["state-replay-service"])

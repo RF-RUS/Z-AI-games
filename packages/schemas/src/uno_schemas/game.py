@@ -35,6 +35,12 @@ class CardValue(StrEnum):
     DRAW_TWO = "draw_two"
     WILD = "wild"
     WILD_DRAW_FOUR = "wild_draw_four"
+    # Provenance marker, NOT a deck card: perception (colour-only CV with the VLM
+    # down) cannot read the printed value. A same-colour card is always playable
+    # on top, so such a detection decides by colour alone and carries this tag.
+    # Never produced by the simulated deck; safe because Card.matches treats it
+    # like any non-wild value (exact-value equality fails unless both are UNKNOWN).
+    UNKNOWN = "unknown"
 
 
 class Card(BaseModel):

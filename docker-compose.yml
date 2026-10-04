@@ -25,5 +25,117 @@ services:
       timeout: 3s
       retries: 5
 
+  # ── Full backend stack (profile: backend) ────────────────────────────────────
+  # One parameterized Dockerfile per service (see /Dockerfile). Each service is
+  # its own container hostname; cross-service addressing uses UNO_SERVICE_URL_*
+  # overrides (see services/session-orchestrator/src/uno_orchestrator/clients.py).
+  # Local dev remains scripts/dev-backend.ps1 — containers are for staging/prod
+  # parity and dependency reproducibility.
+  session-orchestrator:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: session-orchestrator } }
+    environment: &service-env
+      UNO_UVICORN_HOST: "0.0.0.0"
+      UNO_METRICS_DISABLED: "0"
+      UNO_SERVICE_URL_UNO_CORE: http://uno-core:8101
+      UNO_SERVICE_URL_STATE_REPLAY_SERVICE: http://state-replay-service:8102
+      UNO_SERVICE_URL_PERCEPTION_SERVICE: http://perception-service:8103
+      UNO_SERVICE_URL_ADAPTER_WEB: http://adapter-web:8104
+      UNO_SERVICE_URL_ADAPTER_WINDOWS: http://adapter-windows:8105
+      UNO_SERVICE_URL_DECISION_SERVICE: http://decision-service:8106
+      UNO_SERVICE_URL_POLICY_GUARD: http://policy-guard:8107
+      UNO_SERVICE_URL_CHAT_INTENT_SERVICE: http://chat-intent-service:8108
+      UNO_SERVICE_URL_CHAT_RESPONSE_SERVICE: http://chat-response-service:8109
+      UNO_SERVICE_URL_MODEL_RUNTIME_SERVICE: http://model-runtime-service:8111
+      UNO_SERVICE_URL_OBSERVABILITY_SERVICE: http://observability-service:8112
+    ports: ["8100:8100"]
+    depends_on:
+      - uno-core
+      - perception-service
+      - decision-service
+      - policy-guard
+      - observability-service
+
+  uno-core:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: uno-core } }
+    environment: *service-env
+    ports: ["8101:8101"]
+
+  state-replay-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: state-replay-service } }
+    environment: *service-env
+    ports: ["8102:8102"]
+    volumes:
+      - replays:/opt/app/data/replays
+
+  perception-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: perception-service } }
+    environment: *service-env
+    ports: ["8103:8103"]
+
+  adapter-web:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: adapter-web } }
+    environment: *service-env
+    ports: ["8104:8104"]
+
+  adapter-windows:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: adapter-windows } }
+    environment: *service-env
+    ports: ["8105:8105"]
+
+  decision-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: decision-service } }
+    environment: *service-env
+    ports: ["8106:8106"]
+
+  policy-guard:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: policy-guard } }
+    environment: *service-env
+    ports: ["8107:8107"]
+
+  chat-intent-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: chat-intent-service } }
+    environment: *service-env
+    ports: ["8108:8108"]
+
+  chat-response-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: chat-response-service } }
+    environment: *service-env
+    ports: ["8109:8109"]
+
+  model-registry-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: model-registry-service } }
+    environment: *service-env
+    ports: ["8110:8110"]
+
+  model-runtime-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: model-runtime-service } }
+    environment: *service-env
+    ports: ["8111:8111"]
+
+  observability-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: observability-service } }
+    environment: *service-env
+    ports: ["8112:8112"]
+
+  config-service:
+    profiles: [backend]
+    build: { context: ., args: { SERVICE: config-service } }
+    environment: *service-env
+    ports: ["8113:8113"]
+
 volumes:
   postgres_data:
+  replays:

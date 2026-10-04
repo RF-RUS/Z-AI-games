@@ -57,7 +57,7 @@ logger = get_logger("cycle_trace")
 
 # Bump when the on-disk shape changes so the replay harness can refuse to compare
 # records it does not understand instead of silently mis-reading old fixtures.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _DEFAULT_DIR = Path("artifacts") / "cycle_trace"
 
@@ -148,19 +148,20 @@ def _prune(session_dir: Path, keep: int) -> None:
 
 
 def write_cycle_trace(
-  *,
-  session_id: str,
-  cycle_index: int,
-  correlation_id: str,
-  game_type: str | None = None,
-  screenshot: Any = None,
-  observation: Any = None,
-  legal_actions: Any = None,
-  decision: Any = None,
-  guard: Any = None,
-  failed_at: Any = None,
-  error: str | None = None,
-  timings_ms: dict[str, int] | None = None,
+    *,
+    session_id: str,
+    cycle_index: int,
+    correlation_id: str,
+    game_type: str | None = None,
+    screenshot: Any = None,
+    observation: Any = None,
+    legal_actions: Any = None,
+    decision: Any = None,
+    guard: Any = None,
+    failed_at: Any = None,
+    error: str | None = None,
+    timings_ms: dict[str, int] | None = None,
+    click: dict[str, Any] | None = None,
 ) -> Path | None:
   """Write one cycle directory: `frame.png` + `cycle.json`. Returns its path.
 
@@ -228,6 +229,9 @@ def write_cycle_trace(
       "legal_actions": _dump(legal_actions),
       "decision": _dump(decision),
       "guard": _dump(guard),
+      # Whether the executed click actually took effect (zone diff before/after),
+      # and what was retried where — None for cycles that clicked nothing.
+      "click": _dump(click) if click is not None else None,
       "outcome": {
         "failed_at": _dump(failed_at),
         "error": error,

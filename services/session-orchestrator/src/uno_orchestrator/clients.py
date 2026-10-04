@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
+from uuid import uuid4
 
 import httpx
 from uno_adapter_web.startup import PLAYWRIGHT_ATTACH_HTTP_TIMEOUT_SEC
@@ -37,9 +38,26 @@ from uno_schemas.session import AdapterType
 
 
 def _url(service: str) -> str:
+  # Per-service override (Docker: each service is its own container hostname, so
+  # a single UNO_SERVICE_HOST cannot address all of them). Naming convention:
+  #   UNO_SERVICE_URL_PERCEPTION_SERVICE=http://perception-service:8103
+  override = os.getenv(f"UNO_SERVICE_URL_{service.upper().replace('-', '_')}")
+  if override:
+    return override.rstrip("/")
   port = SERVICE_PORTS[service]
   host = os.getenv("UNO_SERVICE_HOST", "127.0.0.1")
   return f"http://{host}:{port}"
+
+
+def _trace_headers(correlation_id: str | None = None) -> dict[str, str]:
+  """Outbound trace propagation.
+
+  Every inter-service call carries X-Trace-Id (the cycle id when known). Each
+  service's middleware binds it into structured logs, so one full pipeline run
+  is greppable across services and joinable via observability /traces/{cid}.
+  A fresh id is generated for calls outside a cycle (game setup, detach, ...).
+  """
+  return {"X-Trace-Id": correlation_id or uuid4().hex[:16]}
 
 
 # ponytail: perceive/ground run the VLM synchronously (VLM_TIMEOUT_S, default
@@ -68,13 +86,13 @@ class ServiceClients:
 
   async def create_game(self, player_names: list[str]) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      r = await client.post(f"{self.core}/games", json={"player_names": player_names, "seed": 42})
+      r = await client.post(f"{self.core}/games", json={"player_names": player_names, "seed": 42}, headers=_trace_headers())
       r.raise_for_status()
       return r.json()
 
   async def legal_actions(self, game_id: str) -> list[LegalAction]:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      r = await client.get(f"{self.core}/games/{game_id}/legal-actions")
+      r = await client.get(f"{self.core}/games/{game_id}/legal-actions", headers=_trace_headers())
       r.raise_for_status()
       return [LegalAction.model_validate(a) for a in r.json()["actions"]]
 
@@ -83,17 +101,19 @@ class ServiceClients:
       r = await client.post(
         f"{self.core}/games/{game_id}/actions",
         json={"action": action.model_dump(mode="json"), "session_id": session_id},
-        headers={"X-Correlation-Id": correlation_id},
+        headers=_trace_headers(correlation_id),
       )
       r.raise_for_status()
       return r.json()
 
   async def perceive(
     self, session_id: str, dom: DomEvidence | None = None, ui: UiEvidence | None = None,
-    screenshot: ScreenshotFrame | None = None,
+    screenshot: ScreenshotFrame | None = None, vlm_profile_id: str | None = None,
+    force_vlm: bool = False,
   ) -> Observation:
     # VLM-bearing call — use the long budget so a slow/cold vision model isn't
     # cut off by the generic client timeout (see VLM_HTTP_TIMEOUT_SEC).
+    from uno_shared.logging import get_correlation_id
     async with httpx.AsyncClient(timeout=VLM_HTTP_TIMEOUT_SEC) as client:
       body: dict[str, Any] = {"session_id": session_id}
       if dom:
@@ -102,7 +122,17 @@ class ServiceClients:
         body["ui"] = ui.model_dump(mode="json")
       if screenshot:
         body["screenshot"] = screenshot.model_dump(mode="json")
-      r = await client.post(f"{self.perception}/perceive", json=body)
+      # Per-session VLM profile (operator model picker). Absent → perception
+      # uses its own env default, so this is a no-op for non-VLM sessions.
+      if vlm_profile_id:
+        body["vlm_profile_id"] = vlm_profile_id
+      # Bypass the static-frame gate: after a model switch the board must be
+      # re-read by the NEW model even though the screen didn't change.
+      if force_vlm:
+        body["force_vlm"] = True
+      r = await client.post(
+        f"{self.perception}/perceive", json=body, headers=_trace_headers(get_correlation_id()),
+      )
       r.raise_for_status()
       return Observation.model_validate(r.json())
 
@@ -124,9 +154,12 @@ class ServiceClients:
       "profile": profile,
       "min_confidence": min_confidence,
     }
+    from uno_shared.logging import get_correlation_id
     try:
       async with httpx.AsyncClient(timeout=VLM_HTTP_TIMEOUT_SEC) as client:
-        r = await client.post(f"{self.perception}/ground", json=body)
+        r = await client.post(
+          f"{self.perception}/ground", json=body, headers=_trace_headers(get_correlation_id()),
+        )
         r.raise_for_status()
         return r.json()
     except Exception as exc:  # noqa: BLE001 — grounding outage must not stall the tick
@@ -134,7 +167,9 @@ class ServiceClients:
 
   async def decide(self, req: DecisionRequest) -> DecisionResult:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      r = await client.post(f"{self.decision}/decide", json=req.model_dump(mode="json"))
+      r = await client.post(
+        f"{self.decision}/decide", json=req.model_dump(mode="json"), headers=_trace_headers(req.correlation_id),
+      )
       r.raise_for_status()
       return DecisionResult.model_validate(r.json())
 
@@ -147,6 +182,7 @@ class ServiceClients:
           "legal_actions": [a.model_dump(mode="json") for a in legal_actions],
           "min_confidence": min_confidence,
         },
+        headers=_trace_headers(decision.correlation_id),
       )
       r.raise_for_status()
       return r.json()
@@ -185,13 +221,19 @@ class ServiceClients:
   async def web_evidence(self, adapter_id: str, correlation_id: str) -> AdapterEvidenceBundle:
     timeout = PLAYWRIGHT_ATTACH_HTTP_TIMEOUT_SEC
     async with httpx.AsyncClient(timeout=timeout) as client:
-      r = await client.get(f"{self.adapter_web}/adapters/{adapter_id}/evidence", params={"correlation_id": correlation_id})
+      r = await client.get(
+        f"{self.adapter_web}/adapters/{adapter_id}/evidence",
+        params={"correlation_id": correlation_id}, headers=_trace_headers(correlation_id),
+      )
       r.raise_for_status()
       return AdapterEvidenceBundle.model_validate(r.json())
 
   async def windows_evidence(self, adapter_id: str, correlation_id: str) -> WindowsEvidenceBundle:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      r = await client.get(f"{self.adapter_windows}/adapters/{adapter_id}/evidence", params={"correlation_id": correlation_id})
+      r = await client.get(
+        f"{self.adapter_windows}/adapters/{adapter_id}/evidence",
+        params={"correlation_id": correlation_id}, headers=_trace_headers(correlation_id),
+      )
       r.raise_for_status()
       return WindowsEvidenceBundle.model_validate(r.json())
 
@@ -227,15 +269,27 @@ class ServiceClients:
 
   async def replay_event(self, replay_id: str, event: DomainEvent) -> None:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      await client.post(f"{self.replay}/replays/{replay_id}/events", json=event.model_dump(mode="json"))
+      await client.post(
+        f"{self.replay}/replays/{replay_id}/events",
+        json=event.model_dump(mode="json"),
+        headers=_trace_headers(event.correlation_id),
+      )
 
   async def replay_observation(self, replay_id: str, bundle: dict) -> None:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      await client.post(f"{self.replay}/replays/{replay_id}/observations", json=bundle)
+      await client.post(
+        f"{self.replay}/replays/{replay_id}/observations",
+        json=bundle,
+        headers=_trace_headers(bundle.get("correlation_id") if isinstance(bundle, dict) else None),
+      )
 
   async def model_invoke(self, req: ModelInvocationRequest) -> dict:
     async with httpx.AsyncClient(timeout=self.timeout) as client:
-      r = await client.post(f"{self.model_runtime}/invoke", json=req.model_dump(mode="json"))
+      r = await client.post(
+        f"{self.model_runtime}/invoke",
+        json=req.model_dump(mode="json"),
+        headers=_trace_headers(req.context.correlation_id),
+      )
       r.raise_for_status()
       return r.json()
 

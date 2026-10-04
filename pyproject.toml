@@ -36,6 +36,7 @@ members = [
     "services/model-runtime-service",
     "services/observability-service",
     "services/config-service",
+    "services/svintus-core",
 ]
 
 [tool.pytest.ini_options]

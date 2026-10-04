@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 import pytest
+
+# Tests must not spawn cross-process traffic: service metrics reporting to the
+# observability service stays off unless a test explicitly opts in.
+os.environ.setdefault("UNO_METRICS_DISABLED", "1")
 
 ROOT = Path(__file__).resolve().parent.parent
 TEST_TARGET_PORT = 8765

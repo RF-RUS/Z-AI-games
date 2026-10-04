@@ -25,6 +25,73 @@ MAX_NODES = 200
 # HTTP timeout and stall the whole session with a ReadTimeout. Raise if a native
 # app legitimately needs deeper walks.
 UIA_WALK_BUDGET_S = 4.0
+# Hard cap on the WHOLE walk coroutine. The budget above is only checked BETWEEN
+# elements, so a single COM call (element.children()/rectangle() against a live,
+# animating game window) can block the walk thread past the budget and the
+# `await` sits on it forever — that is the "observe ReadTimeout after 1 minute"
+# stall. wait_for releases the await even though the orphaned thread keeps
+# running until the COM call returns (bounded: it dies when the call returns or
+# the process restarts). Set just above the budget so a healthy walk finishes
+# naturally first and only a genuinely hung call hits this cap.
+UIA_WALK_HARD_TIMEOUT_S = 6.0
+# Dedicated pool for the UIA tree walk. This is the load-bearing detail behind
+# the 2026-08-28 "observe ReadTimeout" fix: `asyncio.wait_for(to_thread(_walk), 6s)`
+# cancels the AWAIT but cannot KILL the walk thread — a hung UIA COM call keeps
+# its worker blocked until Windows finally returns. The walk and the screenshot
+# both used to run via `asyncio.to_thread` on the SAME default pool, so repeated
+# hung walks piled up in that pool and the screenshot's to_thread queued behind
+# them and starved — the whole evidence capture then blew the 20s backstop with
+# no frame to perceive from (the "pcv=MISSING screenshot=NONE" cycle). Routing the
+# walk through its OWN bounded pool isolates the slow/hung UIA work from the fast
+# screenshot work: a hung walk can occupy at most max_workers dedicated threads
+# and never touches the pool the screenshot draws from.
+# 2026-08-29 (2nd leak wave): the real-UNO Electron window hangs the walk on
+# EVERY cycle, so 2 workers filled up with leaked threads and the next walk
+# waited in the queue past its 6s hard cap — the evidence bundle then lost its
+# screenshot (>20s backstop). 6 workers absorb ~3 consecutive hung walks before
+# a queue delay becomes visible. The real cure is skipping the walk entirely on
+# match_automation=web_only profiles (see _snapshot / should_skip_uia_card_lookup),
+# which makes this a safety margin, not a workaround.
+_UIA_WALK_MAX_WORKERS = 6
+_UIA_WALK_EXECUTOR = None
+# Per-method budget for the pure GDI/ctypes screenshot paths (PrintWindow).
+# Fast in practice (~50ms); bounded so an unresponsive window cannot stall the capture.
+_PRINTWINDOW_BUDGET_S = 3.0
+# Per-method budget for the COM/UIA-backed screenshot paths
+# (pywinauto capture_as_image, PIL ImageGrab via window.rectangle()). These are
+# the methods that hang against a live, animating GPU window, so they get a
+# SHORTER cap than the PrintWindow methods: they are tried last anyway, and the
+# sum of all four budgets must stay well below the 20s /evidence backstop in
+# api.py. (The old budgets summed to 22s — over the backstop — which is exactly
+# why a multi-method hang produced a frameless degraded bundle.)
+_SCREENSHOT_COM_BUDGET_S = 2.0
+
+
+def _get_uia_walk_executor():
+  global _UIA_WALK_EXECUTOR
+  if _UIA_WALK_EXECUTOR is None:
+    from concurrent.futures import ThreadPoolExecutor
+    _UIA_WALK_EXECUTOR = ThreadPoolExecutor(
+      max_workers=_UIA_WALK_MAX_WORKERS, thread_name_prefix="uiawalk"
+    )
+  return _UIA_WALK_EXECUTOR
+# Isolated pool for the SHORT COM window-meta calls (window_text / class_name /
+# window.bounds fallback rectangle). A hung call leaks its thread until Windows
+# eventually returns — with the UIA walk pool at max_workers=2, a leaked meta
+# thread could queue the walk past its 6s hard cap. A separate, slightly larger
+# pool isolates the two work classes; meta calls are cheap, so 4 workers absorbs
+# a burst of leaks without delaying the tree walk.
+_COM_META_EXECUTOR = None
+
+
+def _get_com_meta_executor():
+  global _COM_META_EXECUTOR
+  if _COM_META_EXECUTOR is None:
+    from concurrent.futures import ThreadPoolExecutor
+    _COM_META_EXECUTOR = ThreadPoolExecutor(
+      max_workers=4, thread_name_prefix="commeta"
+    )
+  return _COM_META_EXECUTOR
 STALE_WINDOW_ERROR = "Selected game window is no longer available"
 
 
@@ -237,7 +304,27 @@ async def extract_ui_tree(window, backend: str) -> tuple[list[UiNodeSnapshot], b
       sparse = True
     return nodes, truncated, sparse
 
-  return await asyncio.to_thread(_walk)
+  # Run the walk on the DEDICATED pool (see _UIA_WALK_EXECUTOR). A hung COM call
+  # keeps its worker blocked even after the timeout below; isolating it here means
+  # it can never starve the screenshot, which uses the default pool.
+  loop = asyncio.get_running_loop()
+  try:
+    return await asyncio.wait_for(
+      loop.run_in_executor(_get_uia_walk_executor(), _walk),
+      timeout=UIA_WALK_HARD_TIMEOUT_S,
+    )
+  except asyncio.TimeoutError:
+    # A single UIA COM call hung past the hard cap. Return an EMPTY (sparse,
+    # truncated) tree rather than blocking the evidence capture forever: the
+    # caller still gets a screenshot to perceive from, and the next cycle
+    # retries the walk. Log at warning so an app that consistently hangs is
+    # visible instead of silent.
+    import logging
+    logging.getLogger("adapter-windows").warning(
+      "ui_tree_walk_timeout: returning empty tree (a UIA call hung >%ss)",
+      UIA_WALK_HARD_TIMEOUT_S,
+    )
+    return [], True, True
 
 
 async def find_window(
@@ -357,6 +444,34 @@ def _capture_via_printwindow(hwnd, flag: int):
     ctypes.windll.user32.ReleaseDC(0, hdc_screen)
 
 
+def _bounded_call(fn, timeout_s: float):
+  """Run a possibly-hung COM/UIA call in a throwaway thread with a hard join
+  timeout. A hung call leaks its worker (it dies when Windows finally returns),
+  but one leak per capture is bounded and — critically — the NEXT method still
+  gets a chance, so a single hung call can never cost the whole screenshot.
+  """
+  import threading
+  result: list = []
+  exc: list = []
+  done = threading.Event()
+
+  def runner():
+    try:
+      result.append(fn())
+    except Exception as e:  # noqa: BLE001 — surface to caller as None
+      exc.append(e)
+    finally:
+      done.set()
+
+  t = threading.Thread(target=runner, name="shot-method", daemon=True)
+  t.start()
+  if not done.wait(timeout_s):
+    return None  # hung — abandon this method, its thread dies on its own schedule
+  if exc:
+    return None
+  return result[0] if result else None
+
+
 async def capture_window_screenshot(window, artifacts_dir: Path, label: str) -> str | None:
   """Capture a window screenshot, returning the FIRST non-black result.
 
@@ -365,6 +480,12 @@ async def capture_window_screenshot(window, artifacts_dir: Path, label: str) -> 
   therefore try several methods and skip any that come back black, preferring
   PrintWindow(PW_RENDERFULLCONTENT) and a screen-region grab which do capture DWM
   composited content. Falls back to the last available image if all look black.
+
+  Each method runs through _bounded_call with a per-method budget: capture_as_image
+  and window.rectangle() are COM/UIA calls that can hang against a live, animating
+  window (the same hang class that stalls the UIA walk) — without the budget a
+  single hung method would stall the WHOLE screenshot and the evidence capture
+  would degrade to a frameless bundle again.
   """
   def _shot() -> str | None:
     hwnd = int(window.handle)
@@ -383,17 +504,32 @@ async def capture_window_screenshot(window, artifacts_dir: Path, label: str) -> 
     def m_printwindow_plain():
       return _capture_via_printwindow(hwnd, 0x00000000)
 
-    # Order: content-preserving GPU-capable methods first.
+    # Per-method budget (s). Order matters as much as the budget:
+    #
+    # 1. The reliable, FAST pure-GDI/ctypes methods (PrintWindow) go FIRST. They
+    #    capture DWM-composited content in ~50ms and do not depend on COM/UIA, so
+    #    in the common case the loop returns after method 1 and never reaches a
+    #    hang-prone COM call. capture_as_image (pywinauto) is COM/UIA-backed and
+    #    is the step that stalls against a live, animating GPU window — it used
+    #    to sit first, so a single COM hang cost a full 6s before the ~50ms GDI
+    #    method that could have captured the frame was even tried, and the whole
+    #    capture blew the 20s evidence backstop with no frame (screenshot=NONE).
+    #
+    # 2. Worst-case sum of every budget (3+3+2+2 = 10s) stays BELOW the 20s
+    #    /evidence backstop in api.py, with headroom for the UIA tree walk
+    #    (<=6s) that runs after the screenshot inside capture_evidence. The old
+    #    budgets summed to 22s — over the backstop — so a multi-method hang was
+    #    guaranteed to discard a capture that had already produced a frame.
     methods = [
-      ("capture_as_image", m_capture_as_image),
-      ("printwindow_full", m_printwindow_full),
-      ("imagegrab", m_imagegrab),
-      ("printwindow_plain", m_printwindow_plain),
+      ("printwindow_full", m_printwindow_full, _PRINTWINDOW_BUDGET_S),
+      ("printwindow_plain", m_printwindow_plain, _PRINTWINDOW_BUDGET_S),
+      ("imagegrab", m_imagegrab, _SCREENSHOT_COM_BUDGET_S),
+      ("capture_as_image", m_capture_as_image, _SCREENSHOT_COM_BUDGET_S),
     ]
     fallback = None
-    for name, fn in methods:
+    for name, fn, budget in methods:
       try:
-        img = fn()
+        img = _bounded_call(fn, budget)
       except Exception:
         continue
       if img is None:

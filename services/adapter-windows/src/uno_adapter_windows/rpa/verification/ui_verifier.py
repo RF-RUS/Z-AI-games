@@ -28,8 +28,12 @@ def verify_screenshot_transition(
       img_a = img_a.resize(img_b.size)
     diff = ImageChops.difference(img_b, img_a)
     hist = diff.histogram()
-    # sum of non-zero channel diffs approx
-    changed = sum(hist[1:256]) + sum(hist[257:512]) + sum(hist[513:768])
+    # Weighted sum of per-channel diff MAGNITUDES across all three channels
+    # (histogram is 768 bins: 256 × R/G/B; bin index within a channel = i % 256).
+    # Counting non-zero bins made the ratio cap at 1/255 ≈ 0.0039, permanently below
+    # the default 0.005 threshold, so EVERY dispatched click came back
+    # "no_visible_change" → flagged unconfirmed even on a fully redrawn board.
+    changed = sum((i % 256) * c for i, c in enumerate(hist))
     total = img_b.size[0] * img_b.size[1] * 3 * 255
     ratio = changed / total if total else 0.0
     passed = ratio >= min_change_ratio

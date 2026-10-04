@@ -138,3 +138,97 @@ def test_accepts_dict_shaped_slots() -> None:
 
   assert diag["grounded"] == 1
   assert fused[0]["center"] == {"x": 640, "y": 760}
+
+
+# --- CV count-recovery (the 3b VLM hand-collapse, 2026-08-28) ----------------
+# The small VLM degenerates: on a real 9-card fan it returned hand_cards=[red 7]
+# (identical to the top card, conf 0.5). Segmentation measured 9 slots. Recovery
+# turns the surplus measured slots into colour-only cards (value "unknown") so the
+# agent knows the hand is bigger than one. Gated so the normal off-by-one never
+# fires, and a VLM that read most of the hand is never padded.
+
+def _fan(n: int, colors: list[str], start_x: int = 300, step: int = 100) -> list[SimpleNamespace]:
+  slots = []
+  for i in range(n):
+    x = start_x + i * step
+    slots.append(SimpleNamespace(
+      slot_index=i, color=colors[i % len(colors)],
+      bounds=(x, 700, 80, 120), center=(x + 40, 760), color_confidence=0.9,
+    ))
+  return slots
+
+
+def test_collapse_to_one_recovers_full_hand() -> None:
+  """The live failure: VLM says 1 red 7, CV measured 9 slots of real colours.
+  The recovered hand must keep the VLM's red 7 AND add the 8 missing cards as
+  colour-only (value unknown, measured coordinate), in left-to-right order."""
+  colors = ["red", "green", "blue", "yellow", "red", "green", "blue", "yellow", "red"]
+  cards = [{"color": "red", "value": "7"}]  # the VLM's single collapsed card
+  slots = _fan(9, colors)
+
+  fused, diag = attach_hand_geometry(cards, slots)
+
+  assert diag["method"] == "cv_count_recovery"
+  assert len(fused) == 9
+  assert diag["grounded"] == 1 and diag["recovered"] == 8
+  # The VLM card survives, untouched.
+  assert any(c["value"] == "7" for c in fused)
+  # Recovered cards are colour-only with a measured centre, in fan order.
+  unknowns = [c for c in fused if c["value"] == "unknown"]
+  assert len(unknowns) == 8
+  assert all(c["center"]["x"] is not None for c in unknowns)
+  assert all(c["geometry_source"] == "cv_recovered_color_only" for c in unknowns)
+  # Left-to-right: the centre-x is non-decreasing.
+  xs = [c["center"]["x"] for c in fused]
+  assert xs == sorted(xs)
+
+
+def test_off_by_one_does_not_recover() -> None:
+  """Segmentation's width estimate is often off by ONE. A single surplus slot
+  must NOT fabricate a card — that would be a guess, and this layer never guesses."""
+  cards = [
+    {"color": "red", "value": "1"},
+    {"color": "green", "value": "8"},
+  ]
+  slots = _fan(3, ["red", "green", "blue"])  # one extra slot
+
+  fused, diag = attach_hand_geometry(cards, slots)
+
+  # Falls through to colour matching; the lone surplus slot is too few to recover.
+  assert diag["method"] != "cv_count_recovery"
+  assert "recovered" not in diag
+  # No card with value "unknown" was invented.
+  assert all(c["value"] != "unknown" for c in fused)
+
+
+def test_wild_slot_is_never_recovered() -> None:
+  """A 'wild' (dark) slot cannot be told from a draw-four by colour — recovering
+  it as a colour-only card would be a guess, so it is skipped even when there is
+  a large surplus."""
+  cards = [{"color": "red", "value": "7"}]
+  slots = _fan(4, ["red", "wild", "green", "blue"])
+
+  fused, diag = attach_hand_geometry(cards, slots)
+
+  assert diag["method"] == "cv_count_recovery"
+  # red 7 (VLM) + green + blue recovered; the wild slot is absent.
+  assert len(fused) == 3
+  assert all(c["color"] != "wild" for c in fused)
+
+
+def test_low_confidence_slot_not_recovered() -> None:
+  """A slot whose colour is a coin flip (low confidence) is not recovered: the
+  colour would be a guess, and a wrong colour is worse than an absent card."""
+  cards = [{"color": "red", "value": "7"}]
+  slots = [
+    _slot(0, "red", 300),
+    _slot(1, "green", 400, conf=0.2),  # low confidence
+    _slot(2, "blue", 500, conf=0.2),   # low confidence
+    _slot(3, "yellow", 600, conf=0.9), # the only trustworthy one
+  ]
+
+  fused, diag = attach_hand_geometry(cards, slots)
+
+  # Only the yellow slot is recovered (green/blue are coin flips).
+  assert len(fused) == 2  # red 7 + yellow
+  assert [c for c in fused if c["value"] == "unknown"][0]["color"] == "yellow"

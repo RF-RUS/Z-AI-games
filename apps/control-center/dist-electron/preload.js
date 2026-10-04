@@ -2,7 +2,7 @@
 const electron = require("electron");
 const fs = require("fs");
 const path = require("path");
-const API_BASE = "http://127.0.0.1";
+const API_BASE = process.env.VITE_API_BASE || process.env.API_BASE || "http://127.0.0.1";
 const ORCH = `${API_BASE}:8100`;
 electron.contextBridge.exposeInMainWorld("unoApi", {
   // Health & connection

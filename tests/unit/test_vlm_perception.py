@@ -90,10 +90,16 @@ def test_merger_vlm_board_survives_screenshot_present():
     )
     obs = build_observation("s1", vlm=_vlm(board), screenshot=shot, game_type="uno")
     gs = obs.game_state or {}
-    # VLM's 3 cards survive; heuristic did not overwrite hand_cards/top_card.
-    assert gs.get("hand_count") == 3
+    # VLM's 3 cards survive; heuristic did not overwrite top_card. The count may
+    # now EXCEED 3: on the real 9-card fixture the CV count-recovery adds the
+    # colour-only cards the VLM under-counted, so the count reflects the measured
+    # fan, not just the VLM's read.
+    assert gs.get("hand_count", 0) >= 3
     assert gs.get("top_card") == {"color": "yellow", "value": "reverse"}
     assert gs.get("recognition_method") == "vlm"
+    # The VLM's exact-value cards must all still be present (not clobbered).
+    values = {c.get("value") for c in gs.get("hand_cards", [])}
+    assert {"6", "reverse"} <= values
 
 
 # --- diagnostics: MIME sniff + perceive stamps vlm_status ------------------
@@ -228,6 +234,72 @@ def test_normalize_board_draw_pile_missing_is_none():
     assert out["draw_pile"] is None
 
 
+def test_normalize_board_drops_prompt_on_draw_pile():
+    """A VLM-hallucinated 'Play' prompt at the EXACT draw-pile centre is a
+    fabrication (session 0859f748: draw_pile=(600,300), Play@(600,300)) and must
+    be dropped so the agent never 'clicks Play' on the deck."""
+    raw = {
+        "screen_state": "in_game",
+        "top_card": {"color": "red", "value": "7"},
+        "hand_cards": [{"color": "red", "value": "7"}],
+        "draw_pile": {"x": 600, "y": 300},
+        "prompts": [{"label": "Play", "x": 600, "y": 300}],
+        "confidence": 0.5,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["prompts"] == []
+    # Board is still usable: cards survived, only the phantom prompt was dropped.
+    assert out["top_card"] == {"color": "red", "value": "7"}
+
+
+def test_normalize_board_keeps_prompt_near_draw_pile():
+    """A genuine button that merely sits NEAR the deck (not on it) is kept."""
+    raw = {
+        "screen_state": "in_game",
+        "top_card": {"color": "red", "value": "7"},
+        "hand_cards": [{"color": "red", "value": "7"}],
+        "draw_pile": {"x": 600, "y": 300},
+        "prompts": [{"label": "Play", "x": 648, "y": 380}],
+        "confidence": 0.7,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["prompts"] == [{"label": "Play", "center": {"x": 648, "y": 380}}]
+
+
+def test_normalize_board_extracts_drawn_card():
+    """The just-drawn card (Play/Keep prompt) is surfaced for the strategy."""
+    raw = {
+        "screen_state": "in_game",
+        "top_card": {"color": "red", "value": "2"},
+        "hand_cards": [{"color": "green", "value": "4"}],
+        "drawn_card": {"color": "Red", "value": "5"},
+        "prompts": [
+            {"label": "Play", "x": 768, "y": 630},
+            {"label": "Keep", "x": 1070, "y": 630},
+        ],
+        "confidence": 0.9,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["drawn_card"] == {"color": "red", "value": "5"}
+    assert len(out["prompts"]) == 2 and out["prompts"][0]["center"] == {"x": 768, "y": 630}
+
+
+def test_normalize_board_drawn_card_absent_is_none():
+    """Normal turn — no Play/Keep dialog, so drawn_card is None (not a crash)."""
+    raw = {
+        "screen_state": "in_game",
+        "top_card": {"color": "blue", "value": "1"},
+        "hand_cards": [{"color": "blue", "value": "2"}],
+        "confidence": 0.8,
+    }
+    out = _normalize_board(raw)
+    assert out is not None
+    assert out["drawn_card"] is None
+
+
 def test_normalize_board_draw_pile_bad_coords_is_none():
     """Malformed draw_pile (string coords, missing key) must not crash."""
     raw = {
@@ -257,3 +329,23 @@ def test_merger_passes_draw_pile_to_actionable_targets():
     gs = obs.game_state or {}
     # find_draw_target must resolve to the VLM-reported coordinate.
     assert find_draw_target(gs) == (648, 380)
+
+
+def test_merger_passes_drawn_card_to_game_state():
+    """The Play/Keep strategy needs the drawn card in game_state — the VLM board
+    key must be folded through like top_card, not dropped on the floor."""
+    board = _normalize_board({
+        "screen_state": "in_game",
+        "top_card": {"color": "red", "value": "2"},
+        "hand_cards": [{"color": "green", "value": "4"}],
+        "drawn_card": {"color": "blue", "value": "5"},
+        "prompts": [
+            {"label": "Play", "x": 768, "y": 630},
+            {"label": "Keep", "x": 1070, "y": 630},
+        ],
+        "confidence": 0.9,
+    })
+    obs = build_observation("s1", vlm=_vlm(board), game_type="uno")
+    gs = obs.game_state or {}
+    assert gs.get("drawn_card") == {"color": "blue", "value": "5"}
+    assert len(gs.get("prompts")) == 2

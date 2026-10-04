@@ -15,9 +15,12 @@ when the VLM is disabled or fails.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import re
+import time
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +38,15 @@ logger = get_logger("vlm_perception")
 
 MODEL_RUNTIME_URL = os.getenv("VLM_MODEL_RUNTIME_URL", "http://127.0.0.1:8111")
 VLM_TIMEOUT_S = float(os.getenv("VLM_TIMEOUT_S", "30"))
+# Token budget for the board prompt. This build of Ollama IGNORES the
+# think:false flags (verified 2026-08-26: native "think" and
+# chat_template_kwargs.enable_thinking both still produce ~7k chars of
+# reasoning), so a THINKING VLM must get enough budget for reasoning + JSON.
+# At 3072 the answer was truncated mid-JSON (finish_reason=length) and
+# perception logged parse_failed / empty_board on every real frame.
+# With a non-thinking VLM (qwen2.5-vl) the JSON is ~150 tokens, so the extra
+# headroom costs nothing.
+VLM_MAX_TOKENS = int(os.getenv("VLM_MAX_TOKENS", "4096"))
 # Off by default — enabling it routes perception through the VLM. Set
 # VLM_PERCEPTION=1 (and a vision profile) to make it the primary path.
 VLM_ENABLED = os.getenv("VLM_PERCEPTION", "0") not in ("0", "", "false", "False")
@@ -42,18 +54,69 @@ VLM_ENABLED = os.getenv("VLM_PERCEPTION", "0") not in ("0", "", "false", "False"
 # Qwen2-VL served via vLLM) must be registered; falls back to mock otherwise.
 VLM_PROFILE_ID = os.getenv("VLM_PROFILE_ID", "mock/uno-assistant")
 
+# ── Response cache ─────────────────────────────────────────────────────────────
+# Turn-based games spend whole ticks waiting for the VLM while the board HASN'T
+# CHANGED (opponents' turns, lobby screens, repeated observations of the same
+# frame). Caching inference results by content hash skips redundant model calls:
+# the screenshot is the entire input, so identical bytes + profile + game type
+# always yield the same answer. This is a correctness-neutral optimization —
+# only fresh frames pay model latency. Bounded ring (FIFO eviction) + TTL keep
+# memory flat for long unattended runs.
+VLM_CACHE_ENABLED = os.getenv("VLM_CACHE_ENABLED", "1") not in ("0", "false", "False")
+VLM_CACHE_TTL_S = float(os.getenv("VLM_CACHE_TTL_S", "120"))
+_VLM_CACHE_MAX = 64
+_vlm_cache: OrderedDict[str, tuple[float, VisionInference]] = OrderedDict()
+
+
+def _vlm_cache_key(image_bytes: bytes, profile_id: str, game_type: str) -> str:
+  digest = hashlib.sha256(image_bytes).hexdigest()[:24]
+  return f"{digest}|{profile_id}|{game_type}"
+
+
+def _vlm_cache_get(key: str) -> VisionInference | None:
+  if not VLM_CACHE_ENABLED or VLM_CACHE_TTL_S <= 0:
+    return None
+  entry = _vlm_cache.get(key)
+  if entry is None:
+    return None
+  ts, inference = entry
+  if time.time() - ts > VLM_CACHE_TTL_S:
+    _vlm_cache.pop(key, None)
+    return None
+  _vlm_cache.move_to_end(key)
+  return inference
+
+
+def _vlm_cache_put(key: str, inference: VisionInference) -> None:
+  if not VLM_CACHE_ENABLED:
+    return
+  _vlm_cache[key] = (time.time(), inference)
+  _vlm_cache.move_to_end(key)
+  while len(_vlm_cache) > _VLM_CACHE_MAX:
+    _vlm_cache.popitem(last=False)
+
+
+def reset_vlm_cache() -> None:
+  """Clear cached inferences (tests / model reloads that change the output)."""
+  _vlm_cache.clear()
+
 
 def vlm_enabled() -> bool:
     """Whether the VLM perception path is turned on (env-gated)."""
     return VLM_ENABLED
 
 
-def _read_image_base64(screenshot_path: str) -> str | None:
+def _read_image_bytes(screenshot_path: str) -> bytes | None:
     try:
-        return base64.b64encode(Path(screenshot_path).read_bytes()).decode("ascii")
+        return Path(screenshot_path).read_bytes()
     except Exception as exc:  # noqa: BLE001 — any read error → skip VLM, fall back
         logger.warning("vlm_read_image_failed", path=screenshot_path, error=str(exc))
         return None
+
+
+def _read_image_base64(screenshot_path: str) -> str | None:
+    data = _read_image_bytes(screenshot_path)
+    return base64.b64encode(data).decode("ascii") if data is not None else None
 
 
 async def infer_vision(
@@ -64,13 +127,21 @@ async def infer_vision(
     """Screenshot → (VisionInference, status), or (None, reason) on failure.
 
     The status string surfaces WHY the VLM did/didn't produce a board so it can
-    show up in the operator diagnostic ("ok", "no_image", "http_503" = profile
-    disabled, "http_<code>", "error", "parse_failed", "empty_board"). The caller
-    falls back to the heuristic on any non-"ok" status.
+    show up in the operator diagnostic ("ok", "cache_hit", "no_image", "http_503"
+    = profile disabled, "http_<code>", "error", "parse_failed", "empty_board").
+    The caller falls back to the heuristic on any non-("ok", "cache_hit") status.
     """
-    image_b64 = _read_image_base64(screenshot_path)
-    if not image_b64:
+    image_bytes = _read_image_bytes(screenshot_path)
+    if image_bytes is None:
         return None, "no_image"
+
+    effective_profile = profile_id or VLM_PROFILE_ID
+    cache_key = _vlm_cache_key(image_bytes, effective_profile, game_type)
+    cached = _vlm_cache_get(cache_key)
+    if cached is not None:
+        return cached, "cache_hit"
+
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
 
     body = {
         "context": {"use_case": "perception_board", "correlation_id": f"vlm_{game_type}"},
@@ -78,13 +149,13 @@ async def infer_vision(
         "prompt": _board_prompt(game_type),
         "image_base64": image_b64,
         "expect_json": True,
-        # 3072, not 1024: qwen3-vl is a THINKING model — it emits reasoning tokens
-        # before the answer, and the reasoning is billed against the same budget.
-        # At 1024 the budget was consumed entirely by reasoning, the answer never
-        # started, and message.content came back as "" (finish_reason=length) —
-        # which perception logged as `vlm_empty_board keys=[] raw= structured={}`.
-        # The board JSON is small, so the headroom costs latency, not correctness.
-        "max_tokens": 3072,
+        # VLM_MAX_TOKENS (default 4096): this Ollama build ignores think:false, so
+        # the qwen3-vl board prompt must fit reasoning + JSON in one budget.
+        # 3072 was not enough — the answer was truncated mid-JSON
+        # (finish_reason=length) and every real frame logged
+        # vlm_parse_failed / vlm_empty_board. With a non-thinking VLM the JSON is
+        # ~150 tokens, so the headroom costs nothing.
+        "max_tokens": VLM_MAX_TOKENS,
     }
     try:
         async with httpx.AsyncClient(timeout=VLM_TIMEOUT_S) as client:
@@ -156,45 +227,136 @@ async def infer_vision(
             note="discarding canned board",
         )
         return None, "mock_fallback"
-    return VisionInference(
-        model_id=str(result.get("profile_id") or profile_id or VLM_PROFILE_ID),
+    inference = VisionInference(
+        model_id=str(result.get("profile_id") or effective_profile),
         raw_output=raw_text or json.dumps(structured),
         structured=normalized,
         confidence=float(normalized.get("confidence", 0.0) or 0.0),
-    ), "ok"
+    )
+    _vlm_cache_put(cache_key, inference)
+    return inference, "ok"
 
 
 def _extract_json_object(text: str) -> str | None:
-    """Try to pull the first valid JSON object out of a messy model response.
+    """Try to pull the first JSON object out of a messy model response.
 
-    Handles the two most common failure modes:
-    - Markdown code fences: ```json\\n{...}\\n``` or ```\\n{...}\\n```
-    - Reasoning preamble before the JSON (model ignored /no_think)
+    Handles the failure modes observed on real frames (2026-08-27, qwen2.5-vl):
+    - Markdown code fences: ```json\\n{...}\\n``` (closed)
+    - **UNCLOSED fences**: the model opens ```json and the JSON is cut off by the
+      token budget (finish_reason=length) — the old regex required the closing
+      fence and silently returned None on every such frame.
+    - Reasoning preamble before the JSON (model ignored /no_think).
+    - Truncation mid-object: best-effort tail repair so a mostly-complete board
+      (top_card + first N hand_cards) is still usable.
 
     Returns the raw JSON string (not parsed) so the caller can decide, or None
-    if no {...} block could be found.  Does NOT validate nesting — that is left
-    to json.loads so errors are explicit.
+    if no usable object could be reconstructed.
     """
     if not text:
         return None
-    # 1. Strip markdown code fences (```json ... ``` or ``` ... ```)
+    # 1. Closed fence: take the body as-is.
     fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if fence_match:
         return fence_match.group(1)
-    # 2. Find the first '{' and match its closing '}' via a simple brace counter.
-    #    This handles a reasoning preamble that precedes the JSON object.
+    # 2. Find the first '{'.
     start = text.find("{")
     if start == -1:
         return None
+    # 3. Complete object: string-aware brace counter (braces inside string
+    #    values would break a naive counter).
+    complete = _first_complete_object(text, start)
+    if complete is not None:
+        return complete
+    # 4. Truncated object (unclosed fence / finish_reason=length): repair tail.
+    return _repair_truncated_object(text[start:])
+
+
+def _first_complete_object(text: str, start: int) -> str | None:
+    """Return text[start:end] when braces balance (string-aware), else None."""
     depth = 0
-    for i, ch in enumerate(text[start:], start=start):
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return text[start : i + 1]
+    in_str = False
+    escaped = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
     return None
+
+
+def _repair_truncated_object(fragment: str) -> str | None:
+    """Best-effort close of a JSON object truncated by the token budget.
+
+    The damage zone is the incomplete trailing token, so cut a few characters
+    from the tail at a time and try to close whatever brackets are still open.
+    The last partially-written card is simply absent — far better than
+    discarding a 95%-complete board.
+    """
+    decoder = json.JSONDecoder()
+    try:
+        obj, _ = decoder.raw_decode(fragment)
+        return json.dumps(obj)
+    except json.JSONDecodeError:
+        pass
+    n = len(fragment)
+    for cut in range(n - 1, max(n - 400, 0), -4):
+        head = fragment[:cut].rstrip().rstrip(",")
+        candidate = _close_open_brackets(head)
+        if candidate is None:
+            continue
+        try:
+            decoder.raw_decode(candidate)
+            return candidate
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _close_open_brackets(head: str) -> str | None:
+    """Append closing brackets for whatever is left open after `head`.
+
+    Returns None when the head ends in a state that cannot be closed
+    (mismatched bracket, stray character at a value boundary, etc.).
+    """
+    stack: list[str] = []
+    in_str = False
+    escaped = False
+    for ch in head:
+        if in_str:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                stack.append("}")
+            elif ch == "[":
+                stack.append("]")
+            elif ch in "}]":
+                if not stack or stack[-1] != ch:
+                    return None
+                stack.pop()
+    if in_str:
+        # Unterminated string value: close the string first.
+        head = head + '"'
+    return head + "".join(reversed(stack))
 
 
 def _board_prompt(game_type: str) -> str:
@@ -213,6 +375,7 @@ def _board_prompt(game_type: str) -> str:
         '"hand_cards":[{"color":"...","value":"..."}],'
         '"opponents":[{"seat":"left|right|top","hand_count":<int>}],'
         '"draw_pile":{"x":<center px>,"y":<center px>},'
+        '"drawn_card":{"color":"red|green|blue|yellow|wild","value":"<number or action>"},'
         '"prompts":[{"label":"<button text e.g. Play|Keep|Draw|choose a colour>",'
         '"x":<center px>,"y":<center px>}],'
         '"confidence":0.0-1.0}\n'
@@ -221,6 +384,9 @@ def _board_prompt(game_type: str) -> str:
         "(left/right/top relative to the current player) and how many cards they are holding. "
         "draw_pile is the pixel coordinate of the centre of the face-down draw deck "
         "(the pile the player draws from); omit or null if not visible. "
+        "drawn_card is the card the current player has JUST DRAWN and is being asked about "
+        "(shown highlighted/enlarged near the play area next to a 'Play'/'Keep' choice); "
+        "omit or null unless that situation is visible. "
         "prompts are any on-screen action BUTTONS or dialogs the player must click "
         "right now (e.g. a 'Play'/'Keep' choice after drawing, a colour picker after "
         "a wild, 'UNO!', 'Continue'). Give each button's visible label and the pixel "
@@ -278,6 +444,9 @@ def _normalize_board(raw: dict[str, Any]) -> dict[str, Any] | None:
         return out
 
     top = card(raw.get("top_card"))
+    # The just-drawn card (the "Play or Keep this?" prompt). Absent on a normal
+    # turn; carries colour/value only when the model could read it.
+    drawn = card(raw.get("drawn_card"))
     hand = [x for x in (card(h) for h in (raw.get("hand_cards") or [])) if x]
     prompts = [x for x in (prompt_btn(p) for p in (raw.get("prompts") or [])) if x]
     opponents = [x for x in (opponent(o) for o in (raw.get("opponents") or [])) if x]
@@ -289,14 +458,52 @@ def _normalize_board(raw: dict[str, Any]) -> dict[str, Any] | None:
             draw_pile = {"x": int(dp_raw["x"]), "y": int(dp_raw["y"])}
         except (TypeError, ValueError):
             pass
+    # ── PROMPT/DECK COINCIDENCE GUARD (2026-08-28) ─────────────────────────────
+    # The small VLM hallucinates a "Play" prompt at the EXACT centre it just
+    # reported for the draw pile (session 0859f748: draw_pile=(600,300) AND
+    # prompts=[Play @ (600,300)]). Two on-screen targets cannot occupy the same
+    # pixel, so a prompt coinciding with the deck is a fabrication, and the agent
+    # then "clicked Play" on the deck. Drop any prompt whose centre matches the
+    # draw pile within a few px. Gated so a real button that merely sits NEAR the
+    # deck is kept — only an exact/near-exact coincidence is rejected.
+    if draw_pile and prompts:
+        def _dp_coincides(p: dict[str, Any]) -> bool:
+            c = p.get("center")
+            if not isinstance(c, dict):
+                return False
+            try:
+                return (abs(int(c.get("x", 0)) - draw_pile["x"]) <= 4
+                        and abs(int(c.get("y", 0)) - draw_pile["y"]) <= 4)
+            except (TypeError, ValueError):
+                return False
+        kept = [p for p in prompts if not _dp_coincides(p)]
+        if len(kept) != len(prompts):
+            logger.warning("vlm_prompt_dropped_drawpile_coincidence",
+                           dropped=len(prompts) - len(kept))
+            prompts = kept
     # Usable if we read cards OR an on-screen prompt/button to act on.
     if not top and not hand and not prompts:
+        return None
+
+    # ── PLAUSIBILITY GATE (2026-08-27) ──────────────────────────────────────────
+    # A VLM can produce a *syntactically perfect* board that is physically
+    # impossible: the live run on 2026-08-27 (session e8d99031, cycle 2) returned
+    # 132 hand cards that were ALL `{"color":"red","value":"wild"}` with no parse
+    # error — a repetition-collapse degeneration, which the merger then folded
+    # straight into game_state (vlm_has_cards was True) and the agent acted on.
+    # That is the "confidently wrong perception" this project warns it keeps
+    # biting itself with. Reject the board (fall back to the heuristic) when it
+    # violates invariants a real UNO hand cannot.
+    reason = _board_rejection_reason(hand)
+    if reason is not None:
+        logger.warning("vlm_board_rejected", reason=reason, hand_count=len(hand))
         return None
 
     return {
         "screen_type": raw.get("screen_state") or raw.get("screen_type") or "unknown",
         "whose_turn": raw.get("whose_turn", "unknown"),
         "top_card": top,
+        "drawn_card": drawn,
         "hand_cards": hand,
         "hand_count": len(hand),
         "prompts": prompts,
@@ -305,3 +512,35 @@ def _normalize_board(raw: dict[str, Any]) -> dict[str, Any] | None:
         "confidence": raw.get("confidence", 0.0),
         "source": "vlm",
     }
+
+
+def _board_rejection_reason(hand: list[dict[str, str]]) -> str | None:
+    """Return a reason string when the VLM hand is physically impossible, else None.
+
+    Two independent invariants a real UNO hand cannot violate:
+      1. **Card-count bound.** A hand starts at 7 and only grows by one draw per
+         turn; 25 is already a full house plus the drawn card. Anything far above
+         that (132 observed) is a degeneration, not a hand.
+      2. **Repetition collapse.** A VLM stuck in a loop emits the same
+         (color, value) many times in a row. Five identical consecutive cards is
+         not a hand — it is the model failing to move its attention.
+    """
+    if len(hand) > _MAX_PLAUSIBLE_HAND:
+        return f"hand_count_{len(hand)}_exceeds_{_MAX_PLAUSIBLE_HAND}"
+    run = 1
+    for i in range(1, len(hand)):
+        if hand[i] == hand[i - 1]:
+            run += 1
+            if run >= _MAX_IDENTICAL_RUN:
+                return f"repetition_collapse_{run}_x_{hand[i].get('color')}_{hand[i].get('value')}"
+        else:
+            run = 1
+    return None
+
+
+# A real UNO hand is 7 cards at start; even a maximum draw pile can't push the
+# current player past ~21+1 before they must be down to play. 25 leaves headroom
+# for the drawn-card prompt without ever accepting a degenerate 100+ count.
+_MAX_PLAUSIBLE_HAND = 25
+# Consecutive identical (color, value) cards that mark a repetition loop.
+_MAX_IDENTICAL_RUN = 5

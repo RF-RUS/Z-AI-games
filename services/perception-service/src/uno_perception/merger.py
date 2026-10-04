@@ -93,7 +93,7 @@ def build_observation(
   if vlm_has_cards:
     game_state = game_state or {}
     game_state["cv_build"] = "v3"
-    for k in ("screen_type", "whose_turn", "top_card", "hand_cards", "hand_count", "prompts", "opponents"):
+    for k in ("screen_type", "whose_turn", "top_card", "drawn_card", "hand_cards", "hand_count", "prompts", "opponents"):
       if vlm_board.get(k) is not None:
         game_state[k] = vlm_board[k]
     game_state["recognition_method"] = "vlm"
@@ -151,6 +151,10 @@ def build_observation(
           slots = segment_hand_cards(screenshot.path, hand_region)
           fused, fusion_diag = attach_hand_geometry(game_state["hand_cards"], slots)
           game_state["hand_cards"] = fused
+          # FUSION MAY HAVE GROWN THE HAND (CV count-recovery re-added cards the
+          # small VLM collapsed). Refresh the count so downstream (decision, the
+          # [CVv3] log line) reflects the real number of cards in the fan.
+          game_state["hand_count"] = len(fused)
           # Recorded, not inferred: "the agent did not click" and "the agent had no
           # coordinate to click" are different bugs, and this is what tells them
           # apart in the cycle trace after the fact.

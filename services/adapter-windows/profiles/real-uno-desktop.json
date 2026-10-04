@@ -5,7 +5,8 @@
   "window": {
     "title_regex": "UNO",
     "exclude_title_regex": "Mock Test Target",
-    "process_name": null
+    "process_name": null,
+    "fixed_size": { "width": 1296, "height": 759 }
   },
   "preferred_backend": "uia",
   "fallback_backend": "win32",

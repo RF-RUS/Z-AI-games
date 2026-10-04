@@ -53,6 +53,7 @@ export default function App() {
     selectedWindow?: SelectedGameWindow | null;
     selectedTab?: { url: string; id: string } | null;
     gameType?: string;
+    vlmProfileId?: string | null;
   }) => {
     setStarting(true);
     try {
@@ -77,6 +78,10 @@ export default function App() {
         selectedWindow: config.selectedWindow ?? null,
         selectedTab: config.selectedTab ?? null,
       });
+      // Vision model picked at setup (remembered across sessions). AttachAdapterBody
+      // carries vlm_profile_id so the session starts on the chosen VLM, not the
+      // service default.
+      if (config.vlmProfileId) attachPayload.vlm_profile_id = config.vlmProfileId;
       await attachAdapter(created.session_id, attachPayload);
       dispatch({ type: "ADD_EVENT", event: createEvent("adapter", "Adapter attached") });
 

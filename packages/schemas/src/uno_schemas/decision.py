@@ -32,6 +32,11 @@ class DecisionRequest(BaseModel):
   model_profile_id: str | None = None
   correlation_id: str
   game_type: str | None = None
+  # Shadow mode: additionally run the OTHER strategy (heuristic ↔ model) as a
+  # NON-BINDING observer. The returned decision comes from the primary strategy;
+  # the shadow's choice is recorded in explanation.shadow_comparison so operators
+  # can see disagreement rate before promoting the shadow strategy to primary.
+  shadow_mode: bool = False
 
 
 class DecisionCandidate(BaseModel):
@@ -40,11 +45,19 @@ class DecisionCandidate(BaseModel):
   reason: str = ""
 
 
+class ShadowComparison(BaseModel):
+  shadow_strategy: str
+  shadow_confidence: float
+  shadow_summary: str = ""
+  agree_with_primary: bool
+
+
 class DecisionExplanation(BaseModel):
   summary: str
   candidates: list[DecisionCandidate] = Field(default_factory=list)
   model_used: bool = False
   model_id: str | None = None
+  shadow_comparison: ShadowComparison | None = None
 
 
 class DecisionResult(BaseModel):
@@ -60,6 +73,8 @@ class PolicyViolationType(StrEnum):
   UNSAFE_CHAT = "unsafe_chat"
   RATE_LIMIT = "rate_limit"
   INTERNAL_LEAK = "internal_leak"
+  KILL_SWITCH = "kill_switch"
+  DRY_RUN = "dry_run"
 
 
 class PolicyViolation(BaseModel):

@@ -476,6 +476,11 @@ class SessionOrchestrator:
     self._flow = FlowController(self._clients)
     self._bus = get_event_bus()
     self._adapter_registry = None
+    # Session ids with a model-switch re-perceive in flight (coalescing: a
+    # second switch while the first is still loading the model is ignored —
+    # the in-flight run already reads the LATEST vlm_profile_id at perceive
+    # time, so the operator's final choice wins either way).
+    self._reperceive_inflight: set[str] = set()
 
   @property
   def _registry(self):
@@ -523,6 +528,72 @@ class SessionOrchestrator:
   def get_steps(self, session_id: str) -> list:
     s = self._sessions.get(session_id)
     return s.steps if s else []
+
+  def set_vlm_profile(self, session_id: str, profile_id: str | None) -> SessionDetail:
+    """Set (or clear, when profile_id is None) this session's VLM profile.
+
+    Takes effect immediately: a background re-perceive captures a fresh frame
+    and analyzes it with the new profile (the perception cache is keyed by
+    (session, profile), so the new model gets its own VLM call even on a static
+    screen). The operator's polling then shows the new board within its next
+    3s cycle. No restart, no re-attach. None falls back to the perception
+    service's own default.
+    """
+    session = self._require(session_id)
+    detail = session.detail
+    detail.vlm_profile_id = profile_id
+    logger.info(
+      "vlm_profile_set",
+      session_id=session_id,
+      profile_id=profile_id,
+      flow_state=detail.flow_state.value,
+    )
+    # Re-analyze NOW, not "on the next tick": an idle/paused session may not
+    # tick for a long time, and the operator switching models expects the
+    # board to be re-read immediately. Fire-and-forget: a cold 7b load can
+    # take tens of seconds and must not block the /model response. Coalesced
+    # per session: the in-flight run reads vlm_profile_id at perceive time,
+    # so a switch during a switch still lands on the final choice.
+    if session_id not in self._reperceive_inflight:
+      self._reperceive_inflight.add(session_id)
+      task = asyncio.create_task(self._reperceive_after_model_change(session))
+      task.add_done_callback(lambda _t: self._reperceive_inflight.discard(session_id))
+    return detail
+
+  async def _reperceive_after_model_change(self, session: "RuntimeSession") -> None:
+    """Fresh capture + forced VLM perceive with the just-set profile.
+
+    Result lands in session.latest_observation, which the operator UI surfaces
+    via its 3s session poll (strategy_snapshot). Never raises: a failed
+    re-perceive is logged and the next regular cycle retries.
+    """
+    detail = session.detail
+    binding = self._flow._primary_binding(detail)
+    if not binding or not binding.adapter_id:
+      return  # mock/detached session — nothing to re-analyze
+    cid = str(uuid4())
+    try:
+      _dom, _ui, _conf, screenshot = await self._flow._observe(binding, cid)
+      if screenshot is None:
+        logger.warning(
+          "model_switch_reperceive_no_frame", session_id=detail.session_id,
+        )
+        return
+      obs = await self._clients.perceive(
+        detail.session_id, dom=_dom, ui=_ui, screenshot=screenshot,
+        vlm_profile_id=detail.vlm_profile_id, force_vlm=True,
+      )
+      session.latest_observation = obs
+      logger.info(
+        "model_switch_reperceive_ok", session_id=detail.session_id,
+        profile_id=detail.vlm_profile_id,
+        vlm_status=(obs.game_state or {}).get("vlm_status"),
+      )
+    except Exception as exc:  # noqa: BLE001 — never leak into the /model handler
+      logger.warning(
+        "model_switch_reperceive_failed", session_id=detail.session_id,
+        error=str(exc),
+      )
 
   def status(self, session_id: str) -> OrchestratorStatus | None:
     s = self._sessions.get(session_id)
@@ -672,6 +743,10 @@ class SessionOrchestrator:
     detail.flow_state = transition(detail.flow_state, FlowState.ATTACHING)
     adapter_type = body.adapter_type or detail.config.adapter_type
     profile_id = body.profile_id or self._resolve_default_profile(session.spec, adapter_type)
+    # Per-session VLM profile (operator UI): remember it so every perceive call
+    # in this session routes through the chosen vision model.
+    if body.vlm_profile_id:
+      detail.vlm_profile_id = body.vlm_profile_id
     try:
       binding = await self._attach_with_retry(session, adapter_type, profile_id, body)
       detail.adapter_bindings = [b for b in detail.adapter_bindings if b.adapter_type != adapter_type]
@@ -837,7 +912,9 @@ class SessionOrchestrator:
     try:
       cid = str(uuid4())
       _dom, _ui, _conf, screenshot = await self._flow._observe(binding, cid)
-      await self._clients.perceive(session.detail.session_id, screenshot=screenshot)
+      # Warm the SESSION'S OWN chosen VLM (default when none selected), so a
+      # cold 7b load happens here, not during the first real tick.
+      await self._clients.perceive(session.detail.session_id, screenshot=screenshot, vlm_profile_id=session.detail.vlm_profile_id)
       logger.info("vlm_warmup_ok", session_id=session.detail.session_id)
     except Exception as exc:  # noqa: BLE001 — warmup is best-effort, never fatal
       logger.info("vlm_warmup_skipped", session_id=session.detail.session_id, reason=str(exc))

@@ -46,6 +46,80 @@ def test_heuristic_prefers_play_over_draw():
   assert result.chosen_action.action_type == ActionType.PLAY_CARD
 
 
+def test_heuristic_prefers_colour_match_play_over_draw():
+  """Colour-only perception (VLM down): a same-colour play must beat draw_card.
+
+  Without this, "play green ?" scores 0.5 ("play card") while draw is 0.55, and
+  the agent stalls drawing forever instead of playing the card it can see.
+  """
+  from uno_schemas.game import Card, CardColor, CardValue
+  actions = [
+    LegalAction(action_type=ActionType.PLAY_CARD, player_id="p1",
+                card=Card(color=CardColor.GREEN, value=CardValue.UNKNOWN), action_id="a-play"),
+    LegalAction(action_type=ActionType.DRAW_CARD, player_id="p1", action_id="a-draw"),
+  ]
+  result = decide_heuristic(_make_request(actions))
+  assert result.chosen_action.action_id == "a-play"
+
+
+def _wild_actions(red="a-wild-red", green="a-wild-green"):
+  """Per-colour wild expansion as the simulated engine produces it."""
+  from uno_schemas.game import Card, CardColor, CardValue
+  wild = Card(color=CardColor.WILD, value=CardValue.WILD)
+  return [
+    LegalAction(action_type=ActionType.PLAY_CARD, player_id="p1", card=wild,
+                chosen_color=CardColor.RED, action_id=red),
+    LegalAction(action_type=ActionType.PLAY_CARD, player_id="p1", card=wild,
+                chosen_color=CardColor.GREEN, action_id=green),
+    LegalAction(action_type=ActionType.DRAW_CARD, player_id="p1", action_id="a-draw"),
+  ]
+
+
+def test_heuristic_wild_sets_most_held_colour():
+  """Gap #1: the wild's colour comes from hand strategy, not list order (red)."""
+  req = _make_request(_wild_actions())
+  req.observation.game_state = {
+    "hand_cards": [
+      {"color": "green", "value": "2"},
+      {"color": "green", "value": "7"},
+      {"color": "red", "value": "9"},
+    ],
+    "top_card": {"color": "red", "value": "2"},
+  }
+  result = decide_heuristic(req)
+  assert result.chosen_action.action_id == "a-wild-green"
+  assert "wild: set green" in result.explanation.summary
+
+
+def test_heuristic_wild_continues_top_colour_when_hand_unreadable():
+  req = _make_request(_wild_actions())
+  req.observation.game_state = {
+    "hand_cards": [{"color": "red", "value": "9"}],
+    "top_card": {"color": "green", "value": "4"},
+  }
+  # One red vs top-match green: the 0.1 hand lead beats the 0.05 top bonus,
+  # so red wins — documented strategy order.
+  result = decide_heuristic(req)
+  assert result.chosen_action.action_id == "a-wild-red"
+
+
+def test_heuristic_wild_top_continues_when_hand_empty():
+  req = _make_request(_wild_actions())
+  req.observation.game_state = {
+    "hand_cards": [],
+    "top_card": {"color": "green", "value": "4"},
+  }
+  result = decide_heuristic(req)
+  assert result.chosen_action.action_id == "a-wild-green"
+
+
+def test_heuristic_wild_flat_without_context_keeps_first():
+  """Engine-only path (no perceived board): unchanged flat scoring → list order."""
+  req = _make_request(_wild_actions())  # observation has no game_state
+  result = decide_heuristic(req)
+  assert result.chosen_action.action_id == "a-wild-red"
+
+
 def test_policy_blocks_illegal():
   legal = [LegalAction(action_type=ActionType.DRAW_CARD, player_id="p1", action_id="a1")]
   decision = DecisionResult(

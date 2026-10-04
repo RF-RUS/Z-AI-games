@@ -1,0 +1,23 @@
+{
+  "profile_id": "local/ollama-vlm-7b",
+  "display_name": "Local Ollama vision model (qwen2.5-vl 7b, higher accuracy, OOM-risky under fullscreen game)",
+  "provider": "ollama_openai",
+  "base_url": "http://127.0.0.1:11434/v1",
+  "model_name": "qwen2.5vl:7b",
+  "api_key_env": "OLLAMA_API_KEY",
+  "enabled": true,
+  "capabilities": ["vision_understanding", "text_generation"],
+  "use_cases": ["perception_board"],
+  "priority": 30,
+  "max_tokens_default": 1024,
+  "temperature_default": 0.1,
+  "timeout_seconds": 180.0,
+  "supports_json_mode": false,
+  "supports_multimodal": true,
+  "safety_limits": {"max_tokens": "1024"},
+  "metadata": {
+    "extra_body": "{\"keep_alive\": \"24h\"}",
+    "oom_note": "2026-08-27: 7b (~5.6 GiB + vision projector) did NOT fit alongside the fullscreen UNO game on the RTX 5060 Ti 16 GiB — cudaMalloc OOM, llama-server crashes, Ollama evict/reload loops, the Electron game window losing its GPU surface. Operator chose 'no restriction' for the model picker (2026-08-28): the profile is selectable, but if VRAM pressure appears (monitor flicker, game window glitching, evict/reload logs in Ollama) fall back to local/ollama-vlm (3b). Warm-up loads the model on session start via /model before the first tick.",
+    "perf": "7b warm ~6-15s/call on this GPU when it fits (vs 3b ~1.2-4s)."
+  }
+}

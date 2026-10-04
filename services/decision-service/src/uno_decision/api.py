@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from uno_decision.policy import decide
 from uno_schemas.decision import DecisionRequest, DecisionResult
@@ -15,4 +17,5 @@ async def decide_action(req: DecisionRequest) -> DecisionResult:
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_decision.api:app", host="127.0.0.1", port=SERVICE_PORTS["decision-service"])
+  uvicorn.run("uno_decision.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["decision-service"])
+

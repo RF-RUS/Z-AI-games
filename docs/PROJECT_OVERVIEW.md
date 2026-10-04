@@ -97,8 +97,8 @@ All inter-service communication is synchronous HTTP REST. No message queues.
 | **perception-service** | 8103 | Evidence merge, plugin dispatch, confidence scoring | Yes (hosts per-game plugins) |
 | **decision-service** | 8106 | Strategy dispatch, action selection | Yes (hosts per-game strategies) |
 | **policy-guard** | 8107 | Action legality + confidence validation | Yes |
-| **uno-core** | 8101 | UNO rules engine (game plugin) | No — UNO-specific |
-| **svintus-core** | 8113 | Svintus rules engine (game plugin) | No — Svintus-specific |
+| **uno-core** | 8101 | UNO rules engine (game plugin, also a service) | No — UNO-specific |
+| **svintus-core** | — | Svintus rules engine (in-process game plugin library, no own port) | No — Svintus-specific |
 | **chat-intent-service** | 8108 | Operator chat intent classification | Yes |
 | **chat-response-service** | 8109 | Chat response generation | Yes |
 | **model-runtime** | 8111 | Model inference execution | Yes |
@@ -161,6 +161,16 @@ All inter-service communication is **synchronous HTTP REST** (FastAPI + httpx). 
 | Autonomous loop | Complete | `automatic=True`, first cycle produces real steps |
 | CDP browser connect | Complete | Connect to existing Chrome tabs via DevTools Protocol |
 | Screenshot trace pipeline | Complete | Visual evidence at each pipeline step |
+| Distributed tracing | Complete | X-Trace-Id propagated through all service calls; bound into structured logs per request |
+| Metrics aggregation | Complete | Per-step latency/status reported to observability-service (`/metrics/summary`, `/traces/{cid}`) |
+| Kill switch | Complete | Global halt via policy-guard (`POST /guard/decision` blocks everything while active); startup arming via `UNO_KILL_SWITCH=1` |
+| Dry-run mode | Complete | Session flag runs full observe→decide→guard without executing actions |
+| Shadow evaluation | Complete | Opposite strategy (heuristic↔model) runs non-binding; disagreement tracked in explanations + evals |
+| VLM response cache | Complete | Content-hashed inference cache (TTL + bounded ring) — unchanged frames skip model calls |
+| Eval harness | Complete | `scripts/run-eval.py` in-process scenario runs → `models/benchmarks/history.jsonl` quality curve; CI gate ≥0.8 success |
+| Windows CI coverage | Complete | `windows.yml` workflow runs unit+smoke on windows-latest (pywinauto paths included) |
+| Frontend CI coverage | Complete | `ci.yml` frontend job: tsc type-check + vitest for Control Center |
+| Docker deployment base | In place | One parameterized Dockerfile for all services + compose `backend` profile; staging validation pending |
 
 ### UNO Game Plugin (DONE)
 
@@ -196,9 +206,10 @@ All inter-service communication is **synchronous HTTP REST** (FastAPI + httpx). 
 |------|-------|-------------|
 | CV-based hand detection (template matching) | P1 | Fixture card templates, viewport calibration |
 | VLM integration for canvas games | P2 | Vision model provider, prompt engineering |
-| Second non-UNO game plugin | P2 | Perception + rules plugin for new game |
-| Docker production deployment | P2 | Dockerfiles, health checks |
-| Observability stack | P4 | Prometheus, Grafana, alerting |
+| Second non-UNO game plugin | P2 | Perception + rules plugin for new game (Svintus already proves multi-game in-process) |
+| Docker production deployment | P2 | Parameterized Dockerfile + compose `backend` profile in place; staging validation pending |
+| Prometheus/Grafana export from observability-service | P3 | `/metrics/summary` aggregation already in place |
+| Control Center kill-switch + dry-run UI toggles | P3 | REST endpoints exist (`POST :8107/guard/kill-switch`, session config flags) |
 
 ---
 

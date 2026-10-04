@@ -28,6 +28,10 @@ class WindowMatcher(BaseModel):
   class_name: str | None = None
   process_name: str | None = None
   executable_hint: str | None = None
+  # Exact outer window size ({width, height}) to force at attach and re-assert
+  # before actions. When set, the executor resizes the window to keep frame
+  # pixels, capture rect, and click bounds in one coordinate system.
+  fixed_size: dict[str, int] | None = None
 
 
 class ControlSelector(BaseModel):

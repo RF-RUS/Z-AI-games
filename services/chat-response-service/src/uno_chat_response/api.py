@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from uno_chat_response.generator import generate_reply
 from uno_schemas.chat import ChatReply, ChatReplyRequest
@@ -19,4 +21,5 @@ async def reply(req: ChatReplyRequest) -> ChatReply:
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_chat_response.api:app", host="127.0.0.1", port=SERVICE_PORTS["chat-response-service"])
+  uvicorn.run("uno_chat_response.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["chat-response-service"])
+

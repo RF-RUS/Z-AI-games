@@ -1,6 +1,7 @@
 import FlowStateBadge from "./FlowStateBadge";
 import PhaseLabel from "./PhaseLabel";
 import ModeSwitcher from "./ModeSwitcher";
+import ModelPicker from "./ModelPicker";
 import FreshnessIndicator from "./FreshnessIndicator";
 import StatusDot from "../shared/StatusDot";
 import { ControlMode } from "../../operatorStore";
@@ -14,6 +15,8 @@ interface Props {
   isOnline: boolean;
   freshness: DataFreshness;
   lastUpdateTs: number;
+  sessionId?: string | null;
+  vlmProfileId?: string | null;
   onTick: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -30,7 +33,7 @@ const ADAPTER_LABELS: Record<string, string> = {
 
 export default function SessionHeader({
   flowState, phase, adapterType, controlMode, isOnline,
-  freshness, lastUpdateTs,
+  freshness, lastUpdateTs, sessionId, vlmProfileId,
   onTick, onPause, onResume, onStop, onNewSession, onModeChange,
 }: Props) {
   return (
@@ -47,6 +50,7 @@ export default function SessionHeader({
       </div>
       <div className="header-center">
         <ModeSwitcher mode={controlMode} onModeChange={onModeChange} />
+        <ModelPicker sessionId={sessionId ?? null} current={vlmProfileId ?? null} />
       </div>
       <div className="header-right">
         <button type="button" className="header-btn" onClick={onTick} title="Manual tick (F5)">Tick</button>

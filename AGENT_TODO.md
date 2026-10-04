@@ -1,6 +1,6 @@
 # AGENT_TODO
 
-_Updated: 2026-08-07_
+_Updated: 2026-08-24_
 
 ## In Progress
 - [#16] **VERIFY the click-grounding fix — nothing below has been executed.** Written 2026-08-05 with no
@@ -37,6 +37,22 @@ _Updated: 2026-08-07_
   Operational issue — no code change needed. With the snapshot fix (#T8) in place, the next VLM-down cycle
   will run the heuristic cleanly. Checkpoint: cycle trace shows `crops_generated > 0` and
   `extraction_errors: []`.
+
+## Done (2026-08-24 — drawn-card Play/Keep prompt decided by game strategy)
+- [#20] **Strategy decides the Play/Keep dilemma.** After drawing, the game shows the card with a
+  play-or-keep question; the old code clicked Play by static label priority (`_PROMPT_PRIORITY` ranks
+  "play" first), never analysing the board. Now: VLM reports `drawn_card` (the highlighted just-drawn
+  card); `perceived_actions.decide_drawn_play_or_keep(drawn, top, hand)` returns verdict + reason
+  (unreadable → keep; non-matching → keep; wild hoarded unless nothing else plays; action cards and
+  matching numbers → play); `choose_prompt_with_strategy` applies it only when both sides are visible,
+  legacy `choose_prompt` for everything else; flow clicks it and announces "Prompt: X — why" in chat,
+  `extra.prompt_strategy`, and the `prompt_click` log. +15 tests (unit strategy, VLM normalize/merger,
+  full `run_cycle` flow). All green: 542 passed / 22 skipped.
+- [#21] **Delivery-verification ratio was broken** (found while checking #20's unconfirmed-click path):
+  `verify_screenshot_transition` counted NON-ZERO histogram bins instead of diff magnitude →
+  `change_ratio` capped at ~0.0039 < default threshold 0.005 → every click read `no_visible_change`.
+  Fixed to a magnitude-weighted sum over all 3 channels; `test_changed_board_confirms_delivery`
+  (previously failing in the working tree from the prior session's executor changes) now passes.
 
 ## Done (2026-08-07 — transform confirmed clean; test pollution patched; opponents + draw_pile; policy parse rescue)
 - [#Td] **Policy parse rescue — `decide_model` now uses `_extract_json_object`.**

@@ -1,3 +1,6 @@
+import os
+from datetime import UTC, datetime
+
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from uno_policy.guard import validate_chat_reply, validate_decision
@@ -8,6 +11,17 @@ from uno_shared.service_app import ServiceApp
 
 svc = ServiceApp("policy-guard", description="Hard safety validation layer")
 app: FastAPI = svc.create_app()
+
+# Global kill switch: env UNO_KILL_SWITCH=1 arms it at startup (e.g. for unattended
+# runs), an operator toggles it live via /guard/kill-switch. While active, every
+# /guard/decision is blocked, so the agent halts on the very next tick without any
+# per-session coordination. State is process-local by design: policy-guard is THE
+# safety authority, and one instance guards every session.
+_kill_switch = {
+  "active": os.getenv("UNO_KILL_SWITCH", "0") in ("1", "true"),
+  "activated_at": None,
+  "reason": "armed at startup (UNO_KILL_SWITCH=1)" if os.getenv("UNO_KILL_SWITCH", "0") in ("1", "true") else None,
+}
 
 
 class GuardDecisionRequest(BaseModel):
@@ -21,9 +35,30 @@ class GuardDecisionResponse(BaseModel):
   violation: PolicyViolation | None = None
 
 
+class KillSwitchBody(BaseModel):
+  active: bool
+  reason: str = ""
+
+
+@app.get("/guard/kill-switch", tags=["guard"])
+async def get_kill_switch() -> dict:
+  return dict(_kill_switch)
+
+
+@app.post("/guard/kill-switch", tags=["guard"])
+async def set_kill_switch(body: KillSwitchBody) -> dict:
+  _kill_switch["active"] = body.active
+  _kill_switch["activated_at"] = datetime.now(UTC).isoformat() if body.active else None
+  _kill_switch["reason"] = body.reason or ("released by operator" if not body.active else "armed by operator")
+  return dict(_kill_switch)
+
+
 @app.post("/guard/decision", response_model=GuardDecisionResponse, tags=["guard"])
 async def guard_decision(req: GuardDecisionRequest) -> GuardDecisionResponse:
-  allowed, violation = validate_decision(req.decision, req.legal_actions, req.min_confidence)
+  allowed, violation = validate_decision(
+    req.decision, req.legal_actions, req.min_confidence,
+    kill_switch_active=_kill_switch["active"],
+  )
   return GuardDecisionResponse(allowed=allowed, violation=violation)
 
 
@@ -36,4 +71,4 @@ async def guard_chat(reply: ChatReply) -> ChatPolicyResult:
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_policy.api:app", host="127.0.0.1", port=SERVICE_PORTS["policy-guard"])
+  uvicorn.run("uno_policy.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["policy-guard"])

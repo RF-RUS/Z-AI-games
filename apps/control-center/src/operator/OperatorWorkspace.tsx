@@ -117,6 +117,8 @@ export default function OperatorWorkspace({ sessionId, onNewSession }: Props) {
         isOnline={polling.isOnline}
         freshness={freshness}
         lastUpdateTs={polling.lastUpdateTs}
+        sessionId={sessionId}
+        vlmProfileId={polling.session?.vlm_profile_id ?? null}
         onTick={handleTick}
         onPause={handlePause}
         onResume={handleResume}

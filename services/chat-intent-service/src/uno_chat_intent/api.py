@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from uno_chat_intent.detector import detect_intent, parse_chat_messages
@@ -30,4 +32,5 @@ async def detect(req: IntentRequest) -> ChatIntent | None:
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_chat_intent.api:app", host="127.0.0.1", port=SERVICE_PORTS["chat-intent-service"])
+  uvicorn.run("uno_chat_intent.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["chat-intent-service"])
+

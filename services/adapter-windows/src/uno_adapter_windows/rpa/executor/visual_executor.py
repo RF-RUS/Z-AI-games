@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from pathlib import Path
 from uuid import uuid4
@@ -12,6 +13,7 @@ from uno_adapter_windows.rpa.driver.input_driver import (
   type_text,
 )
 from uno_adapter_windows.rpa.driver.window_driver import (
+  assert_window_size,
   clamp_point_to_bounds,
   ensure_focus,
   window_bounds,
@@ -43,6 +45,12 @@ from uno_shared.logging import get_logger
 # repo, so its INFO records go nowhere at all. See `_execute_grounded_click`.
 _click_logger = get_logger("adapter_windows.click")
 
+# Cap for the window-bounds read in _apply_fixed_size (which runs BEFORE the
+# screenshot on the evidence path). A stuck COM window.rectangle() there would
+# block the event loop and starve the 20s /evidence backstop; bounded to 2s so a
+# healthy path is unaffected and a hung one degrades to the cached bounds.
+_WINDOW_BOUNDS_BUDGET_S = 2.0
+
 
 class VisualRpaExecutor:
   def __init__(
@@ -67,6 +75,39 @@ class VisualRpaExecutor:
     self._client_bounds = self._resolve_client_bounds()
     self._zone_store = zone_store
     self._game_id = game_id
+    self._fixed_size = (profile.window.fixed_size or None) if profile else None
+
+  async def _apply_fixed_size(self) -> None:
+    """Re-assert the profile's fixed window size and refresh click bounds.
+
+    The perception pipeline emits coordinates in frame pixels and the click
+    clamps to `self._bounds`; if the window resized since attach those two
+    disagree and a "confirmed" click lands on the wrong card. Asserting the size
+    (size only, position kept) before every frame capture and every action keeps
+    one coordinate system for the whole cycle. No-op without a profile fixed_size.
+    """
+    if not self._fixed_size:
+      return
+    await asyncio.to_thread(assert_window_size, self._window, self._fixed_size)
+    await asyncio.sleep(0.05)
+    # Offload the bounds read to the isolated COM-meta pool (NOT the default pool
+    # the screenshot shares). window_bounds tries pure-ctypes GetWindowRect first
+    # and only falls back to a COM window.rectangle(); a stuck COM fallback on the
+    # live animating UNO window would otherwise leak a thread in the shared pool
+    # and starve the screenshot — this runs BEFORE the frame, so a hang here used
+    # to mean no frame at all.
+    try:
+      from uno_adapter_windows.runtime import _get_com_meta_executor
+      loop = asyncio.get_running_loop()
+      new_bounds = await asyncio.wait_for(
+        loop.run_in_executor(_get_com_meta_executor(), lambda: window_bounds(self._window)),
+        timeout=_WINDOW_BOUNDS_BUDGET_S,
+      )
+    except Exception:
+      new_bounds = None
+    if new_bounds:
+      self._bounds = new_bounds
+      self._client_bounds = self._resolve_client_bounds()
 
   def _resolve_client_bounds(self) -> dict[str, float] | None:
     """Get client area bounds (content-only, excluding title bar / borders)."""
@@ -91,6 +132,7 @@ class VisualRpaExecutor:
       return None
 
   async def capture_live_frame(self, label: str = "live") -> str | None:
+    await self._apply_fixed_size()
     path = await capture_window_screenshot(self._window, self._artifacts_dir, label)
     if path:
       frame = screen_frame_from_path(path, self._session_id)
@@ -101,6 +143,7 @@ class VisualRpaExecutor:
     self,
     req: WindowsActionExecutionRequest,
   ) -> VisualActionResult:
+    await self._apply_fixed_size()
     action_id = str(uuid4())
     domain = req.domain_action or req.selector_key or req.action_type.value
     self._state.automation_active = True
@@ -138,15 +181,31 @@ class VisualRpaExecutor:
       if before_path:
         before_frame = screen_frame_from_path(before_path, self._session_id)
 
-    nodes, _, sparse = await extract_ui_tree(self._window, self._backend)
+    # Skip-UIA check BEFORE the tree walk: on a browser/canvas host the UIA walk
+    # can stall for the whole execute deadline (12s) before we'd notice the
+    # result is useless anyway. Deciding first turns that hang into a fast,
+    # structured refusal — the grounded-click path already bypasses all of this
+    # upstream, so reaching here means there is no CV coordinate to ground to.
+    # 2026-08-29: match_automation="web_only" also means "no UIA" on DESKTOP
+    # Electron/Unity canvas games (the real UNO client) — the old check only
+    # applied to browser hosts, so a play_card that missed CV-grounding spent
+    # the walk's 6s+ hard cap on a tree that can never contain a card, then
+    # failed the 12s execute deadline with no click delivered.
     is_browser = bool(self._state.attachment and self._state.attachment.is_browser_host)
-    diagnostics = analyze_uia_tree(nodes, sparse_tree=sparse, is_browser_host=is_browser)
-    self._state.uia_diagnostics = diagnostics
-    skip_uia = should_skip_uia_card_lookup(
+    web_only = getattr(self._profile, "match_automation", None) == "web_only"
+    skip_uia = web_only or should_skip_uia_card_lookup(
       is_browser,
       req.selector_key,
       match_automation=getattr(self._profile, "match_automation", None),
     )
+
+    nodes: list = []
+    sparse = True
+    if not skip_uia:
+      nodes, _, sparse = await extract_ui_tree(self._window, self._backend)
+
+    diagnostics = analyze_uia_tree(nodes, sparse_tree=sparse, is_browser_host=is_browser)
+    self._state.uia_diagnostics = diagnostics
 
     allowed_keys = set(self._profile.selectors.keys()) | set(self._profile.action_mappings.keys())
     allowed_keys |= {"draw", "play_red_five", "choose_color"}
@@ -458,12 +517,32 @@ class VisualRpaExecutor:
     self._state.set_status(WindowsRpaStatus.VERIFYING)
     verification = VerificationResult(passed=False, status="skipped")
     if req.capture_screenshots and not error:
+      # Settle briefly so the game finishes animating the played/drawn card
+      # before the "after" frame — an in-flight animation reads as "no change"
+      # and would false-positive the verification below.
+      await asyncio.sleep(0.35)
       after_path = await self.capture_live_frame("after")
       if after_path:
         after_frame = screen_frame_from_path(after_path, self._session_id)
       verification = verify_screenshot_transition(before_path, after_path)
 
-    self._state.set_status(WindowsRpaStatus.READY if error is None else WindowsRpaStatus.FAILED, error or "")
+    # A dispatched click is NOT a played card until the board visibly reacted.
+    # No before→after change means the click likely landed on dead space: flag
+    # the delivery as unconfirmed (uncertain, not failed — the next cycle
+    # re-perceives the board and the plan reacts: replay, draw, or move on).
+    # Without this, a missed click recorded ok:true and every subsequent cycle
+    # built its decision on a board that never changed.
+    unconfirmed = (
+      error is None
+      and verification.status not in ("skipped", "passed")
+    )
+    if unconfirmed:
+      self._state.set_status(
+        WindowsRpaStatus.UNCERTAIN,
+        f"click delivered but unverified: {verification.notes or verification.status}",
+      )
+    else:
+      self._state.set_status(WindowsRpaStatus.READY if error is None else WindowsRpaStatus.FAILED, error or "")
     target = UITarget(
       selector_key=req.selector_key or req.domain_action,
       label=f"cv:{req.domain_action}",
@@ -478,7 +557,7 @@ class VisualRpaExecutor:
       target=target,
       confidence=0.7,
       success=error is None,
-      uncertain=False,
+      uncertain=bool(error is None and unconfirmed),
       verification=verification,
       before_frame=before_frame,
       after_frame=after_frame,

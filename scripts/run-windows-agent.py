@@ -128,7 +128,15 @@ async def _attach_and_start(orch, args) -> str:
   from uno_schemas.session import AdapterType, SessionConfig
 
   spec = SessionSpec(
-    config=SessionConfig(adapter_type=AdapterType.WINDOWS, adapter_id="pending"),
+    config=SessionConfig(
+      adapter_type=AdapterType.WINDOWS,
+      adapter_id="pending",
+      # OBSERVE-ONLY: the flow runs perceive->decide->guard and reports the
+      # planned action but never calls adapter.execute_action, so the game
+      # window is not touched — safe while a human plays (see flow_controller
+      # dry_run branch).
+      dry_run=args.dry_run,
+    ),
     windows_profile_id=args.profile,
     window_title=args.window_title,
     automatic=False,  # runner drives ticks explicitly for checkpoint/limit control
@@ -280,6 +288,10 @@ def parse_args(argv=None) -> argparse.Namespace:
   p.add_argument("--window-title", default=None)
   p.add_argument("--pywinauto", action="store_true",
                  help="Use real pywinauto RPA (requires Windows host)")
+  p.add_argument("--dry-run", action="store_true",
+                 help="OBSERVE ONLY: run the full perceive->decide->guard pipeline "
+                      "and log the planned action, but never click the game window. "
+                      "Safe to run while a human is playing.")
   p.add_argument("--launch-test-target", action="store_true",
                  help="Launch bundled tkinter UNO mock app on attach")
   p.add_argument("--max-ticks", type=int, default=0, help="0 = unlimited")

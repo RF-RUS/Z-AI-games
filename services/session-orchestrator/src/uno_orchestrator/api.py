@@ -4,6 +4,7 @@ os.environ.setdefault("AGENT_SCREENSHOT_TRACE", "1")
 os.environ.setdefault("AGENT_SCREENSHOT_TRACE_DIR", "services\\artifacts")
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from uno_orchestrator.orchestrator import SessionOrchestrator
 from uno_orchestrator.state_machine import InvalidTransition
 from uno_schemas.orchestrator import (
@@ -63,6 +64,28 @@ async def attach_adapter(session_id: str, body: AttachAdapterBody) -> SessionDet
 async def detach_adapter(session_id: str, adapter_type: AdapterType | None = None) -> SessionDetail:
   try:
     return await orchestrator.detach_adapter(session_id, adapter_type)
+  except KeyError:
+    raise HTTPException(404, "session not found") from None
+
+
+class SetModelBody(BaseModel):
+  # The VLM profile id to route this session's perception through (e.g.
+  # "local/ollama-vlm" for 3b, "local/ollama-vlm-7b" for 7b, or a runtime
+  # "ollama:<model>" synthesized profile). Omit/None to fall back to the
+  # perception service's own default (env VLM_PROFILE_ID).
+  vlm_profile_id: str | None = None
+
+
+@app.post("/sessions/{session_id}/model", response_model=SessionDetail, tags=["sessions"])
+async def set_session_model(session_id: str, body: SetModelBody) -> SessionDetail:
+  """Switch this session's VLM profile live (no restart / re-attach).
+
+  Effective on the next perceive call. The operator UI model picker calls this
+  to A/B vision models mid-game (3b↔7b↔any Ollama model). Returns the session
+  with the updated vlm_profile_id so the picker can reflect the live selection.
+  """
+  try:
+    return orchestrator.set_vlm_profile(session_id, body.vlm_profile_id)
   except KeyError:
     raise HTTPException(404, "session not found") from None
 
@@ -219,4 +242,4 @@ def main() -> None:
   os.environ.setdefault("AGENT_SCREENSHOT_TRACE", "1")
   os.environ.setdefault("AGENT_SCREENSHOT_TRACE_DIR", "services\\artifacts")
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_orchestrator.api:app", host="127.0.0.1", port=SERVICE_PORTS["session-orchestrator"])
+  uvicorn.run("uno_orchestrator.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["session-orchestrator"])

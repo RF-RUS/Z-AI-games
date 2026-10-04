@@ -44,6 +44,18 @@ _REAL_COLORS = {"red", "yellow", "green", "blue"}
 # (hand shifted by one), not to second-guess the model card by card.
 _MIN_COLOR_CONF = 0.5
 
+# CV-count recovery. The small VLM (qwen2.5vl:3b) degenerates under load: on a real
+# 9-card fan it returns hand_cards=[top_card] — a single red 7, conf 0.5 — the classic
+# repetition-collapse. The calibrated segmentation, by contrast, MEASURES the fan
+# width and returns one slot per real card, each with a measured colour. When the two
+# disagree by a lot we trust the measured count (it is geometry, not a guess) and
+# recover the hand to the measured slots: keep the VLM's real value where it reported
+# a card, and emit a colour-only card (value left blank) for every slot it missed.
+# Gated to avoid over-correcting the normal off-by-one: need at least this many MORE
+# measured slots than reported cards, on a fan with at least this many slots.
+_COUNT_RECOVERY_MIN_GAP = 2
+_COUNT_RECOVERY_MIN_SLOTS = 3
+
 
 def _color_of(item: Any) -> str:
   if isinstance(item, dict):
@@ -157,11 +169,18 @@ def attach_hand_geometry(
   # colour is not a real colour (wild), or that finds no free slot, gets no geometry:
   # at this point we already know the two views of the hand disagree, and guessing
   # would mean clicking a card the agent did not choose.
+  #
+  # Path 3 (inside _recover_undercounted_hand) — the small VLM collapsed the hand
+  # to a single card while the segmentation measured many real slots: the surplus
+  # measured slots become colour-only cards (value "unknown") so the agent at
+  # least knows how many cards it holds and which colours are on the table.
   used: set[int] = set()
+  attempted = matched = 0
   for card in cards:
     c_color = _color_of(card)
     if c_color not in _REAL_COLORS:
       continue
+    attempted += 1
     for i, slot in enumerate(slots):
       if i in used or _color_of(slot) != c_color:
         continue
@@ -171,9 +190,77 @@ def attach_hand_geometry(
         card["geometry_source"] = "hand_segmentation_color_match"
         used.add(i)
         diag["grounded"] += 1
+        matched += 1
       break
   diag["method"] = "color_match"
   diag["reason"] = (
     "card/slot count mismatch" if len(cards) != len(slots) else "slot colours contradict card order"
   )
+
+  recovered = _recover_undercounted_hand(slots, used, diag, all_real_cards_matched=(attempted == matched))
+  if recovered:
+    cards.extend(recovered)
+    # Left-to-right contract: the hand list mirrors the fan order so index-based
+    # consumers stay consistent. VLM cards keep their (measured) centres, so
+    # sorting by centre x reorders nothing for them.
+    cards.sort(key=lambda c: (c.get("center") or {}).get("x", 10**9))
+    diag["method"] = "cv_count_recovery"
   return cards, diag
+
+
+def _recover_undercounted_hand(
+  slots: list[Any], used: set[int], diag: dict[str, Any], *, all_real_cards_matched: bool
+) -> list[dict[str, Any]]:
+  """Recover cards the small VLM collapsed out of the hand.
+
+  qwen2.5vl:3b degenerates under load: on a real 9-card fan it returned
+  hand_cards=[{"red","7"}] — a single card identical to the discard pile —
+  while the calibrated segmentation measured 9 slots. Believing the VLM, the
+  agent acts on a hand that does not exist (the "misrecognized cards → wrong
+  move" failure of 2026-08-28).
+
+  The measured slot count is geometry, not a guess — so when the fan has far
+  more measured slots than reported cards, every still-unused slot with a
+  confidently-read REAL colour becomes a colour-only card (value left blank:
+  we never claim to have read a value we did not). Wild/back slots are skipped:
+  the classifier cannot separate wild from draw-four, and a wrong value there
+  is worse than an absent card.
+
+  Two gates, each guarding against a different false positive:
+  * `all_real_cards_matched` — the VLM's own cards must ALL have grounded. If
+    a card the VLM reported finds NO matching slot, the two views disagree on
+    IDENTITY (a shifted/contradicted hand), and padding with fabricated cards
+    would hide that disagreement. Recovery is for a collapsed hand, not a
+    misread one.
+  * `surplus >= _COUNT_RECOVERY_MIN_GAP` — the normal off-by-one in the
+    segmentation width estimate produces at most one surplus slot; recovering
+    on a single surplus would fabricate a card the hand does not have.
+  Returns [] when either gate does not fire — the caller then keeps Path 2's
+  behaviour exactly as before.
+  """
+  if len(slots) < _COUNT_RECOVERY_MIN_SLOTS:
+    return []
+  if not all_real_cards_matched:
+    return []
+  surplus = len(slots) - len(used)
+  if surplus < _COUNT_RECOVERY_MIN_GAP:
+    return []
+  out: list[dict[str, Any]] = []
+  for i, slot in enumerate(slots):
+    if i in used:
+      continue
+    s_color = _color_of(slot)
+    if s_color not in _REAL_COLORS:
+      continue  # wild/card-back: colour-only card here would be a guess
+    if _confidence_of(slot) < _MIN_COLOR_CONF:
+      continue  # the slot colour is a coin flip — recover nothing from it
+    geom = _slot_geometry(slot)
+    if not geom:
+      continue
+    card: dict[str, Any] = {"color": s_color, "value": "unknown"}
+    card.update(geom)
+    card["geometry_source"] = "cv_recovered_color_only"
+    out.append(card)
+  if out:
+    diag["recovered"] = len(out)
+  return out

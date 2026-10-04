@@ -1,9 +1,12 @@
 import asyncio
+import os
 import time
+import uuid
 from collections import defaultdict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from uno_adapter_windows.extraction import window_snapshot_to_ui_evidence
 from uno_adapter_windows.profiles import list_profiles, load_profile
 from uno_adapter_windows.registry import attach_adapter, get_adapter
 from uno_adapter_windows.runtime import is_windows, list_window_candidates, pywinauto_available
@@ -17,6 +20,7 @@ from uno_schemas.adapter_windows import (
   WindowsActionExecutionResult,
   WindowsAdapterProfile,
   WindowsEvidenceBundle,
+  WindowSnapshot,
 )
 from uno_shared.service_app import ServiceApp
 
@@ -34,12 +38,17 @@ _RATE_LIMIT_MAX = 10
 # hung click/UIA walk comes back as a structured failure instead of a ReadTimeout
 # that stalls the session.
 _EXECUTE_DEADLINE_S = 12.0
-
+# Evidence capture deadline. Same rule as _EXECUTE_DEADLINE_S but for the
+# observe path. The inner capture now hard-caps the UIA walk (runtime
+# UIA_WALK_HARD_TIMEOUT_S) and captures the screenshot first, so this is a
+# backstop: if the whole capture still overruns (e.g. screenshot grab itself
+# hangs), return a structured degraded bundle with an empty snapshot instead of
+# letting the orchestrator sit on an opaque ReadTimeout for its full ~60s.
+_EVIDENCE_DEADLINE_S = 20.0
 
 @app.get("/profiles", response_model=list[WindowsAdapterProfile], tags=["profiles"])
 async def get_profiles() -> list[WindowsAdapterProfile]:
   return list_profiles()
-
 
 @app.get("/profiles/{profile_id}", response_model=WindowsAdapterProfile, tags=["profiles"])
 async def get_profile(profile_id: str) -> WindowsAdapterProfile:
@@ -48,16 +57,13 @@ async def get_profile(profile_id: str) -> WindowsAdapterProfile:
   except FileNotFoundError:
     raise HTTPException(404, "profile not found") from None
 
-
 @app.get("/windows/candidates", response_model=list[WindowCandidate], tags=["windows"])
 async def window_candidates() -> list[WindowCandidate]:
   return await list_window_candidates()
 
-
 @app.post("/attach", response_model=AttachWindowsAdapterResponse, tags=["adapter"])
 async def attach(req: AttachWindowsAdapterRequest) -> AttachWindowsAdapterResponse:
   return await attach_adapter(req)
-
 
 @app.get("/adapters/{adapter_id}/preview", response_model=OperatorPreviewState, tags=["adapter"])
 async def get_preview(adapter_id: str) -> OperatorPreviewState:
@@ -74,7 +80,6 @@ async def get_preview(adapter_id: str) -> OperatorPreviewState:
     message="preview not available for this adapter mode",
   )
 
-
 @app.get("/adapters/{adapter_id}/ui-tree", tags=["adapter"])
 async def ui_tree(adapter_id: str) -> dict:
   a = get_adapter(adapter_id)
@@ -82,16 +87,45 @@ async def ui_tree(adapter_id: str) -> dict:
     raise HTTPException(404, "adapter not found")
   return await a.capture_ui_tree()
 
-
 @app.get("/adapters/{adapter_id}/evidence", response_model=WindowsEvidenceBundle, tags=["adapter"])
 async def get_evidence(adapter_id: str, correlation_id: str | None = None) -> WindowsEvidenceBundle:
   a = get_adapter(adapter_id)
   if not a:
     raise HTTPException(404, "adapter not found")
-  bundle = await a.capture_evidence(adapter_id)
+  try:
+    bundle = await asyncio.wait_for(a.capture_evidence(adapter_id), timeout=_EVIDENCE_DEADLINE_S)
+  except TimeoutError:
+    # The whole capture overran the backstop (the UIA walk is already capped
+    # inside, so this only fires if the screenshot grab itself hung). Return a
+    # structured degraded bundle — empty snapshot, no screenshot — so the
+    # orchestrator observes an empty-but-valid frame and the cycle advances,
+    # instead of sitting on an opaque ReadTimeout for its full ~60s.
+    import logging
+    logging.getLogger("adapter-windows").warning(
+      "evidence_capture_timeout adapter_id=%s: returning degraded bundle (>%.0fs)",
+      adapter_id, _EVIDENCE_DEADLINE_S,
+    )
+    snap = WindowSnapshot(
+      snapshot_id=str(uuid.uuid4()),
+      window_title="unknown",
+      backend=getattr(a, "backend", "uia"),
+      captured_at_ms=int(time.time() * 1000),
+      profile_id=getattr(a, "profile_id", None),
+      extracted={},
+      confidence=0.3,
+      truncated=True,
+      sparse_tree=True,
+    )
+    bundle = WindowsEvidenceBundle(
+      adapter_id=adapter_id,
+      session_id=getattr(a, "session_id", ""),
+      window_snapshot=snap,
+      ui_evidence=window_snapshot_to_ui_evidence(snap),
+      screenshot=None,
+      chat_messages=[],
+    )
   bundle.correlation_id = correlation_id
   return bundle
-
 
 @app.post("/adapters/{adapter_id}/actions", response_model=WindowsActionExecutionResult, tags=["adapter"])
 async def execute_action(
@@ -119,7 +153,6 @@ async def execute_action(
       uncertain=True,
     )
 
-
 @app.get("/adapters/{adapter_id}/screenshot", tags=["adapter"])
 async def get_screenshot(adapter_id: str):
   a = get_adapter(adapter_id)
@@ -129,7 +162,6 @@ async def get_screenshot(adapter_id: str):
   if not bundle.screenshot or not bundle.screenshot.path:
     raise HTTPException(404, "no screenshot")
   return FileResponse(bundle.screenshot.path, media_type="image/png")
-
 
 @app.get("/adapters/{adapter_id}/calibration", tags=["adapter"])
 async def get_calibration(adapter_id: str) -> dict:
@@ -200,7 +232,6 @@ async def get_calibration(adapter_id: str) -> dict:
     "coordinate_space": "client_area" if client_bounds else "window",
   }
 
-
 @app.post("/adapters/{adapter_id}/capture-fixture", tags=["adapter"])
 async def capture_fixture(adapter_id: str, output_dir: str = "tests/fixtures/windows_adapter") -> dict:
   from pathlib import Path
@@ -228,7 +259,6 @@ async def capture_fixture(adapter_id: str, output_dir: str = "tests/fixtures/win
     "screenshot": str(screenshot) if screenshot else None,
   }
 
-
 @app.post("/adapters/{adapter_id}/detach", tags=["adapter"])
 async def detach(adapter_id: str) -> dict:
   from uno_adapter_windows.registry import _adapters
@@ -237,13 +267,11 @@ async def detach(adapter_id: str) -> dict:
     await a.detach()
   return {"detached": True}
 
-
 @app.get("/zones/{game_id}", tags=["zones"])
 async def get_learned_zones(game_id: str) -> list[dict]:
   """Inspect learned zones for a game — useful for debugging action memory."""
   from uno_adapter_windows.registry import _zone_store
   return _zone_store.inspect(game_id)
-
 
 @app.delete("/zones/{game_id}", tags=["zones"])
 async def reset_learned_zones(game_id: str) -> dict:
@@ -254,7 +282,6 @@ async def reset_learned_zones(game_id: str) -> dict:
     _zone_store.forget(game_id, z.zone_id)
   return {"reset": True, "zones_deleted": len(zones)}
 
-
 @app.get("/pywinauto/check", tags=["adapter"])
 async def pywinauto_check() -> dict:
   return {
@@ -263,8 +290,8 @@ async def pywinauto_check() -> dict:
     "profiles": [p.profile_id for p in list_profiles()],
   }
 
-
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_adapter_windows.api:app", host="127.0.0.1", port=SERVICE_PORTS["adapter-windows"])
+  uvicorn.run("uno_adapter_windows.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["adapter-windows"])
+

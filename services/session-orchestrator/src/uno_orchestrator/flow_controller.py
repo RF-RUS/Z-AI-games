@@ -9,7 +9,11 @@ from typing import Any
 from uuid import uuid4
 
 from uno_orchestrator.clients import ServiceClients
-from uno_orchestrator.perceived_actions import choose_prompt, legal_actions_from_perception
+from uno_orchestrator.perceived_actions import (
+  choose_prompt,
+  choose_prompt_with_strategy,
+  legal_actions_from_perception,
+)
 from uno_orchestrator.recovery import (
   classify_error,
   decide_attach_recovery,
@@ -34,11 +38,64 @@ from uno_schemas.orchestrator import (
 from uno_schemas.perception import DomEvidence, Observation, ScreenshotFrame, UiEvidence
 from uno_schemas.session import AdapterType, SessionPhase
 from uno_shared.adapter_registry import find_draw_target, get_adapter_registry
+from uno_shared.click_verification import click_retry_offsets, verify_zone_change, zone_config
 from uno_shared.cycle_trace import write_cycle_trace
 from uno_shared.game_registry import _ensure_default_plugins, get_game_plugin
-from uno_shared.logging import get_logger
+from uno_shared.logging import bind_correlation_id, get_logger
 
 logger = get_logger("orchestrator")
+
+# How many consecutive cycles a prompt may stay UNCONFIRMED (click delivered,
+# screen never reacted) before the agent tells the operator to take over.
+# 3 is deliberately low: each already costs a 15s click+verify, so 3 is ~45s of
+# a frozen board. The counter resets on a confirmed click or when the modal is
+# gone, so a transient blip never escalates.
+_PROMPT_STALL_ESCALATE_AT = 3
+# Anti-hallucination guard (2026-08-29 session 0f7de4cd): a REAL Play/Keep
+# dialog is closed by a single confirmed click (change_ratio ~0.6). A prompt the
+# VLM hallucinates on a static board is never confirmed (change_ratio ~0.02-0.05)
+# — and because the prompt branch preempts card play, the agent loops on it for
+# minutes and never takes its turn. After escalation, the perceived prompt is
+# IGNORED for this many cycles so the flow falls through to normal card
+# decision; a real dialog re-asserting itself past the suppression window (or
+# confirming a click) ends the suppression.
+_PROMPT_HALLUCINATION_SUPPRESS_CYCLES = 2
+# Non-board frames that can never host an in-game click. perception's screen_type
+# is one of in_game|lobby|menu|unknown. When it is a real non-board (the game is
+# animating to the lobby / a result screen / the table is mid-transition), an
+# in-game action decided from the (desynced) simulated engine has no on-screen
+# target to ground to — the adapter refuses and the cycle dies with
+# flow_state=error. See session 56c1564a (2026-08-29): a frame right after a real
+# Keep closed was read screen_type=menu gs_conf=0.00, the engine still decided
+# play_card, and execute was refused.
+_NON_BOARD_SCREEN_TYPES = frozenset({"menu", "lobby", "game_over", "ended", "result"})
+# In-game actions that require a readable board before they may be executed.
+_IN_GAME_ACTIONS = frozenset({
+  "play_card", "draw_card", "choose_color", "pass", "pass_turn",
+  "call_uno", "challenge", "accept_penalty",
+})
+# Anti-hallucination by turn (2026-08-29 session 3bfacb8a): Play/Keep and the
+# colour picker are modals that exist only on the human player's OWN turn.
+# perception reports whose_turn in the same VLM call, so when it is the
+# opponent's turn ANY reported prompt is by definition a phantom — clicking it
+# is worse than useless: on a live board the opponent-turn animations fake
+# "confirmed" clicks (change_ratio 0.06-0.10 > the 0.05 threshold), which
+# defeated the confirmation-based stall guard above.
+#
+# Anti-hallucination by coordinate stability: a real dialog button stays at the
+# same screen position cycle to cycle. A VLM phantom wanders (observed drift
+# >100px between cycles on a static board). A label re-reported far from its
+# last known position is treated as a phantom for that cycle.
+_PROMPT_COORD_STABILITY_PX = 48.0
+
+
+def _shadow_agree(decision: Any) -> bool | None:
+  """Whether the shadow strategy agreed with the primary this tick (None if off)."""
+  explanation = getattr(decision, "explanation", None)
+  comparison = getattr(explanation, "shadow_comparison", None) if explanation else None
+  if comparison is None:
+    return None
+  return bool(comparison.agree_with_primary)
 
 
 @dataclass
@@ -64,10 +121,98 @@ class RuntimeSession:
   # cycle would overwrite the previous one's trace directory — losing exactly the
   # frames worth keeping.
   cycle_counter: int = 0
+  cycle_counter: int = 0
+  # Consecutive cycles in which a prompt click was DELIVERED but never confirmed
+  # (the screen did not react) — the "Play, Play, Play…" loop that looks like a
+  # 20-second stall. A confirmed click or a cycle with no modal on screen resets
+  # it. Crossing _PROMPT_STALL_ESCALATE_AT cycles → the operator is told to take
+  # over (window focus, an un-drivable dialog, or perception missing the button):
+  # further automated retries change nothing, and the agent keeps observing.
+  prompt_stall_count: int = 0
+  # Anti-hallucination: cycles remaining in which a perceived prompt is IGNORED
+  # (treated as absent) so the flow falls through to normal card play. Set when a
+  # prompt repeatedly fails to confirm — the signature of a VLM phantom on a
+  # static board, not a real dialog.
+  prompt_suppress_cycles: int = 0
+  # Anti-hallucination by coordinate stability: (x, y) of the prompt button seen
+  # last cycle, for its label. A real dialog stays put; a VLM phantom wanders.
+  # Reset to None whenever the perceived prompt set changes shape (label appears
+  # / disappears) so a brand-new dialog is never compared against a stale one.
+  last_prompt_coord: dict[str, tuple[float, float]] = field(default_factory=dict)
 
 
 class LowConfidenceError(Exception):
   pass
+
+
+def _filter_phantom_prompts(
+  session: RuntimeSession,
+  raw_prompts: list[dict] | None,
+  whose_turn: str | None,
+  session_id: str,
+) -> list[dict] | None:
+  """Drop prompts that look like VLM hallucinations, BEFORE strategy picks one.
+
+  Two independent, reliable signals — neither depends on click confirmation,
+  which is useless on a live board (opponent-turn animations push change_ratio
+  over the 0.05 threshold and fake "confirmed" clicks):
+
+  * TURN GATE — Play/Keep and the colour picker are modals that only exist on
+    the player's OWN turn. perception reports whose_turn in the very same VLM
+    call, so when it says "opponent", ANY button it also reports is a
+    logical contradiction: a phantom, always.
+  * COORDINATE STABILITY — a real dialog button sits at the same screen
+    position every cycle. A label re-reported more than
+    _PROMPT_COORD_STABILITY_PX px from where it was last cycle is a phantom for
+    this cycle (observed: phantoms wander 100+ px between frames on a static
+    board while real buttons don't move).
+
+  Survivors (and only survivors) refresh the per-label coordinate memory. An
+  empty prompt set clears the memory so a brand-new real dialog is never
+  compared against a stale one.
+  """
+  prompts = [p for p in (raw_prompts or []) if isinstance(p, dict) and p.get("center")]
+  if not prompts:
+    session.last_prompt_coord = {}
+    return prompts
+
+  # TURN GATE: on the opponent's turn no play modal can exist. Drop everything,
+  # and do NOT refresh coordinate memory (phantom positions on a foreign turn
+  # must not become the baseline for the next own turn).
+  if str(whose_turn or "").strip().lower() == "opponent":
+    for p in prompts:
+      logger.info(
+        "prompt_phantom_filtered", session_id=session_id,
+        label=p.get("label"), reason="not_own_turn", whose_turn=whose_turn,
+      )
+    return []
+
+  kept: list[dict] = []
+  # Start from the previous baseline so a label that is filtered this cycle
+  # (coordinate jump) KEEPS its stable baseline instead of losing it — otherwise
+  # a phantom could wander to a new position and "resync" there as a fresh label.
+  new_memory: dict[str, tuple[float, float]] = dict(session.last_prompt_coord)
+  for p in prompts:
+    label = str(p.get("label", "")).strip().lower()
+    try:
+      x = float(p["center"]["x"]); y = float(p["center"]["y"])
+    except (KeyError, TypeError, ValueError):
+      kept.append(p)  # malformed centre — let the normal path handle it
+      continue
+    prev = new_memory.get(label)
+    if prev is not None:
+      dist = ((x - prev[0]) ** 2 + (y - prev[1]) ** 2) ** 0.5
+      if dist > _PROMPT_COORD_STABILITY_PX:
+        logger.info(
+          "prompt_phantom_filtered", session_id=session_id, label=label,
+          reason="coord_jump", dist_px=round(dist, 1),
+          prev=(round(prev[0]), round(prev[1])), now=(round(x), round(y)),
+        )
+        continue
+    kept.append(p)
+    new_memory[label] = (x, y)
+  session.last_prompt_coord = new_memory
+  return kept
 
 
 class FlowController:
@@ -93,6 +238,39 @@ class FlowController:
     if has_adapter:
       return "not_in_game"
     return "unknown"
+
+  def _board_is_playable(self, observation, gs: dict | None) -> bool:
+    """True when the perceived frame looks like a real, actionable game board.
+
+    Gate for executing IN-GAME actions (play_card / draw_card / choose_color …).
+    A decision is only worth delivering when the frame it was decided on actually
+    shows a playable table — perception says `screen_type=in_game` with a
+    non-zero game-state confidence. The simulated engine that feeds `_decide`
+    keeps its own stale belief about the hand, so on a transition frame
+    (menu/lobby/result screen, gs_conf=0.00) it happily "plays" a card that has
+    no on-screen coordinate — the adapter then refuses and the cycle dies with
+    flow_state=error (session 56c1564a).
+
+    PERMISSIVE DEFAULT: when there is NO game_state data at all, we cannot know
+    what is on screen, so the action is NOT deferred (unchanged legacy behaviour
+    — same rule as `replan_ungrounded_play`: no perception data → act as decided).
+    Only an explicit non-board reading or an explicit zero-confidence frame
+    vetoes the move; the next healthy cycle plays it either way. The prompt
+    branch (Play/Keep) is NOT gated here: a modal exists on screen regardless of
+    the coarse state, and it is handled before this point.
+    """
+    if not isinstance(gs, dict) or not gs:
+      return True
+    screen_type = str(gs.get("screen_type") or "").strip().lower()
+    if screen_type in _NON_BOARD_SCREEN_TYPES:
+      return False
+    try:
+      gs_conf = float(getattr(getattr(observation, "confidence", None), "game_state", 0.0) or 0.0)
+    except (TypeError, ValueError):
+      gs_conf = 0.0
+    if gs_conf <= 0.0:
+      return False
+    return True
 
   def _extract_action_type(self, decision) -> str | None:
     """Extract action type string from decision for verification."""
@@ -128,6 +306,11 @@ class FlowController:
 
     cid = str(uuid4())
     detail.correlation_id = cid
+    # Bind the cycle id into the logging context: every structlog line emitted
+    # anywhere in this task (perception, adapters included when called
+    # in-process) now carries correlation_id=cid, making one full pipeline run
+    # greppable across logs/<service>.log files and via /traces/{cid}.
+    bind_correlation_id(cid)
     started = time.perf_counter()
     failed_at: FlowStepName | None = None
 
@@ -151,6 +334,7 @@ class FlowController:
     # returns) is by definition not a failure.
     trace_failed_at = None
     trace_error = None
+    click_info: dict | None = None
     t_observe_ms = 0
     t_perceive_ms = 0
     t_decide_ms = 0
@@ -170,7 +354,7 @@ class FlowController:
       failed_at = FlowStepName.PERCEIVE
       await self._run_step(session, cid, FlowStepName.PERCEIVE, SessionPhase.OBSERVE)
       _t0 = time.perf_counter()
-      observation = await self.clients.perceive(detail.session_id, dom=dom, ui=ui, screenshot=screenshot)
+      observation = await self.clients.perceive(detail.session_id, dom=dom, ui=ui, screenshot=screenshot, vlm_profile_id=detail.vlm_profile_id)
       t_perceive_ms = int((time.perf_counter() - _t0) * 1000)
       session.latest_observation = observation
       # NOTE: the min_confidence gate used to sit HERE, above the diagnostic. It
@@ -263,12 +447,110 @@ class FlowController:
       # the game blocks on a modal button that must be clicked before any card
       # move. Handle it FIRST — click the button and end this cycle. Only fires
       # when perception (VLM) reported prompt buttons with coordinates.
+      # The Play/Keep dilemma is decided by GAME STRATEGY (drawn card vs top vs
+      # hand), not by a static "Play first" preference: choose_prompt_with_strategy
+      # returns the button to click plus WHY, which lands in the chat and the log.
       gs_now = observation.game_state or {}
-      prompt = choose_prompt(gs_now.get("prompts"))
-      if prompt is not None:
-        await self._click_prompt(binding, prompt, detail, cid)
+      prompts = _filter_phantom_prompts(
+        session, gs_now.get("prompts"), gs_now.get("whose_turn"), detail.session_id,
+      )
+      prompt, strategy_reason = choose_prompt_with_strategy(
+        prompts,
+        top_card=gs_now.get("top_card"),
+        hand_cards=gs_now.get("hand_cards"),
+        drawn_card=gs_now.get("drawn_card"),
+      )
+      # No modal on screen → a previous prompt stall is resolved (the dialog is
+      # gone, or perception degraded to the point we can't see buttons — in which
+      # case we honestly stop claiming a stall we can no longer measure).
+      if prompt is None:
+        if session.prompt_stall_count:
+          session.prompt_stall_count = 0
+        # A clean board re-arms prompt handling immediately: a dialog that appears
+        # after a prompt-free cycle is almost certainly real, not a lingering phantom.
+        session.prompt_suppress_cycles = 0
+      # Anti-hallucination: a phantom prompt (VLM sees Play/Keep on a static board
+      # where no dialog is) is never confirmed — a real one closes on the first
+      # confirmed click. While suppression is active we SKIP the prompt branch and
+      # let the flow fall through to normal card decision, instead of hammering a
+      # button that isn't there (this was the "agent froze and never played" loop).
+      if prompt is not None and session.prompt_suppress_cycles > 0:
+        session.prompt_suppress_cycles -= 1
+        logger.info(
+          "prompt_suppressed_phantom", session_id=detail.session_id,
+          label=prompt.get("label"), remaining=session.prompt_suppress_cycles,
+        )
+      elif prompt is not None:
+        # OBSERVE-ONLY: the prompt would block the board, so report which button
+        # we WOULD click (and why) but never deliver it. Without this guard the
+        # prompt branch fires before the dry_run check below and clicks the game
+        # even in dry-run — exactly the "test clicks the live game" mixing that
+        # made the operator see the window react during a no-op run.
+        if detail.config.dry_run:
+          announcement = (
+            f"[dry-run] Would click prompt '{prompt.get('label')}'. "
+            f"Reason: {strategy_reason}"
+          )
+          pre_msg = await self.clients.send_bot_message(
+            detail.session_id, announcement, correlation_id=cid,
+          )
+          session.chat_messages.append(pre_msg)
+          session.last_action_type = "prompt_click_dry_run"
+          return {
+            "correlation_id": cid,
+            "dry_run": True,
+            "planned_prompt": prompt,
+            "prompt_strategy": strategy_reason or None,
+            "prompt_status": "dry_run_skipped",
+          }
+        _t0 = time.perf_counter()
+        announcement, click_info = await self._click_prompt(
+          binding, prompt, detail, cid, reason=strategy_reason,
+        )
+        t_execute_ms = int((time.perf_counter() - _t0) * 1000)
+        # Stall escalation: N consecutive unconfirmed prompt clicks means the
+        # board is genuinely stuck (coords, focus, un-drivable dialog). Say so
+        # ONCE to the operator and keep observing — do not pretend progress.
+        if click_info.get("status") == "confirmed":
+          session.prompt_stall_count = 0
+        else:
+          session.prompt_stall_count += 1
+          if session.prompt_stall_count >= _PROMPT_STALL_ESCALATE_AT:
+            session.prompt_stall_count = 0
+            # The signature of a VLM phantom: a real Play/Keep dialog closes on
+            # the FIRST confirmed click (change_ratio ~0.6). Three straight
+            # unconfirmed clicks (change_ratio ~0.02-0.05, static board) mean
+            # there is almost certainly no dialog — so STOP clicking it and let
+            # the agent take its actual card turn for a few cycles.
+            session.prompt_suppress_cycles = _PROMPT_HALLUCINATION_SUPPRESS_CYCLES
+            stall_msg = await self.clients.send_bot_message(
+              detail.session_id,
+              (
+                f"STALLED on prompt '{prompt.get('label')}': clicked it "
+                f"{_PROMPT_STALL_ESCALATE_AT} times in a row (last change_ratio="
+                f"{click_info.get('change_ratio')}) and the screen never reacted. "
+                "This looks like a phantom dialog (the VLM sees a button that "
+                "isn't there) — pausing prompt clicks and taking my card turn "
+                "instead. If a real dialog is open, click it once manually."
+              ),
+              correlation_id=cid,
+            )
+            session.chat_messages.append(stall_msg)
+            logger.warning(
+              "prompt_stall_escalated", session_id=detail.session_id,
+              label=prompt.get("label"), last_change_ratio=click_info.get("change_ratio"),
+            )
+        pre_msg = await self.clients.send_bot_message(
+          detail.session_id, announcement, correlation_id=cid,
+        )
+        session.chat_messages.append(pre_msg)
         session.last_action_type = "prompt_click"
-        return {"correlation_id": cid, "prompt_clicked": prompt.get("label")}
+        return {
+          "correlation_id": cid,
+          "prompt_clicked": prompt.get("label"),
+          "prompt_strategy": strategy_reason or None,
+          "prompt_status": click_info["status"],
+        }
 
       legal_actions = await self._legal_actions(detail.game_id, observation)
 
@@ -305,6 +587,62 @@ class FlowController:
 
       if cid in detail.executed_correlation_ids:
         return {"correlation_id": cid, "deduplicated": True}
+
+      # Dry-run safety mode: the full perception→decision→guard pipeline ran, so
+      # report exactly what WOULD be executed, but never deliver it to the adapter.
+      # The game on screen stays untouched; the operator UI shows the planned action.
+      if detail.config.dry_run:
+        session.pre_action_state = self._classify_state_for_verification(observation, detail)
+        session.last_action_type = self._extract_action_type(decision)
+        await self._run_step(session, cid, FlowStepName.EXECUTE, SessionPhase.EXECUTE)
+        logger.info(
+          "dry_run_action_skipped", session_id=detail.session_id,
+          action=self._extract_action_type(decision), confidence=decision.confidence,
+        )
+        detail.phase = SessionPhase.IDLE
+        return {
+          "correlation_id": cid,
+          "dry_run": True,
+          "planned_action": decision.chosen_action.model_dump(mode="json"),
+          "confidence": decision.confidence,
+          "shadow": _shadow_agree(decision),
+        }
+
+      # PLAYABILITY GATE: an in-game action (play/draw/choose_color/…) is only
+      # executable when the frame it was decided on actually shows a playable
+      # board. perception reads a transition frame (menu/lobby/result screen, or a
+      # zero-confidence frame) and the desynced simulated engine still "decides" a
+      # card that has no on-screen coordinate to ground to — the adapter then
+      # refuses ("…not supported via Windows UIA…") and the cycle dies with
+      # flow_state=error (session 56c1564a). Defer instead of executing: keep
+      # observing, and the next healthy in_game cycle plays the same move. The
+      # prompt branch (Play/Keep) is deliberately NOT gated — a modal exists on
+      # screen regardless of the coarse board state, and it is handled before
+      # this point.
+      if action_type_str in _IN_GAME_ACTIONS and not self._board_is_playable(
+        observation, observation.game_state if observation else None,
+      ):
+        gs_defer = (observation.game_state if observation else None) or {}
+        logger.warning(
+          "in_game_action_deferred", session_id=detail.session_id, cid=cid,
+          action=action_type_str,
+          screen_type=gs_defer.get("screen_type"),
+          game_state_confidence=getattr(getattr(observation, "confidence", None), "game_state", None) if observation else None,
+          reason="board not playable (non-board or zero-confidence frame)",
+        )
+        defer_msg = await self.clients.send_bot_message(
+          detail.session_id,
+          f"Table not readable yet (transition frame). Holding '{action_type_str}' — "
+          "will play it as soon as the board is visible again.",
+          correlation_id=cid,
+        )
+        session.chat_messages.append(defer_msg)
+        detail.phase = SessionPhase.IDLE
+        return {
+          "correlation_id": cid,
+          "deferred": True,
+          "planned_action": action_type_str,
+        }
 
       failed_at = FlowStepName.EXECUTE
       session.pre_action_state = self._classify_state_for_verification(observation, detail)
@@ -345,6 +683,7 @@ class FlowController:
         "observation_id": observation.observation_id,
         "action": decision.chosen_action.model_dump(),
         "guard": guard,
+        "shadow": _shadow_agree(decision),
       }
     except Exception as exc:
       trace_failed_at = failed_at
@@ -377,6 +716,7 @@ class FlowController:
           "decide": t_decide_ms,
           "execute": t_execute_ms,
         },
+        click=click_info,
       )
 
   async def _run_step(self, session: RuntimeSession, cid: str, name: FlowStepName, phase: SessionPhase) -> None:
@@ -522,6 +862,7 @@ class FlowController:
       model_profile_id=model_profile_id,
       correlation_id=cid,
       game_type=game_type,
+      shadow_mode=detail.config.shadow_evaluation,
     ))
 
   async def _execute(
@@ -596,15 +937,58 @@ class FlowController:
         if draw_target is not None:
           payload = {**(payload or {}), "draw_target": list(draw_target)}
 
-    # Ground choose_color to a click point on canvas/Electron (the colour cubes
-    # aren't in the UIA tree). Cheap path first: the colour button may already be
-    # in the perceived prompts[]. Fall back to the VLM grounding provider only
-    # when it isn't. Sets target_x/target_y that _map_action_windows passes on.
-    if action_type_str == "choose_color":
-      color = payload.get("chosen_color") if payload else None
-      xy = await self._ground_choose_color(color, observation, screenshot, detail)
-      if xy is not None:
-        payload = {**(payload or {}), "target_x": xy[0], "target_y": xy[1]}
+      # Ground choose_color to a click point on canvas/Electron (the colour cubes
+      # aren't in UIA). Cheap path first: the colour button may already be in the
+      # perceived prompts[]. Fall back to the VLM grounding provider only when
+      # it isn't. Sets target_x/target_y that _map_action_windows passes on.
+      if action_type_str == "choose_color":
+        color = payload.get("chosen_color") if payload else None
+        xy = await self._ground_choose_color(color, observation, screenshot, detail)
+        if xy is not None:
+          payload = {**(payload or {}), "target_x": xy[0], "target_y": xy[1]}
+
+    # Re-plan a play_card whose card is NOT in the perceived hand. The simulated
+    # engine's hand desyncs from the real table; its phantom cards can never be
+    # grounded ("need to draw, instead of an error"). Perceptual contract: every
+    # play_card must name a card actually detected on screen. If it doesn't, the
+    # honest move is drawing — swap here rather than letting the adapter refuse
+    # at delivery time (session de3856d6 cycle 2 and after).
+    if action_type_str == "play_card" and isinstance(hand_cards, list) and hand_cards:
+      played_color = str((payload or {}).get("card_color") or "").lower()
+      played_value = str((payload or {}).get("card_value") or "").lower()
+      if any(
+        str(c.get("color", "")).lower() == played_color
+        and (
+          not played_value
+          or str(c.get("value", "")).lower() == played_value
+          or str(c.get("value", "")).lower() == "unknown"
+        )
+        for c in hand_cards if isinstance(c, dict)
+      ):
+        pass  # card exists on screen → grounds normally below
+      elif observation is not None and getattr(observation, "game_state", None) \
+          and (observation.game_state or {}).get("screen_type") == "in_game":
+        logger.warning(
+          "replan_ungrounded_play_as_draw", session_id=detail.session_id, cid=cid,
+          wanted=f"{played_color} {played_value}",
+          reason="chosen card absent from perceived hand (simulator desync)",
+        )
+        detail.metrics.fallbacks += 1
+        draw_target = find_draw_target(observation.game_state)
+        decision = DecisionResult(
+          chosen_action=LegalAction(action_type=ActionType.DRAW_CARD, player_id=player_id, action_id="draw"),
+          confidence=min(decision.confidence, 0.7),
+          explanation=decision.explanation.model_copy(update={
+            "summary": f"Replanned {action_type_str} ({played_color} {played_value}) as draw_card: "
+                       f"card not in the perceived hand",
+          }) if decision.explanation else decision.explanation,
+          correlation_id=cid,
+        )
+        action = decision.chosen_action
+        action_type_str = "draw_card"
+        payload = {"card_color": None, "card_value": None}
+        if draw_target is not None:
+          payload["draw_target"] = list(draw_target)
 
     action_req = client.map_action(
       action_type=action_type_str,
@@ -663,34 +1047,157 @@ class FlowController:
       return int(res["x"]), int(res["y"])
     return None
 
-  async def _click_prompt(self, binding: AdapterBinding, prompt: dict, detail: SessionDetail, cid: str) -> None:
-    """Click an on-screen prompt button (Play/Keep, colour picker, Continue).
+  async def _capture_frame(self, client, binding: AdapterBinding, session_id: str, cid: str) -> str | None:
+    """Path of a FRESH screenshot from the adapter, or None if capture failed.
+
+    Deliberately not the cycle's `screenshot`: that frame belongs to OBSERVE and can
+    be seconds old by the time the game reacts to a click. Verification needs two
+    captures bracketing the click itself.
+    """
+    try:
+      bundle = await client.capture_evidence(binding.adapter_id, correlation_id=cid)
+    except Exception as exc:
+      logger.warning(
+        "click_verify_capture_failed", session=session_id,
+        error=f"{type(exc).__name__}: {exc}",
+      )
+      return None
+    return getattr(bundle, "screenshot_path", None) or None
+
+  async def _click_prompt(
+    self, binding: AdapterBinding, prompt: dict, detail: SessionDetail, cid: str, reason: str = "",
+  ) -> tuple[str, dict]:
+    """Click an on-screen prompt button (Play/Keep, colour picker, Continue) and
+    VERIFY the click actually took effect. Returns (announcement, click_info).
 
     Grounds the click to the button's perceived coordinate — the same mechanism
     as card/draw grounding. Lets the agent get past modal dialogs it would
-    otherwise stall on (the recurring "draw → Play/Keep → stuck" case).
+    otherwise stall on (the recurring "draw → Play/Keep → stuck" case). `reason`
+    carries the strategy verdict (WHY this side of the dilemma was chosen) so the
+    operator chat and logs show the decision, not just a blind click.
+
+    VERIFICATION (regression, session 8b4cefc1 2026-08-24): `execute_action`
+    reported success=True twice while the game ignored the click and kept showing
+    the same modal, so every following cycle decided on a board that never moved.
+    A dispatched click is therefore NOT a done action: after each attempt we
+    re-capture the screen and require a visible change in the zone around the
+    clicked point (whole-frame diffs are useless — opponents redraw the board
+    constantly). Unreactive → retry with small offsets around the perceived
+    centre, then report the outcome as unconfirmed instead of silently claiming
+    success. The click info lands in the cycle trace, logs, and the chat line.
     """
     from uno_shared.adapter_protocol import GenericActionRequest
+
     center = prompt.get("center") or {}
-    x, y = int(center.get("x", 0)), int(center.get("y", 0))
-    req = GenericActionRequest(
-      action_type="click_input",
-      selector_key="prompt",
-      domain_action="click_prompt",
-      extra={
-        "target_x": x, "target_y": y,
-        "grounded_by": "cv_detection",
-        "capture_screenshots": True,
-        "min_confidence": 0.55,
-        "allow_coordinate_fallback": True,
-        "prompt_label": prompt.get("label", ""),
-      },
-    )
+    base_x, base_y = int(center.get("x", 0)), int(center.get("y", 0))
+    cfg = zone_config()
+    min_ratio = float(cfg["min_ratio"])
+    label = prompt.get("label") or "?"
+
     registry = get_adapter_registry()
     client = registry.get_client(binding.adapter_type)
-    logger.info("prompt_click session=%s label=%s x=%s y=%s",
-                detail.session_id, prompt.get("label"), x, y)
-    await client.execute_action(binding.adapter_id, req, correlation_id=cid)
+    # Surface the STRATEGY decision, not just coordinates: the whole point of the
+    # Play/Keep fix is that the AI analysed drawn-vs-top-vs-hand and chose a side.
+    # The returned text is announced by the caller into the operator chat.
+    announcement = f"Prompt: {label}" + (f" — {reason}" if reason else "")
+
+    before_path = await self._capture_frame(client, binding, detail.session_id, cid)
+
+    attempts_plan = click_retry_offsets()
+    delivery_ok = False
+    delivered_any = False
+    change_ratio: float | None = None
+    after_path: str | None = None
+    final_x, final_y = base_x, base_y
+    attempts_made = 0
+    status = "unverifiable"
+    for index, (dx, dy) in enumerate(attempts_plan):
+      final_x, final_y = base_x + dx, base_y + dy
+      req = GenericActionRequest(
+        action_type="click_input",
+        selector_key="prompt",
+        domain_action="click_prompt",
+        extra={
+          "target_x": final_x, "target_y": final_y,
+          "grounded_by": "cv_detection",
+          "capture_screenshots": True,
+          "min_confidence": 0.55,
+          "allow_coordinate_fallback": True,
+          "prompt_label": prompt.get("label", ""),
+          "prompt_strategy": reason,
+        },
+      )
+      logger.info("prompt_click", session=detail.session_id, label=label,
+                  x=final_x, y=final_y, strategy=reason or None,
+                  attempt=index + 1, max_attempts=len(attempts_plan))
+      attempts_made = index + 1
+      try:
+        res = await client.execute_action(binding.adapter_id, req, correlation_id=cid)
+        delivered_any = True
+        delivery_ok = bool(getattr(res, "success", False)) and not getattr(res, "error", None)
+      except Exception as exc:
+        logger.warning(
+          "prompt_click_delivery_failed", session=detail.session_id, label=label,
+          attempt=index + 1, error=f"{type(exc).__name__}: {exc}",
+        )
+        status = "delivery_failed"
+        break
+
+      after_path = await self._capture_frame(client, binding, detail.session_id, cid)
+      if not before_path or not after_path:
+        logger.info(
+          "prompt_click_unverifiable", session=detail.session_id, label=label,
+          attempt=index + 1, note="could not capture before/after frames",
+        )
+        break
+      change_ratio = verify_zone_change(
+        before_path, after_path, final_x, final_y,
+        half_w=int(cfg["half_w"]), half_h=int(cfg["half_h"]), pixel_diff=int(cfg["pixel_diff"]),
+      )
+      if change_ratio is not None and change_ratio >= min_ratio:
+        status = "confirmed"
+        break
+      logger.info(
+        "prompt_click_unconfirmed", session=detail.session_id, label=label,
+        attempt=index + 1,
+        change_ratio=None if change_ratio is None else round(change_ratio, 4),
+        min_change_ratio=min_ratio,
+        note="zone around the button did not visibly react; retrying with offset",
+      )
+      if index < len(attempts_plan) - 1:
+        await asyncio.sleep(float(cfg["settle_s"]))
+
+    if status != "confirmed" and delivered_any and status != "delivery_failed":
+      # Click went out at least once but the screen never reacted (or we could not
+      # measure it). Not a delivery failure — say exactly that.
+      status = "unconfirmed" if change_ratio is not None else "unverifiable"
+
+    if status == "confirmed":
+      announcement += " (confirmed)"
+    elif status == "unconfirmed":
+      announcement += " (UNCONFIRMED — screen did not react)"
+    elif status == "unverifiable":
+      announcement += " (unverified — no before/after frames)"
+
+    click_info = {
+      "type": "prompt_click",
+      "label": label,
+      "base_point": {"x": base_x, "y": base_y},
+      "final_point": {"x": final_x, "y": final_y},
+      "attempts": attempts_made,
+      "delivery_ok": delivery_ok or status == "confirmed",
+      "status": status,
+      "change_ratio": None if change_ratio is None else round(change_ratio, 4),
+      "min_change_ratio": min_ratio,
+      "before_frame": before_path,
+      "after_frame": after_path,
+    }
+    logger.info(
+      "prompt_click_result", session=detail.session_id, label=label,
+      status=status, attempts=attempts_made,
+      change_ratio=click_info["change_ratio"],
+    )
+    return announcement, click_info
 
   async def _record(self, detail: SessionDetail, cid: str, observation: Observation) -> None:
     if not detail.replay_id:

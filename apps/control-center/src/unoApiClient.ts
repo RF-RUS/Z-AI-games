@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1";
 const ORCH = `${API_BASE}:8100`;
 const ADAPTER_WEB = `${API_BASE}:8104`;
 const ADAPTER_WIN = `${API_BASE}:8105`;
+const MODEL_RUNTIME = `${API_BASE}:8111`;
 const FETCH_TIMEOUT_MS = 3000;
 const WEB_ATTACH_TIMEOUT_MS = 120_000;
 
@@ -168,6 +169,32 @@ export interface SessionDetail {
     last_error?: string | null;
   }>;
   metrics: SessionMetrics;
+  // Per-session VLM profile chosen in the operator model picker (null = service default).
+  vlm_profile_id?: string | null;
+}
+
+export interface VisionProfile {
+  profile_id: string;
+  display_name: string;
+  provider: string;
+  model_name?: string | null;
+  enabled: boolean;
+  supports_multimodal: boolean;
+}
+
+export interface OllamaModel {
+  name: string;
+  profile_id: string;
+  vision: boolean;
+  size_gb: number;
+  params?: string | null;
+  quantization?: string | null;
+}
+
+export interface OllamaInventory {
+  reachable: boolean;
+  models: OllamaModel[];
+  error?: string;
 }
 
 export interface DetectedCard {
@@ -362,6 +389,35 @@ export async function listModels(): Promise<Array<{ model_id: string; display_na
     return (await window.unoApi.listModels()) as Array<{ model_id: string; display_name: string; enabled: boolean }>;
   }
   return fetchJson(`${API_BASE}:8110/models`);
+}
+
+// ── Model picker (operator switches a session's VLM live) ────────────────────
+
+export async function listVisionProfiles(): Promise<VisionProfile[]> {
+  try {
+    return await fetchJson<VisionProfile[]>(`${MODEL_RUNTIME}/profiles`, undefined, 5000);
+  } catch {
+    return [];
+  }
+}
+
+export async function listOllamaModels(): Promise<OllamaInventory> {
+  try {
+    return await fetchJson<OllamaInventory>(`${MODEL_RUNTIME}/ollama/models`, undefined, 5000);
+  } catch {
+    return { reachable: false, models: [] };
+  }
+}
+
+export async function setSessionModel(
+  sessionId: string,
+  vlmProfileId: string | null,
+): Promise<SessionDetail> {
+  return orchFetch<SessionDetail>(`/sessions/${sessionId}/model`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vlm_profile_id: vlmProfileId }),
+  });
 }
 
 export async function createSession(spec: Record<string, unknown>): Promise<Record<string, unknown>> {

@@ -48,12 +48,18 @@ Full spec: `docs/architecture/intermediate-contract.md`.
 - Model calls are logged via `ModelUsageTracker`; chat gated by `ChatPolicy`.
 
 ## Service ports
-8100 orchestrator · 8101 uno-core · 8102 state-replay · 8103 perception · 8104 adapter-web · 8105 adapter-windows · 8106 decision · 8107 policy-guard · 8108 chat-intent · 8109 chat-response · 8110 model-registry · 8111 model-runtime · 8112 observability (planned) · 8113 config-service. Control Center 5173.
+8100 orchestrator · 8101 uno-core · 8102 state-replay · 8103 perception · 8104 adapter-web · 8105 adapter-windows · 8106 decision · 8107 policy-guard · 8108 chat-intent · 8109 chat-response · 8110 model-registry · 8111 model-runtime · 8112 observability · 8113 config-service. Control Center 5173. svintus-core has NO port — it is an in-process game plugin library (registered via game_registry), not a standalone service.
+
+## New platform invariants (do not break casually)
+6. **Trace propagation is global.** `ServiceApp` middleware binds `X-Trace-Id` into structured logs for every request and reports per-step latency to observability-service (fire-and-forget). Keep `UNO_METRICS_DISABLED` honored in tests (conftest sets it); outbound calls go through `_trace_headers()` in orchestrator clients.
+7. **Eval history is the quality curve.** `scripts/run-eval.py` appends to `models/benchmarks/history.jsonl`; CI gates full_operator success_rate ≥ 0.8. Regressions show up there first — check it before "it used to work" debates.
+8. **Safety endpoints are the operator's last line.** policy-guard `/guard/kill-switch` (global) + session `dry_run` flag. Both are tested (`tests/unit/test_trace_metrics.py`, `test_dry_run_shadow.py`) — don't remove without replacement.
+9. **Docker addressing uses `UNO_SERVICE_URL_<NAME>` overrides** (orchestrator clients + adapter registry), falling back to `UNO_SERVICE_HOST`+port. Containers must bind 0.0.0.0 via `UNO_UVICORN_HOST`.
 
 ## Drift / failure risks
-- **Port 8113 collision:** README/config-service and STATE.md/svintus-core both claim 8113. Verify before binding.
-- **CI is Ubuntu-only:** `adapter-windows` (pywinauto/UIA) is untested in CI; validate Windows changes locally.
-- Dev scripts are PowerShell (`.ps1`, Windows-first). No Docker prod deploy yet; observability = structured logs only.
+- ~~Port 8113 collision~~ RESOLVED 2026-08-24: svintus-core is an in-process game plugin library (no port, no pyproject-service); config-service keeps 8113. svintus-core IS now a uv workspace member.
+- **CI is multi-runner:** ubuntu (ci.yml) + windows-latest (windows.yml covers pywinauto paths). Live-GUI e2e still needs a local Windows machine.
+- Dev scripts are PowerShell (`.ps1`, Windows-first). Docker base exists (parameterized Dockerfile + compose `backend` profile) but staging validation is pending.
 - `scuffed-uno-web` (canvas/CV) is the active sprint; E2E canvas gameplay **not confirmed**. Don't assume it works.
 - Contract edits without updating all consuming plugins → silent pipeline breakage (caught by `tests/contracts`).
 - Requires-python is 3.11+ but ruff/CI target 3.12 — avoid 3.12-only syntax if 3.11 support matters.

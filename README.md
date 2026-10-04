@@ -30,7 +30,7 @@ See [Architecture Overview](docs/architecture/overview.md), [Intermediate Contra
 | **UNO** (DOM) | Working | adapter-web (Playwright) | Pizzuno via `real-unoh-web` profile |
 | **UNO** (Canvas) | In progress | adapter-web (screenshot + CV) | `scuffed-uno-web` — E2E not confirmed |
 | **UNO** (Desktop) | Working | adapter-windows (pywinauto) | Mock + real via `local-mock-uno` |
-| **Svintus** | Working | adapter-web | Second game plugin — proves multi-game architecture |
+| **Svintus** | Working | in-process plugin (no port) | Second game plugin — proves multi-game architecture |
 | Chess, Poker, etc. | Planned | any adapter | See [Plugin Interfaces](docs/architecture/plugin-interfaces.md) |
 
 ## Model Capabilities
@@ -45,8 +45,11 @@ See [Architecture Overview](docs/architecture/overview.md), [Intermediate Contra
 
 **Providers:** OpenAI-compatible (OpenAI, vLLM, llama.cpp), Mock (fallback).
 **Config:** Per-game `GameModelConfig` declares preferred models per task.
-**Safety:** `ChatPolicy` gates all chat responses — rate limiting, strategy leakage prevention, operator override.
-**Observability:** `ModelUsageTracker` logs every model call with latency, fallback reason, provider.
+**Shadow mode:** Set `shadow_evaluation=true` on a session and the opposite strategy (heuristic ↔ model) runs non-binding each tick; disagreement surfaces in decision explanations and eval reports (`shadow_agree_rate`) so strategy promotion is data-backed.
+**Caching:** VLM inference results are content-hashed and cached (`VLM_CACHE_ENABLED`, TTL `VLM_CACHE_TTL_S`) — unchanged frames never pay model latency again.
+**Safety:** `ChatPolicy` gates all chat responses — rate limiting, strategy leakage prevention, operator override. Global kill switch: `POST :8107/guard/kill-switch {"active": true}` halts every session's next action instantly (arm at startup with `UNO_KILL_SWITCH=1`). Dry-run sessions (`dry_run=true`) run the full observe→decide→guard pipeline without ever executing an action.
+**Observability:** Every service propagates `X-Trace-Id` through inter-service calls (binds into structured logs); per-step latency is aggregated at observability-service `/metrics/summary` and one pipeline run is reconstructable via `GET /traces/{correlation_id}`. `ModelUsageTracker` logs every model call with latency, fallback reason, provider.
+**Evaluation:** `python scripts/run-eval.py --dataset full_operator` runs scenario datasets through the full in-process pipeline and appends to `models/benchmarks/history.jsonl` — the long-run quality curve. CI gates on `success_rate >= 0.8`; nightly adds shadow measurement.
 
 See [Model Integration](docs/architecture/model-integration.md) for full details.
 
@@ -104,7 +107,7 @@ python scripts/watchdog-windows-agent.py --run-id nightly --pywinauto --max-dura
 | Service | Port | Role |
 |---------|------|------|
 | session-orchestrator | 8100 | Session lifecycle, tick loop, recovery |
-| uno-core | 8101 | UNO rules engine (game plugin) |
+| uno-core | 8101 | UNO rules engine (game plugin, also a service) |
 | state-replay-service | 8102 | Event recording + replay |
 | perception-service | 8103 | Evidence merge, plugin dispatch |
 | adapter-web | 8104 | Browser automation (Playwright) |
@@ -115,8 +118,9 @@ python scripts/watchdog-windows-agent.py --run-id nightly --pywinauto --max-dura
 | chat-response-service | 8109 | Chat response generation |
 | model-registry-service | 8110 | Model version management |
 | model-runtime-service | 8111 | Model inference |
-| observability-service | 8112 | Metrics (planned) |
+| observability-service | 8112 | Logs/traces/metrics aggregation |
 | config-service | 8113 | Runtime configuration |
+| svintus-core | — | Svintus rules engine (in-process game plugin library) |
 | control-center | 5173 | Operator UI (Electron/React) |
 
 ## Documentation
@@ -162,6 +166,17 @@ scripts/                    Setup, dev, evaluation
 | `.\scripts\dev-desktop.ps1` | Start Control Center (Vite + Electron) |
 | `.\scripts\smoke-check.ps1` | HTTP health check on all service ports |
 | `.\scripts\run-tests.ps1` | Full pytest suite |
+| `python scripts/run-eval.py --dataset full_operator` | Eval harness — in-process pipeline runs, appends quality curve |
+| `docker compose --profile backend up --build` | Full backend stack as containers (staging/prod parity) |
+
+### Operations: Safety & Quality
+
+- **Kill switch** (instant halt of every session): `POST http://127.0.0.1:8107/guard/kill-switch {"active": true, "reason": "..."}` — release with `{"active": false}`. Arm at startup for unattended runs via `UNO_KILL_SWITCH=1`.
+- **Dry-run sessions**: create a session with `config.dry_run=true` — observe→decide→guard run fully; nothing is ever clicked. For trying new strategies/profiles against a live UI with zero risk.
+- **Shadow evaluation**: `config.shadow_evaluation=true` runs the opposite strategy non-binding each tick; `shadow_agree_rate` appears in eval reports and disagreement is logged per tick (`shadow_comparison`).
+- **Tracing**: one cycle = one `X-Trace-Id` across all services. Grep any log file for it, or reconstruct the whole run: `GET :8112/traces/{correlation_id}`. Per-step latency: `GET :8112/metrics/summary`; per-service snapshot: `GET :<port>/metrics`.
+- **Eval gate**: CI fails if scenario `success_rate < 0.8` on the full operator dataset; nightly additionally measures shadow agreement and uploads `models/benchmarks/history.jsonl` (the quality curve).
+- **Windows coverage**: adapter-windows (pywinauto/UIA) runs in the `windows.yml` workflow on a real Windows runner — no more blind spot.
 
 ## Technology Stack
 

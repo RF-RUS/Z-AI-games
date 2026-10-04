@@ -33,6 +33,11 @@ ADAPTER_HTTP_TIMEOUT_SEC = float(os.getenv("ADAPTER_HTTP_TIMEOUT_SEC", "45"))
 
 
 def _service_url(service: str) -> str:
+    # Per-service override (Docker: each service is its own container hostname).
+    # Naming convention: UNO_SERVICE_URL_ADAPTER_WEB=http://adapter-web:8104
+    override = os.getenv(f"UNO_SERVICE_URL_{service.upper().replace('-', '_')}")
+    if override:
+        return override.rstrip("/")
     port_map = {
         "adapter-web": 8104,
         "adapter-windows": 8105,

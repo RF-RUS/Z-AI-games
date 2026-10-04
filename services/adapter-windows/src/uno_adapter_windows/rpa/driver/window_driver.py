@@ -46,20 +46,32 @@ def win32_bounds_for_handle(handle: int) -> dict[str, float] | None:
 def read_window_bounds(window, *, window_handle: int | None = None) -> dict[str, float] | None:
   handle = window_handle
   if handle is None and hasattr(window, "handle"):
-    handle = int(window.handle)
+    try:
+      handle = int(window.handle)
+    except Exception:
+      handle = None
+  # Pure-ctypes GetWindowRect FIRST: this function is called from the async event
+  # loop on the evidence path (via _apply_fixed_size BEFORE the screenshot), and
+  # window.rectangle() is a pywinauto COM call that has been observed to hang
+  # against the live animating UNO (Electron) window. A hang there blocks the
+  # WHOLE loop, so the 20s /evidence backstop (an asyncio.wait_for on the same
+  # loop) cannot fire and the orchestrator sees a ReadTimeout with no frame.
+  # GetWindowRect is a plain user32 call that does not go through COM and returns
+  # the same outer rectangle.
   bounds: dict[str, float] | None = None
-  try:
-    rect = window.rectangle()
-    bounds = {
-      "left": float(rect.left),
-      "top": float(rect.top),
-      "right": float(rect.right),
-      "bottom": float(rect.bottom),
-    }
-  except Exception:
-    bounds = None
-  if not bounds_are_usable(bounds) and handle is not None:
-    bounds = win32_bounds_for_handle(handle) or bounds
+  if handle is not None:
+    bounds = win32_bounds_for_handle(handle)
+  if not bounds_are_usable(bounds):
+    try:
+      rect = window.rectangle()
+      bounds = {
+        "left": float(rect.left),
+        "top": float(rect.top),
+        "right": float(rect.right),
+        "bottom": float(rect.bottom),
+      }
+    except Exception:
+      bounds = None
   return bounds
 
 
@@ -152,6 +164,15 @@ def window_attachment(
   )
 
 
+# Budget for the pre-click COM set_focus call. window.set_focus() is a pywinauto
+# COM call with NO timeout of its own: on the live animating UNO (Electron) window
+# it was observed to hang long enough to consume the entire 12s execute deadline
+# ("execution exceeded 12s deadline", no click delivered). The focus attempt is
+# best-effort anyway (the click path clamps to screen coords), so a bounded
+# attempt that falls through is strictly better than an unbounded one.
+_FOCUS_BUDGET_S = 3.0
+
+
 async def ensure_focus(window) -> None:
   def _focus():
     try:
@@ -159,7 +180,22 @@ async def ensure_focus(window) -> None:
     except Exception:
       pass
 
-  await asyncio.to_thread(_focus)
+  try:
+    # Offload to the dedicated COM-meta pool: a hung set_focus leaks its worker
+    # until Windows returns, and this runs on the default pool that the
+    # screenshot shares — a leaked focus thread would starve the frame capture.
+    from uno_adapter_windows.runtime import _get_com_meta_executor
+    loop = asyncio.get_running_loop()
+    await asyncio.wait_for(
+      loop.run_in_executor(_get_com_meta_executor(), _focus),
+      timeout=_FOCUS_BUDGET_S,
+    )
+  except Exception:
+    import logging
+    logging.getLogger("adapter-windows").warning(
+      "ensure_focus_timeout: set_focus hung >%ss — clicking without focus",
+      _FOCUS_BUDGET_S,
+    )
 
 
 async def window_still_valid(window, expected_title: str | None = None) -> bool:
@@ -183,3 +219,63 @@ def clamp_point_to_bounds(x: float, y: float, bounds: dict[str, float] | None) -
   cx = max(left + 2, min(right - 2, x))
   cy = max(top + 2, min(bottom - 2, y))
   return int(cx), int(cy)
+
+
+def set_window_size_keep_position(window, width: int, height: int) -> dict[str, float] | None:
+  """Resize the window to an exact size, keeping its current top-left corner.
+
+  WHY THIS EXISTS (2026-08-27): the VLM and the heuristic both emit coordinates
+  in *frame* pixels, and the executor clamps clicks to the window bounds captured
+  at attach. If the game window drifts in size after attach (the user maximises
+  it, the game resizes to a borderless/fullscreen mode, a display-mode change),
+  the frame and the click bounds no longer agree and a "confirmed" click lands on
+  the wrong card — exactly the class of confidently-wrong perception this repo
+  keeps fixing. Forcing a fixed outer rectangle at attach (and re-asserting it
+  before an action) keeps frame size, capture rect, and click bounds locked to one
+  coordinate system. Only the size is changed, never the position, so the window
+  does not jump around the screen (which would itself trigger a DWM recomposite).
+
+  Implemented with user32.SetWindowPos (SWP_NOZORDER) rather than a pywinauto
+  call: the win32 DialogWrapper exposes no set_rectangle, and Unity windows have
+  been verified to honour SetWindowPos size changes.
+  """
+  try:
+    import ctypes
+    from ctypes import wintypes
+
+    handle = None
+    if window_handle_of(window) is not None:
+      handle = window_handle_of(window)
+    if handle is None:
+      return None
+    rect = wintypes.RECT()
+    if not ctypes.windll.user32.GetWindowRect(handle, ctypes.byref(rect)):
+      return None
+    SWP_NOZORDER = 0x0004
+    ctypes.windll.user32.SetWindowPos(
+      handle, 0, int(rect.left), int(rect.top), int(width), int(height), SWP_NOZORDER
+    )
+    return None
+  except Exception:
+    return None
+
+
+def window_handle_of(window) -> int | None:
+  try:
+    return int(window.handle) if hasattr(window, "handle") else None
+  except Exception:
+    return None
+
+
+def assert_window_size(
+  window,
+  fixed_size: dict | None,
+) -> None:
+  """Apply a profile's `fixed_size` ({width, height}) if present. Best-effort."""
+  if not fixed_size:
+    return
+  width = fixed_size.get("width")
+  height = fixed_size.get("height")
+  if not width or not height:
+    return
+  set_window_size_keep_position(window, int(width), int(height))

@@ -42,7 +42,19 @@ def validate_decision(
   decision: DecisionResult,
   legal_actions: list[LegalAction | GameAction],
   min_confidence: float = 0.3,
+  kill_switch_active: bool = False,
+  dry_run: bool = False,
 ) -> tuple[bool, PolicyViolation | None]:
+  # Kill switch: hard global halt. Every action is blocked until an operator
+  # releases it (POST /guard/kill-switch {"active": false}).
+  if kill_switch_active:
+    return False, PolicyViolation(
+      violation_type=PolicyViolationType.KILL_SWITCH,
+      message="kill switch active — all actions halted",
+      blocked_action=decision.chosen_action,
+      correlation_id=decision.correlation_id,
+    )
+
   legal_ids = {_get_action_id(a) for a in legal_actions}
   if _get_action_id(decision.chosen_action) not in legal_ids:
     chosen_type = _get_action_type(decision.chosen_action)

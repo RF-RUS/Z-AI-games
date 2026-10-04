@@ -1108,3 +1108,47 @@ Three `decide_model` rescue-path tests (httpx mocked, no live model-runtime need
 are unmodified; new tests add an `autouse` fixture that only patches `get_usage_tracker` (not called by
 the existing heuristic/guard tests).
 
+---
+
+### 2026-08-24 — Drawn-card Play/Keep prompt decided by game strategy (was: static "Play first")
+- **Trigger (user):** during a real test run the agent drew a card and the game showed the drawn card
+  with a "play it or skip/pass the turn" question. The AI must analyse what is required and decide —
+  not blindly click. Root cause: `flow_controller.run_cycle` handled on-screen prompts via
+  `choose_prompt`, whose `_PROMPT_PRIORITY` ranks `"play"` BEFORE `"keep"` — so whenever BOTH buttons
+  were visible the agent always clicked Play, regardless of whether the drawn card even matched.
+- **What changed:**
+  1. **Perception now carries the drawn card.** VLM board prompt asks for
+     `drawn_card:{color,value}` (the highlighted just-drawn card next to a Play/Keep choice);
+     `_normalize_board` surfaces it (None on a normal turn); the merger folds it into `game_state`
+     alongside top_card/hand_cards/prompts.
+  2. **Strategy module** (`perceived_actions.decide_drawn_play_or_keep`) analyses
+     (drawn card, top card, hand) → verdict + human-readable reason:
+     unreadable drawn card → keep; non-matching colour/value → keep; wild/+4 → hoard when the hand
+     already has a playable card, spend it when nothing else plays; action cards (+2/skip/reverse) →
+     play (pressure); plain matching number → play. Reuses `Card.matches` (same rule as legal actions).
+  3. **`choose_prompt_with_strategy`** picks the button: only when BOTH a play-side and a keep-side
+     button are perceived does the strategy decide; everything else keeps the legacy
+     `choose_prompt` behaviour (colour pickers, "Continue", lone buttons unchanged). If the preferred
+     side wasn't perceived, the other available side is clicked instead — on a blocking modal,
+     refusing to click stalls the session on a cached identical frame.
+  4. **Flow layer** (`run_cycle` prompt branch → `_click_prompt(reason=...)`) clicks the chosen button
+     and ANNOUNCES the decision: operator chat gets "Prompt: Play — matches top red 2", the request
+     carries `extra.prompt_strategy`, and `prompt_click` logs `strategy=...`. The cycle result gains
+     `prompt_strategy`.
+  5. **Fixed a pre-existing broken metric found while wiring delivery verification**
+     (`rpa/verification/ui_verifier.verify_screenshot_transition`): the diff "changed" value counted
+     NON-ZERO histogram bins, capping `change_ratio` at ~0.0039 — permanently below the default
+     0.005 threshold, so every delivered click read `no_visible_change` and the new "unconfirmed"
+     status from the previous session would have flagged every click uncertain. Now weighted by diff
+     magnitude across all 3 channels; ratio scales 0..1 correctly.
+- **Files changed:** `vlm_provider.py` (prompt + normalize), `merger.py` (key fold),
+  `perceived_actions.py` (strategy), `flow_controller.py` (wiring + announcement),
+  `ui_verifier.py` (ratio fix), tests: `test_perceived_actions.py` (+12), `test_vlm_perception.py` (+3),
+  `test_ui_verifier.py` (+2), `tests/unit/test_prompt_strategy_flow.py` (NEW, full `run_cycle` flow).
+- **Verified (this host):** ruff clean on all touched files; `pytest tests --ignore=tests/e2e`
+  → **542 passed, 22 skipped, 0 failed** (was 439 unit + rest; includes the previously failing
+  `test_grounded_click_verification::test_changed_board_confirms_delivery`, now green via the ratio fix).
+  Real-game confirmation (the actual UNO Play/Keep dialog being read + correct click) still needs a
+  live run with Ollama up: watch `[CVv3] rec=vlm`, then the operator chat line
+  `Prompt: <label> — <reason>` in the cycle where the dilemma appears.
+

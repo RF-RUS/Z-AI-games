@@ -202,6 +202,11 @@ class SessionDetail(BaseModel):
   adapter_bindings: list[AdapterBinding] = Field(default_factory=list)
   metrics: OrchestratorMetrics = Field(default_factory=OrchestratorMetrics)
   executed_correlation_ids: list[str] = Field(default_factory=list)
+  # Per-session VLM profile override for the perception path. None = the
+  # perception service's own default (env VLM_PROFILE_ID). Set by the operator
+  # UI (POST /sessions/{id}/model) or at attach time; surfaced back to the UI
+  # in this same object so the picker can show the live selection.
+  vlm_profile_id: str | None = None
 
 
 class AttachAdapterBody(BaseModel):
@@ -214,6 +219,8 @@ class AttachAdapterBody(BaseModel):
   launch_test_target: bool = False
   windows_use_pywinauto: bool = True
   cdp_url: str | None = None
+  # Optional per-session VLM profile for this session's perception calls.
+  vlm_profile_id: str | None = None
 
 
 class FlowControlResponse(BaseModel):

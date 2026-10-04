@@ -1,5 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
-import { ServiceHealthState, getProfileCompatibility, ProfileCompatibility, CdpTab } from "./unoApiClient";
+import {
+  ServiceHealthState, getProfileCompatibility, ProfileCompatibility, CdpTab,
+  listVisionProfiles, listOllamaModels, VisionProfile, OllamaModel,
+} from "./unoApiClient";
 import GameWindowPicker from "./GameWindowPicker";
 import BrowserTabPicker from "./BrowserTabPicker";
 import { SelectedGameWindow } from "./windowAttachPayload";
@@ -12,6 +15,7 @@ interface Props {
     selectedWindow?: SelectedGameWindow | null;
     selectedTab?: CdpTab | null;
     gameType?: string;
+    vlmProfileId?: string | null;
   }) => void;
 }
 
@@ -62,6 +66,22 @@ function findMatchingProfiles(
   return matches;
 }
 
+const VLM_LAST_PICK_KEY = "uno.session.vlm_profile_id";
+
+function loadLastVlmPick(): string {
+  try {
+    return localStorage.getItem(VLM_LAST_PICK_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function shortModelLabel(id: string): string {
+  if (id.startsWith("ollama:")) return id.slice(7);
+  const parts = id.split("/");
+  return parts[parts.length - 1];
+}
+
 export default function SessionSetup({ health, onStart }: Props) {
   const [adapterType, setAdapterType] = useState("windows");
   const [profileId, setProfileId] = useState("real-uno-desktop");
@@ -72,6 +92,13 @@ export default function SessionSetup({ health, onStart }: Props) {
   const [attachError, setAttachError] = useState<string | null>(null);
   const [compatMap, setCompatMap] = useState<Map<string, ProfileCompatibility>>(new Map());
   const [autoSuggestion, setAutoSuggestion] = useState<string | null>(null);
+  // Vision model (per-session VLM). Remembered across sessions so the operator
+  // doesn't re-pick it every New Session (it defaulted to the service profile
+  // before, which made A/B-testing models a pain).
+  const [vlmProfileId, setVlmProfileId] = useState<string>(loadLastVlmPick);
+  const [vlmProfiles, setVlmProfiles] = useState<VisionProfile[]>([]);
+  const [vlmOllama, setVlmOllama] = useState<OllamaModel[]>([]);
+  const [vlmLoading, setVlmLoading] = useState(true);
 
   const orchestratorOnline = (health[8100] ?? "offline") !== "offline";
   const adapterOnline = adapterType === "web"
@@ -79,6 +106,20 @@ export default function SessionSetup({ health, onStart }: Props) {
     : (health[8105] ?? "offline") !== "offline";
 
   const profiles = adapterType === "web" ? WEB_PROFILES : WINDOWS_PROFILES;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [p, o] = await Promise.all([listVisionProfiles(), listOllamaModels()]);
+        setVlmProfiles(p);
+        setVlmOllama(o.models);
+      } catch {
+        // model-runtime offline — the select degrades to "Default" only
+      } finally {
+        setVlmLoading(false);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (adapterType !== "web") return;
@@ -144,11 +185,19 @@ export default function SessionSetup({ health, onStart }: Props) {
       }
       await new Promise((r) => setTimeout(r, 300));
       setAttachStage("attaching_adapter");
+      // Remember the operator's pick so the next New Session starts with it.
+      try {
+        if (vlmProfileId) localStorage.setItem(VLM_LAST_PICK_KEY, vlmProfileId);
+        else localStorage.removeItem(VLM_LAST_PICK_KEY);
+      } catch {
+        // storage unavailable — no persistence, session still starts
+      }
       await onStart({
         adapterType,
         profileId,
         selectedWindow: adapterType === "windows" ? selectedWindow : null,
         selectedTab: adapterType === "web" ? selectedTab : null,
+        vlmProfileId: vlmProfileId || null,
       });
       setAttachStage("done");
     } catch (e) {
@@ -220,6 +269,35 @@ export default function SessionSetup({ health, onStart }: Props) {
             Compatible domains: {currentCompat.allowed_domains.join(", ")}
           </p>
         )}
+
+        <label className="setup-label">
+          🧠 Vision model (VLM)
+          <select
+            value={vlmProfileId}
+            onChange={(e) => setVlmProfileId(e.target.value)}
+            disabled={starting || vlmLoading}
+          >
+            <option value="">Default (service profile)</option>
+            {vlmProfiles.map((p) => (
+              <option key={p.profile_id} value={p.profile_id} disabled={!p.enabled}>
+                {shortModelLabel(p.profile_id)}
+                {p.enabled && p.supports_multimodal ? "" : " · text-only"}
+              </option>
+            ))}
+            {vlmOllama
+              .filter((m) => !vlmProfiles.some((p) => p.model_name === m.name))
+              .map((m) => (
+                <option key={m.profile_id} value={m.profile_id}>
+                  {m.name} {m.vision ? "" : "· text-only"}
+                </option>
+              ))}
+          </select>
+        </label>
+        <p className="muted" style={{ fontSize: "11px", marginTop: "-4px" }}>
+          {vlmLoading
+            ? "Loading models…"
+            : "Recognizes the board & cards. Remembered for next session; still switchable live."}
+        </p>
 
         {adapterType === "web" && currentCompat && currentCompat.allowed_domains.length === 0 && (
           <p className="muted" style={{ fontSize: "12px", marginTop: "-4px", color: "var(--text-muted)" }}>

@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
+
+# Hard cap for the window meta (window_text/class_name) COM calls offloaded to
+# the UIA-walk pool in _snapshot(). Kept small so a stuck meta call adds at most
+# this much to the evidence capture; the 20s /evidence backstop then still has
+# room to fire.
+_WINDOW_META_BUDGET_S = 3.0
 
 from uno_adapter_windows.browser_attach import is_browser_host, verify_browser_attach
 from uno_adapter_windows.extraction import build_window_snapshot, window_snapshot_to_ui_evidence
@@ -200,12 +207,30 @@ class PywinautoWindowsAdapter:
   async def _verify_browser_attach(self) -> None:
     if not self._window or not self._state.attachment:
       return
+    # web_only (canvas/GPU content): the walk can never surface the in-game
+    # controls and on the real UNO window it hangs every cycle — skip it and
+    # verify the browser titles on an empty tree (the title checks don't need
+    # nodes).
+    web_only = getattr(self.profile, "match_automation", None) == "web_only"
     live_title = self._state.attachment.live_title or ""
+    # window_text() is a COM call — run it off the loop with a budget (see
+    # _snapshot). A hang here must never block the event loop.
     try:
-      live_title = self._window.window_text() or live_title
+      from uno_adapter_windows.runtime import _get_com_meta_executor
+      loop = asyncio.get_running_loop()
+      text = await asyncio.wait_for(
+        loop.run_in_executor(_get_com_meta_executor(), self._window.window_text),
+        timeout=_WINDOW_META_BUDGET_S,
+      )
+      if text:
+        live_title = text
     except Exception:
       pass
-    nodes, _, sparse = await extract_ui_tree(self._window, self._backend)
+    if web_only:
+      nodes: list = []
+      sparse = True
+    else:
+      nodes, _, sparse = await extract_ui_tree(self._window, self._backend)
     is_browser = bool(self._state.attachment.is_browser_host)
     diagnostics = analyze_uia_tree(nodes, sparse_tree=sparse, is_browser_host=is_browser)
     self._state.uia_diagnostics = diagnostics
@@ -225,34 +250,12 @@ class PywinautoWindowsAdapter:
     return snap.model_dump()
 
   async def capture_evidence(self, adapter_id: str) -> WindowsEvidenceBundle:
+    # ponytail: screenshot FIRST — it is the primary perception input and is
+    # fast (~100ms). The UIA tree walk is secondary (confidence/chat text) and
+    # is the step that can hang on a live animating game window; putting it
+    # second means a hung walk can no longer gate the frame the agent reads.
+    screenshot = await self._capture_screenshot_frame()
     snap = await self._snapshot()
-    screenshot = None
-    if self.capture_screenshots and self._window and self._executor:
-      path = await self._executor.capture_live_frame("evidence")
-      if path:
-        frame = screen_frame_from_path(path, self.session_id)
-        screenshot = ScreenshotFrame(
-          frame_id=frame.frame_id,
-          session_id=self.session_id,
-          width=frame.width,
-          height=frame.height,
-          path=path,
-          data_base64=frame.data_base64,
-          captured_at_ms=frame.captured_at_ms,
-        )
-    elif self.capture_screenshots and self._window:
-      path = await capture_window_screenshot(self._window, self.artifacts_dir, "evidence")
-      if path:
-        frame = screen_frame_from_path(path, self.session_id)
-        screenshot = ScreenshotFrame(
-          frame_id=frame.frame_id,
-          session_id=self.session_id,
-          width=frame.width,
-          height=frame.height,
-          path=path,
-          data_base64=frame.data_base64,
-          captured_at_ms=frame.captured_at_ms,
-        )
     return WindowsEvidenceBundle(
       adapter_id=adapter_id,
       session_id=self.session_id,
@@ -262,6 +265,26 @@ class PywinautoWindowsAdapter:
       chat_messages=snap.extracted.get("chat_messages", []),
     )
 
+  async def _capture_screenshot_frame(self) -> ScreenshotFrame | None:
+    if not self.capture_screenshots or not self._window:
+      return None
+    if self._executor:
+      path = await self._executor.capture_live_frame("evidence")
+    else:
+      path = await capture_window_screenshot(self._window, self.artifacts_dir, "evidence")
+    if not path:
+      return None
+    frame = screen_frame_from_path(path, self.session_id)
+    return ScreenshotFrame(
+      frame_id=frame.frame_id,
+      session_id=self.session_id,
+      width=frame.width,
+      height=frame.height,
+      path=path,
+      data_base64=frame.data_base64,
+      captured_at_ms=frame.captured_at_ms,
+    )
+
   async def _snapshot(self):
     title = self.window_title_hint or self.profile.window.title_regex or "unknown"
     class_name = None
@@ -269,15 +292,46 @@ class PywinautoWindowsAdapter:
     nodes = []
     truncated = sparse = True
     if self._window:
-      try:
-        title = self._window.window_text()
-        class_name = self._window.class_name()
-      except Exception:
-        pass
-      nodes, truncated, sparse = await extract_ui_tree(self._window, self._backend)
+      # 2026-08-29: match_automation="web_only" means the game content is
+      # canvas/GPU-drawn — UIA cannot see cards or buttons, so a walk here only
+      # hangs (6s hard cap per cycle on the real UNO window) and leaks worker
+      # threads into the walk pool. The screenshot is the ONLY useful signal;
+      # skip the walk (and the COM window_text/class_name meta calls that feed
+      # nothing downstream) entirely.
+      if getattr(self.profile, "match_automation", None) != "web_only":
+        # window_text()/class_name() are pywinauto COM calls. They used to run
+        # synchronously inside this coroutine — a hang on the live animating UNO
+        # window blocked the WHOLE event loop, so the 20s /evidence backstop
+        # (asyncio.wait_for on the same loop) could never fire and the orchestrator
+        # observed an opaque ReadTimeout with no frame. Offload to the dedicated
+        # COM-meta pool (separate from the UIA-walk pool) with a small cap: a stuck
+        # call leaks a thread but can never stall the walk or the screenshot.
+        try:
+          from uno_adapter_windows.runtime import _get_com_meta_executor
+          loop = asyncio.get_running_loop()
+          title, class_name = await asyncio.wait_for(
+            loop.run_in_executor(_get_com_meta_executor(), self._window_meta),
+            timeout=_WINDOW_META_BUDGET_S,
+          )
+        except Exception:
+          pass
+        nodes, truncated, sparse = await extract_ui_tree(self._window, self._backend)
     return build_window_snapshot(
       self.profile, nodes, title, self._backend, class_name, process_name, truncated, sparse
     )
+
+  def _window_meta(self) -> tuple[str, str | None]:
+    title = None
+    class_name = None
+    try:
+      title = self._window.window_text() or None
+    except Exception:
+      pass
+    try:
+      class_name = self._window.class_name() or None
+    except Exception:
+      pass
+    return (title or self.window_title_hint or self.profile.window.title_regex or "unknown"), class_name
 
   async def execute(
     self, req: WindowsActionExecutionRequest, correlation_id: str | None = None

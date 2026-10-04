@@ -134,6 +134,87 @@
 .mode-btn:hover { color: var(--text-secondary); border-color: var(--text-secondary); }
 .mode-btn-active { background: var(--accent); color: white; border-color: var(--accent); }
 
+/* Model picker (per-session VLM switch) */
+.model-picker {
+  position: relative;
+  margin-left: 10px;
+}
+.model-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  max-width: 190px;
+}
+.model-picker-btn:hover { border-color: var(--text-secondary); }
+.model-picker-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.model-picker-icon { font-size: 12px; }
+.model-picker-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-picker-caret { font-size: 9px; color: var(--text-muted); }
+.model-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 300px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 1000;
+  padding: 4px;
+}
+.model-picker-group {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  padding: 6px 8px 2px;
+}
+.model-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.model-picker-item:hover { background: rgba(255,255,255,0.06); }
+.model-picker-item.active { background: rgba(74,144,217,0.18); }
+.model-picker-item.active .mp-name { color: #fff; }
+.model-picker-item.disabled { opacity: 0.4; cursor: not-allowed; }
+.mp-name { font-weight: 600; }
+.mp-hint { font-size: 10px; color: var(--text-muted); }
+.model-picker-note {
+  font-size: 10px;
+  color: var(--warning);
+  padding: 4px 8px;
+}
+.model-picker-error {
+  font-size: 10px;
+  color: var(--error);
+  padding: 4px 8px;
+}
+.model-picker-footer {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px 0 2px;
+}
+
 /* === LEFT RAIL — GAME STATE === */
 .game-state-card {
   background: rgba(255,255,255,0.03);

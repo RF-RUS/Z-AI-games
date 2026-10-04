@@ -1,3 +1,4 @@
+import os
 import time
 from collections import defaultdict
 from uuid import uuid4
@@ -35,11 +36,9 @@ _action_timestamps: dict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 1.0
 _RATE_LIMIT_MAX = 10
 
-
 @app.get("/profiles", response_model=list[WebAdapterProfile], tags=["profiles"])
 async def get_profiles() -> list[WebAdapterProfile]:
   return list_profiles()
-
 
 @app.get("/profiles/{profile_id}", response_model=WebAdapterProfile, tags=["profiles"])
 async def get_profile(profile_id: str) -> WebAdapterProfile:
@@ -48,17 +47,14 @@ async def get_profile(profile_id: str) -> WebAdapterProfile:
   except FileNotFoundError:
     raise HTTPException(404, "profile not found") from None
 
-
 @app.post("/attach", response_model=AttachWebAdapterResponse, tags=["adapter"])
 async def attach(req: AttachWebAdapterRequest) -> AttachWebAdapterResponse:
   return await attach_adapter(req)
-
 
 @app.get("/network/check", tags=["adapter"])
 async def network_check(url: str) -> dict:
   result = await check_url_reachability(url)
   return result.model_dump(mode="json")
-
 
 @app.get("/cdp/tabs", tags=["cdp"])
 async def list_cdp_tabs(cdp_url: str = "http://127.0.0.1:9222") -> list[dict]:
@@ -82,7 +78,6 @@ async def list_cdp_tabs(cdp_url: str = "http://127.0.0.1:9222") -> list[dict]:
   except Exception:
     return []
 
-
 @app.get("/cdp/check", tags=["cdp"])
 async def check_cdp_port(cdp_url: str = "http://127.0.0.1:9222") -> dict:
   """Check if Chrome CDP debug port is available."""
@@ -95,7 +90,6 @@ async def check_cdp_port(cdp_url: str = "http://127.0.0.1:9222") -> dict:
       return {"available": True, "browser": data.get("Browser", "unknown"), "cdp_url": cdp_url}
   except Exception:
     return {"available": False, "browser": None, "cdp_url": cdp_url}
-
 
 @app.post("/cdp/launch", tags=["cdp"])
 async def launch_debug_chrome(body: dict) -> dict:
@@ -175,7 +169,6 @@ async def launch_debug_chrome(body: dict) -> dict:
 
   return {"success": False, "error": "Chrome launched but debug port did not respond within 7.5s"}
 
-
 @app.get("/profiles/{profile_id}/compatibility", tags=["profiles"])
 async def get_profile_compatibility(profile_id: str) -> dict:
   """Return domain compatibility info for a web profile."""
@@ -191,14 +184,12 @@ async def get_profile_compatibility(profile_id: str) -> dict:
   except FileNotFoundError:
     raise HTTPException(404, "profile not found") from None
 
-
 @app.get("/adapters/{adapter_id}/dom", tags=["adapter"])
 async def read_dom(adapter_id: str) -> dict:
   a = get_adapter(adapter_id)
   if not a:
     raise HTTPException(404, "adapter not found")
   return await a.read_dom()
-
 
 @app.get("/adapters/{adapter_id}/evidence", response_model=AdapterEvidenceBundle, tags=["adapter"])
 async def get_evidence(adapter_id: str, correlation_id: str | None = None) -> AdapterEvidenceBundle:
@@ -208,7 +199,6 @@ async def get_evidence(adapter_id: str, correlation_id: str | None = None) -> Ad
   bundle = await a.capture_evidence(adapter_id)
   bundle.correlation_id = correlation_id
   return bundle
-
 
 @app.post("/adapters/{adapter_id}/actions", response_model=ActionExecutionResult, tags=["adapter"])
 async def execute_action(
@@ -225,7 +215,6 @@ async def execute_action(
     raise HTTPException(404, "adapter not found")
   return await a.execute(req, correlation_id)
 
-
 @app.get("/adapters/{adapter_id}/screenshot", tags=["adapter"])
 async def get_screenshot(adapter_id: str):
   a = get_adapter(adapter_id)
@@ -235,7 +224,6 @@ async def get_screenshot(adapter_id: str):
   if not bundle.screenshot or not bundle.screenshot.path:
     raise HTTPException(404, "no screenshot")
   return FileResponse(bundle.screenshot.path, media_type="image/png")
-
 
 @app.post("/adapters/{adapter_id}/capture-fixture", tags=["adapter"])
 async def capture_fixture(adapter_id: str, output_dir: str = "tests/fixtures/web_adapter") -> dict:
@@ -269,7 +257,6 @@ async def capture_fixture(adapter_id: str, output_dir: str = "tests/fixtures/web
     "screenshot": str(screenshot_path) if screenshot_path else None,
   }
 
-
 @app.post("/adapters/{adapter_id}/detach", tags=["adapter"])
 async def detach(adapter_id: str) -> dict:
   from uno_adapter_web.registry import _adapters
@@ -277,7 +264,6 @@ async def detach(adapter_id: str) -> dict:
   if a:
     await a.detach()
   return {"detached": True}
-
 
 @app.get("/profiles/{profile_id}/selector-health", response_model=ProfileHealthReport, tags=["profiles"])
 async def profile_selector_health(
@@ -292,7 +278,6 @@ async def profile_selector_health(
   except FileNotFoundError:
     raise HTTPException(404, "profile not found") from None
 
-
 @app.get("/profiles/{profile_id}/health/history", response_model=list[ProfileHealthHistoryEntry], tags=["profiles"])
 async def profile_health_history(profile_id: str, limit: int = 20) -> list[ProfileHealthHistoryEntry]:
   try:
@@ -301,7 +286,6 @@ async def profile_health_history(profile_id: str, limit: int = 20) -> list[Profi
     raise HTTPException(404, "profile not found") from None
   return [to_history_entry(r) for r in load_reports(profile_id, limit=limit)]
 
-
 @app.get("/profiles/{profile_id}/health/summary", response_model=ProfileHealthSummary, tags=["profiles"])
 async def profile_health_summary(profile_id: str, limit: int = 20) -> ProfileHealthSummary:
   try:
@@ -309,7 +293,6 @@ async def profile_health_summary(profile_id: str, limit: int = 20) -> ProfileHea
   except FileNotFoundError:
     raise HTTPException(404, "profile not found") from None
   return build_summary(profile, limit=limit)
-
 
 @app.get("/profiles/{profile_id}/health/alerts", response_model=list[ProfileHealthAlert], tags=["profiles"])
 async def profile_health_alerts(profile_id: str, limit: int = 20) -> list[ProfileHealthAlert]:
@@ -320,21 +303,17 @@ async def profile_health_alerts(profile_id: str, limit: int = 20) -> list[Profil
   reports = load_reports(profile_id, limit=limit)
   return evaluate_alerts(reports, profile)
 
-
 @app.get("/metrics/profile-health", tags=["profiles"])
 async def profile_health_metrics() -> dict:
   return metrics_export()
-
 
 @app.get("/playwright/check", tags=["adapter"])
 async def playwright_check() -> dict:
   return {"available": playwright_available(), "profiles": [p.profile_id for p in list_profiles()]}
 
-
 @app.get("/trace/debug", tags=["trace"])
 async def trace_debug() -> dict:
   """Diagnostic endpoint: check trace state inside the running process."""
-  import os
 
   from uno_adapter_web.agent_trace import TraceManager
   base = TraceManager.base_dir()
@@ -350,7 +329,6 @@ async def trace_debug() -> dict:
     "base_dir_exists": base_exists,
     "session_count": session_count,
   }
-
 
 @app.get("/trace/sessions", tags=["trace"])
 async def list_trace_sessions() -> list[dict]:
@@ -383,7 +361,6 @@ async def list_trace_sessions() -> list[dict]:
         "latest_meta": latest_meta,
       })
   return sessions
-
 
 @app.get("/trace/{session_id}/steps", tags=["trace"])
 async def list_trace_steps(session_id: str) -> list[dict]:
@@ -420,7 +397,6 @@ async def list_trace_steps(session_id: str) -> list[dict]:
     })
   return steps
 
-
 @app.get("/trace/{session_id}/{step_dir}/frame.png", tags=["trace"])
 async def get_trace_frame(session_id: str, step_dir: str):
   """Serve a trace screenshot."""
@@ -429,7 +405,6 @@ async def get_trace_frame(session_id: str, step_dir: str):
   if not path.exists():
     raise HTTPException(404, "frame not found")
   return FileResponse(path, media_type="image/png")
-
 
 @app.get("/trace/{session_id}/{step_dir}/{filename}", tags=["trace"])
 async def get_trace_file(session_id: str, step_dir: str, filename: str):
@@ -442,7 +417,6 @@ async def get_trace_file(session_id: str, step_dir: str, filename: str):
   if filename.endswith(".json"):
     return __import__("json").loads(path.read_text(encoding="utf-8"))
   return FileResponse(path, media_type="image/png")
-
 
 @app.get("/trace/{session_id}/latest-frame", tags=["trace"])
 async def get_latest_trace_frame(session_id: str):
@@ -458,7 +432,6 @@ async def get_latest_trace_frame(session_id: str):
       if p.exists():
         return FileResponse(p, media_type="image/png")
   raise HTTPException(404, "no screenshots found in trace")
-
 
 @app.get("/trace/{session_id}/latest-meta", tags=["trace"])
 async def get_latest_trace_meta(session_id: str):
@@ -476,8 +449,7 @@ async def get_latest_trace_meta(session_id: str):
       return json.loads(meta_path.read_text(encoding="utf-8"))
   raise HTTPException(404, "no meta found in trace")
 
-
 def main() -> None:
   import uvicorn
   from uno_schemas.api import SERVICE_PORTS
-  uvicorn.run("uno_adapter_web.api:app", host="127.0.0.1", port=SERVICE_PORTS["adapter-web"])
+  uvicorn.run("uno_adapter_web.api:app", host=os.getenv("UNO_UVICORN_HOST", "127.0.0.1"), port=SERVICE_PORTS["adapter-web"])

@@ -7,6 +7,7 @@ duck-typing. Model-assist calls model-runtime-service for strategy advice.
 from __future__ import annotations
 
 import json
+import os
 import random
 import re
 from typing import Any
@@ -17,9 +18,11 @@ from uno_schemas.decision import (
     DecisionExplanation,
     DecisionRequest,
     DecisionResult,
+    ShadowComparison,
     StrategyId,
 )
 from uno_shared.logging import get_logger
+from uno_shared.wild_color import choose_wild_color, score_wild_color, color_counts
 
 # structlog, NOT logging.getLogger(): the project configures structlog to print to
 # STDOUT, which is what lands in logs/<service>.log. A bare stdlib logger is never
@@ -29,8 +32,8 @@ from uno_shared.logging import get_logger
 # days. NOTE: structlog's warning() takes kwargs, NOT %s interpolation.
 logger = get_logger("decision")
 
-MODEL_RUNTIME_URL = "http://127.0.0.1:8111"
-MODEL_TIMEOUT_S = 10.0
+MODEL_RUNTIME_URL = os.getenv("MODEL_RUNTIME_URL", "http://127.0.0.1:8111")
+MODEL_TIMEOUT_S = float(os.getenv("MODEL_TIMEOUT_S", "10"))
 
 
 def _extract_json_object(text: str) -> str | None:
@@ -84,26 +87,52 @@ def _get_card_info(action) -> dict[str, Any] | None:
   }
 
 
-def _score_action(action) -> tuple[float, str]:
-  """Score an action — game-agnostic heuristic."""
+def _score_action(action, wild_counts=None, wild_top_color=None) -> tuple[float, str]:
+  """Score an action — game-agnostic heuristic.
+
+  `wild_counts` / `wild_top_color` (computed once by `decide_heuristic`) let a
+  wild play be ranked by the shared colour strategy: when the engine expands a
+  wild into one action per colour (`chosen_color`), the most-held / top-matching
+  colour wins instead of "first red in the list".
+  """
   action_type = _get_action_type(action)
   card = _get_card_info(action)
+  if wild_counts is None:
+    wild_counts = {}
 
   if action_type in ("play_card", "play") and card:
     value = str(card.get("value", "")).lower() if isinstance(card.get("value"), str) else str(card.get("value", ""))
     color = str(card.get("color", "")).lower() if isinstance(card.get("color"), str) else str(card.get("color", ""))
 
     if "wild" in value and "draw" in value and "four" in value:
-      return 0.9, "aggressive wild draw four"
-    if "draw" in value and "two" in value:
-      return 0.85, "draw two pressure"
+      score, why = 0.9, "aggressive wild draw four"
+    elif "draw" in value and "two" in value:
+      score, why = 0.85, "draw two pressure"
+    elif color == "wild":
+      score, why = 0.7, "wild flexibility"
+    elif value in ("skip", "reverse"):
+      score, why = 0.75, "skip/reverse tempo"
+    elif value == "unknown":
+      # Colour-only perception (VLM down): the hand was read by colour alone and
+      # this action matched that colour against the top card. Scoring it just
+      # "play card" (0.5) would make the heuristic prefer draw_card (0.55) and
+      # stall the game forever — a known-colour play must beat a blind draw.
+      score, why = 0.6, "colour-match play (value unreadable)"
+    elif value.isdigit():
+      score, why = 0.5 + (0.05 * int(value)), "number card"
+    else:
+      score, why = 0.5, "play card"
+
+    # Wild plays: rank the per-colour variants by the shared strategy so the
+    # most-held / sequence-continuing colour wins, not list order.
     if color == "wild":
-      return 0.7, "wild flexibility"
-    if value in ("skip", "reverse"):
-      return 0.75, "skip/reverse tempo"
-    if value.isdigit():
-      return 0.5 + (0.05 * int(value)), "number card"
-    return 0.5, "play card"
+      chosen = getattr(action, "chosen_color", None)
+      chosen_color = chosen.value if hasattr(chosen, "value") else str(chosen or "").lower()
+      bonus = score_wild_color(chosen_color, wild_counts, wild_top_color)
+      if bonus > 0:
+        score += bonus
+        why = f"wild: set {chosen_color} ({why})"
+    return score, why
 
   if action_type in ("draw_card", "draw"):
     return 0.55, "draw card"
@@ -144,10 +173,29 @@ def _format_state_for_prompt(observation: Any) -> str:
 
 # ── Heuristic strategy ──
 
+def _wild_context(req: DecisionRequest) -> tuple[dict[str, int], str | None]:
+  """(hand colour counts, top colour) from the perceived board, or empties.
+
+  Feeds the wild-colour strategy in `_score_action`. When the observation has
+  no readable hand/top (engine-only path) both come back empty and wild
+  variants keep their flat score — same behaviour as before this strategy.
+  """
+  observation = req.observation
+  gs = getattr(observation, "game_state", None) or {}
+  hand_cards = gs.get("hand_cards") if isinstance(gs, dict) else None
+  top = gs.get("top_card") if isinstance(gs, dict) else None
+  top_color = None
+  if isinstance(top, dict):
+    tc = str(top.get("color") or "").lower().strip()
+    top_color = tc or None
+  return color_counts(hand_cards), top_color
+
+
 def decide_heuristic(req: DecisionRequest) -> DecisionResult:
+  wild_counts, wild_top_color = _wild_context(req)
   candidates: list[DecisionCandidate] = []
   for action in req.legal_actions:
-    score, reason = _score_action(action)
+    score, reason = _score_action(action, wild_counts, wild_top_color)
     candidates.append(DecisionCandidate(action=action, score=score, reason=reason))
 
   play_candidates = [c for c in candidates if _is_play_action(c.action)]
@@ -284,44 +332,106 @@ async def decide_model(req: DecisionRequest) -> DecisionResult:
     return decide_heuristic(req)
 
 
+# ── Shadow mode ──
+
+async def _run_shadow(req: DecisionRequest, primary_result: DecisionResult) -> ShadowComparison | None:
+  """Run the opposite strategy as a non-binding observer; never affects the result.
+
+  The point of shadow mode is measuring disagreement before trusting a strategy:
+  e.g. primary=heuristic, shadow=model_assist logs how often the model would have
+  chosen a different card (and at what confidence), so promotion to primary is a
+  data-backed decision instead of a vibe. Any shadow failure degrades silently —
+  the primary decision must never be at risk because of an observer.
+  """
+  try:
+    if req.strategy_id == StrategyId.MODEL_ASSIST:
+      shadow_req = req.model_copy(update={"strategy_id": StrategyId.HEURISTIC, "use_model_assist": False})
+      shadow_strategy = "heuristic"
+      shadow_result = decide_heuristic(shadow_req)
+    else:
+      shadow_req = req.model_copy(update={"strategy_id": StrategyId.MODEL_ASSIST, "use_model_assist": True})
+      shadow_strategy = "model_assist"
+      shadow_result = await decide_model(shadow_req)
+    shadow_action_id = getattr(shadow_result.chosen_action, "action_id", None)
+    primary_action_id = getattr(primary_result.chosen_action, "action_id", None)
+    agree = (
+      shadow_action_id == primary_action_id
+      or shadow_result.chosen_action.model_dump(mode="json") == primary_result.chosen_action.model_dump(mode="json")
+    )
+    logger.info(
+      "shadow_comparison",
+      primary_strategy=req.strategy_id.value,
+      shadow_strategy=shadow_strategy,
+      agree=agree,
+      shadow_confidence=shadow_result.confidence,
+      correlation_id=req.correlation_id,
+    )
+    return ShadowComparison(
+      shadow_strategy=shadow_strategy,
+      shadow_confidence=shadow_result.confidence,
+      shadow_summary=shadow_result.explanation.summary if shadow_result.explanation else "",
+      agree_with_primary=agree,
+    )
+  except Exception as exc:  # noqa: BLE001 — shadow is observational, never fatal
+    logger.warning("shadow_failed", error=f"{type(exc).__name__}: {exc}")
+    return None
+
+
 # ── Main dispatch ──
 
 async def decide(req: DecisionRequest) -> DecisionResult:
   """Route to appropriate strategy based on strategy_id."""
+  if req.shadow_mode:
+    base_req = req.model_copy(update={"shadow_mode": False})
+    if base_req.strategy_id == StrategyId.RANDOM:
+      primary = decide_random(base_req)
+    elif base_req.strategy_id == StrategyId.MODEL_ASSIST or base_req.use_model_assist:
+      primary = await _primary_with_model(base_req)
+    else:
+      primary = decide_heuristic(base_req)
+    shadow = await _run_shadow(req, primary)
+    if shadow is not None:
+      primary = primary.model_copy(deep=True)
+      primary.explanation = primary.explanation.model_copy(update={"shadow_comparison": shadow})
+    return primary
   if req.strategy_id == StrategyId.RANDOM:
     return decide_random(req)
   if req.strategy_id == StrategyId.MODEL_ASSIST:
     return await decide_model(req)
   if req.use_model_assist:
-    # Heuristic first, model as secondary opinion
-    heuristic_result = decide_heuristic(req)
-    try:
-      model_result = await decide_model(req)
-      # If model agrees with heuristic, use model's confidence
-      if model_result.chosen_action == heuristic_result.chosen_action:
-        return DecisionResult(
-          chosen_action=heuristic_result.chosen_action,
-          confidence=max(heuristic_result.confidence, model_result.confidence),
-          explanation=DecisionExplanation(
-            summary=f"Heuristic + model agree: {_get_action_type(heuristic_result.chosen_action)}",
-            candidates=heuristic_result.explanation.candidates,
-            model_used=True,
-            model_id=model_result.explanation.model_id,
-          ),
-          correlation_id=req.correlation_id,
-        )
-      # If model disagrees, use heuristic but note disagreement
+    return await _primary_with_model(req)
+  return decide_heuristic(req)
+
+
+async def _primary_with_model(req: DecisionRequest) -> DecisionResult:
+  """Heuristic-primary decision with the model as a secondary opinion."""
+  heuristic_result = decide_heuristic(req)
+  try:
+    model_result = await decide_model(req)
+    # If model agrees with heuristic, use model's confidence
+    if model_result.chosen_action == heuristic_result.chosen_action:
       return DecisionResult(
         chosen_action=heuristic_result.chosen_action,
-        confidence=heuristic_result.confidence,
+        confidence=max(heuristic_result.confidence, model_result.confidence),
         explanation=DecisionExplanation(
-          summary=f"Heuristic chose {_get_action_type(heuristic_result.chosen_action)} (model suggested {_get_action_type(model_result.chosen_action)})",
+          summary=f"Heuristic + model agree: {_get_action_type(heuristic_result.chosen_action)}",
           candidates=heuristic_result.explanation.candidates,
           model_used=True,
           model_id=model_result.explanation.model_id,
         ),
         correlation_id=req.correlation_id,
       )
-    except Exception:
-      return heuristic_result
-  return decide_heuristic(req)
+    # If model disagrees, use heuristic but note disagreement
+    return DecisionResult(
+      chosen_action=heuristic_result.chosen_action,
+      confidence=heuristic_result.confidence,
+      explanation=DecisionExplanation(
+        summary=f"Heuristic chose {_get_action_type(heuristic_result.chosen_action)} (model suggested {_get_action_type(model_result.chosen_action)})",
+        candidates=heuristic_result.explanation.candidates,
+        model_used=True,
+        model_id=model_result.explanation.model_id,
+      ),
+      correlation_id=req.correlation_id,
+    )
+  except Exception:
+    return heuristic_result
